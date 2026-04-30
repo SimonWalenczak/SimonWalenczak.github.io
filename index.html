@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Sélection du métier</title>
+    <link rel="stylesheet" href="intro_style.css">
+</head>
+<body>
+
+<div id="ecran-accueil">
+    <div class="container-relatif">
+        <img src="intro_background_v2.png" alt="Fond" id="image-fond">
+
+        <form id="formulaire-invisible">
+            <label id="titre-image">Sélectionnez votre corps de métier</label>
+
+            <select id="select-metier" required>
+                <option value="" disabled selected>Choisir...</option>
+                <option value="allergo">Allergologue</option>
+                <option value="dentiste">Dentiste</option>
+                <option value="dermatho">Dermatologue</option>
+                <option value="hemato">Hématologue</option>
+                <option value="kine">Kinésithérapeute</option>
+                <option value="oncolo">Oncologue</option>
+                <option value="ophtalmo">Ophtalmologue</option>
+                <option value="psy">Psychiatre</option>
+                <option value="generaliste">Médecin Généraliste</option>
+            </select>
+
+            <button type="submit" id="bouton-image">Valider</button>
+        </form>
+    </div>
+</div>
+<script src="script.js"></script>
+</body>
+</html>
