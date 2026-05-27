@@ -1,0 +1,2025 @@
+const dom = {
+    imageInput: document.getElementById("imageInput"),
+    spaceToggle: document.getElementById("spaceToggle"),
+    viewport: document.getElementById("viewport"),
+    scene: document.getElementById("scene"),
+    grid: document.getElementById("grid"),
+    objectLayer: document.getElementById("objectLayer"),
+    hierarchy: document.getElementById("hierarchy"),
+    contextMenu: document.getElementById("contextMenu"),
+    renameBtn: document.getElementById("renameBtn"),
+    deleteBtn: document.getElementById("deleteBtn"),
+    gizmo: document.getElementById("gizmo"),
+    axisX: document.querySelector(".axis-x"),
+    axisY: document.querySelector(".axis-y"),
+    rotateHandle: document.querySelector(".rotate-handle"),
+    posXInput: document.getElementById("posX"),
+    posYInput: document.getElementById("posY"),
+    rotationInput: document.getElementById("rotation"),
+    scaleXInput: document.getElementById("scaleX"),
+    scaleYInput: document.getElementById("scaleY"),
+    resetRotationBtn: document.getElementById("resetRotationBtn"),
+    resetScaleBtn: document.getElementById("resetScaleBtn"),
+    inspectorTabs: document.getElementById("inspectorTabs"),
+    svgExportAction: document.getElementById("svgExportAction"),
+    svgInspector: document.getElementById("svgInspector"),
+    rigInspector: document.getElementById("rigInspector"),
+    exportSceneBtn: document.getElementById("exportSceneBtn"),
+    exportModal: document.getElementById("exportModal"),
+    exportFixedFields: document.getElementById("exportFixedFields"),
+    exportWidthInput: document.getElementById("exportWidth"),
+    exportHeightInput: document.getElementById("exportHeight"),
+    exportNameInput: document.getElementById("exportName"),
+    exportCancelBtn: document.getElementById("exportCancelBtn"),
+    exportConfirmBtn: document.getElementById("exportConfirmBtn")
+};
+
+const state = {
+    objects: [],
+    selected: null,
+    transformSpace: "local",
+    contextTarget: null,
+    draggedHierarchyItem: null,
+    rigSliderActive: false,
+    activeInspectorTab: "svg",
+    history: [],
+    historyIndex: -1,
+    _rigBeforeSnapshot: null,
+    camera: {
+        x: 0,
+        y: 0,
+        zoom: 1
+    },
+    interaction: {
+        type: null,
+        axis: null,
+        startSceneMouse: null,
+        startObjectPosition: null,
+        lastMouse: null,
+        beforeSnapshot: null,
+        beforeRigSnapshot: null
+    }
+};
+
+const VIEWPORT = {
+    sceneSize: 5000,
+    minZoom: 0.2,
+    maxZoom: 3,
+    zoomStep: 0.1
+};
+
+const SPRITE = {
+    defaultX: 300,
+    defaultY: 300,
+    defaultWidth: 200,
+    minScale: 0.05
+};
+
+// Configuration générique du rig humanoïde avec hiérarchie
+const RIG_CONFIG = {
+    Head: { pivot: "Neck", label: "Tête", parent: null, range: { rotation: [-25, 25], x: [-20, 20], y: [-20, 20] } },
+    
+    LeftArm: { pivot: "LeftShoulder", label: "Bras gauche", parent: null, range: { rotation: [-90, 90], x: [-50, 50], y: [-50, 50] } },
+    LeftForearm: { pivot: "LeftElbow", label: "Avant-bras gauche", parent: "LeftArm", range: { rotation: [-120, 120], x: [-50, 50], y: [-50, 50] } },
+    
+    RightArm: { pivot: "RightShoulder", label: "Bras droit", parent: null, range: { rotation: [-90, 90], x: [-50, 50], y: [-50, 50] } },
+    RightForearm: { pivot: "RightElbow", label: "Avant-bras droit", parent: "RightArm", range: { rotation: [-120, 120], x: [-50, 50], y: [-50, 50] } },
+    
+    LeftLeg: { pivot: "LeftHip", label: "Jambe haute gauche", parent: null, range: { rotation: [-60, 60], x: [-30, 30], y: [-30, 30] } },
+    LeftLowerLeg: { pivot: "LeftKnee", label: "Jambe basse gauche", parent: "LeftLeg", range: { rotation: [0, 80], x: [-30, 30], y: [-30, 30] } },
+    
+    RightLeg: { pivot: "RightHip", label: "Jambe haute droit", parent: null, range: { rotation: [-60, 60], x: [-30, 30], y: [-30, 30] } },
+    RightLowerLeg: { pivot: "RightKnee", label: "Jambe basse droit", parent: "RightLeg", range: { rotation: [0, 80], x: [-30, 30], y: [-30, 30] } }
+};
+
+const scaleHandles = createScaleHandles();
+
+disableNativeDrag(dom.axisX, dom.axisY, dom.rotateHandle, ...scaleHandles);
+bindEvents();
+updateCamera();
+updateInspector({ refreshSvg: true });
+updateGizmo();
+
+function bindEvents() {
+    dom.imageInput.addEventListener("change", handleImageImport);
+    dom.spaceToggle.addEventListener("click", toggleTransformSpace);
+
+    dom.scene.addEventListener("mousedown", handleSceneMouseDown);
+    dom.viewport.addEventListener("mousedown", handleViewportMouseDown);
+    dom.viewport.addEventListener("wheel", handleViewportWheel, { passive: false });
+
+    dom.axisX.addEventListener("mousedown", (event) => startGizmoMove(event, "x"));
+    dom.axisY.addEventListener("mousedown", (event) => startGizmoMove(event, "y"));
+    dom.rotateHandle.addEventListener("mousedown", startGizmoRotation);
+    scaleHandles.forEach((handle) => {
+        handle.addEventListener("mousedown", (event) => startScale(event, handle.dataset.scaleHandle));
+    });
+
+    dom.renameBtn.addEventListener("click", renameContextTarget);
+    dom.deleteBtn.addEventListener("click", deleteContextTarget);
+
+    dom.posXInput.addEventListener("input", () => updateSelectedFromInspector("x", dom.posXInput.value));
+    dom.posYInput.addEventListener("input", () => updateSelectedFromInspector("y", dom.posYInput.value));
+    dom.rotationInput.addEventListener("input", () => updateSelectedFromInspector("rotation", dom.rotationInput.value));
+    dom.scaleXInput.addEventListener("input", () => updateSelectedFromInspector("scaleX", dom.scaleXInput.value));
+    dom.scaleYInput.addEventListener("input", () => updateSelectedFromInspector("scaleY", dom.scaleYInput.value));
+    dom.resetRotationBtn.addEventListener("click", resetSelectedRotation);
+    dom.resetScaleBtn.addEventListener("click", resetSelectedScale);
+    [dom.posXInput, dom.posYInput, dom.rotationInput, dom.scaleXInput, dom.scaleYInput].forEach((input) => {
+        let snap = null;
+        input.addEventListener("focus", () => { if (state.selected) snap = snapshotTransform(state.selected); });
+        input.addEventListener("blur", () => {
+            if (snap && state.selected) {
+                pushHistory(state.selected, snap, null, snapshotTransform(state.selected), null);
+                snap = null;
+            }
+        });
+    });
+    dom.rigInspector.addEventListener("input", handleRigInspectorInput);
+    dom.rigInspector.addEventListener("click", handleRigInspectorClick);
+    dom.rigInspector.addEventListener("pointerdown", handleRigInspectorPointerDown);
+    dom.inspectorTabs.addEventListener("click", (e) => {
+        const tab = e.target.closest("[data-tab]");
+        if (!tab) return;
+        state.activeInspectorTab = tab.dataset.tab;
+        syncInspectorTabs();
+    });
+    dom.exportSceneBtn.addEventListener("click", openExportModal);
+    dom.exportCancelBtn.addEventListener("click", closeExportModal);
+    dom.exportConfirmBtn.addEventListener("click", confirmExport);
+    dom.exportModal.addEventListener("click", (e) => { if (e.target === dom.exportModal) closeExportModal(); });
+    dom.exportModal.addEventListener("keydown", (e) => { if (e.key === "Escape") closeExportModal(); });
+    document.querySelectorAll("input[name='exportMode']").forEach((radio) => {
+        radio.addEventListener("change", () => {
+            dom.exportFixedFields.hidden = radio.value !== "fixed" || !radio.checked;
+        });
+    });
+    document.addEventListener("mousemove", handleDocumentMouseMove);
+    document.addEventListener("mouseup", stopInteraction);
+    document.addEventListener("pointerup", handleRigInspectorPointerUp);
+    document.addEventListener("keydown", handleDocumentKeyDown);
+
+    setupPanelResizer(
+        document.getElementById("hierarchyResizer"),
+        document.getElementById("hierarchy-panel"),
+        "right"
+    );
+    setupPanelResizer(
+        document.getElementById("inspectorResizer"),
+        document.getElementById("inspector-panel"),
+        "left"
+    );
+}
+
+function setupPanelResizer(resizer, panel, side) {
+    let startX, startWidth;
+
+    resizer.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        startX = e.clientX;
+        startWidth = panel.offsetWidth;
+        resizer.classList.add("dragging");
+        resizer.setPointerCapture(e.pointerId);
+    });
+
+    resizer.addEventListener("pointermove", (e) => {
+        if (!resizer.hasPointerCapture(e.pointerId)) return;
+        const delta = e.clientX - startX;
+        const newWidth = side === "right"
+            ? Math.max(150, Math.min(600, startWidth + delta))
+            : Math.max(150, Math.min(600, startWidth - delta));
+        const prevWidth = panel.offsetWidth;
+        panel.style.width = `${newWidth}px`;
+        panel.style.flexBasis = `${newWidth}px`;
+        if (side === "right") {
+            state.camera.x -= panel.offsetWidth - prevWidth;
+            updateCamera();
+        }
+    });
+
+    resizer.addEventListener("pointerup", () => {
+        resizer.classList.remove("dragging");
+    });
+}
+
+function disableNativeDrag(...elements) {
+    elements.forEach((element) => {
+        if (element) element.draggable = false;
+    });
+}
+
+function createScaleHandles() {
+    const frame = document.createElement("div");
+    frame.className = "scale-frame";
+    dom.scaleFrame = frame;
+    dom.gizmo.appendChild(frame);
+
+    const handles = ["nw", "n", "ne", "e", "se", "s", "sw", "w"].map((name) => {
+        const handle = document.createElement("div");
+
+        handle.className = `scale-handle scale-handle-${name}`;
+        handle.dataset.scaleHandle = name;
+        handle.title = `Scale ${name.toUpperCase()}`;
+
+        frame.appendChild(handle);
+        return handle;
+    });
+
+    return handles;
+}
+
+function handleImageImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+        if (isSvgFile(file)) {
+            createSvgSprite(reader.result, file.name);
+            return;
+        }
+
+        createBitmapSprite(reader.result, file.name);
+    });
+
+    if (isSvgFile(file)) {
+        reader.readAsText(file);
+    } else {
+        reader.readAsDataURL(file);
+    }
+
+    event.target.value = "";
+}
+
+function createBitmapSprite(src, fileName) {
+    const image = document.createElement("img");
+    const objectData = createObjectData(fileName, "bitmap");
+
+    image.src = src;
+    image.alt = objectData.name;
+    image.draggable = false;
+    image.className = "sprite";
+    image.objectData = objectData;
+    image.style.width = `${SPRITE.defaultWidth}px`;
+    image.addEventListener("mousedown", (event) => startSpriteMove(event, image));
+    image.addEventListener("load", () => refreshSpriteLayout(image), { once: true });
+
+    dom.objectLayer.appendChild(image);
+    state.objects.push(image);
+
+    image.hierarchyItem = createHierarchyItem(image);
+    updateSprite(image);
+    refreshSceneOrder();
+    selectObject(image);
+    refreshSpriteLayout(image);
+}
+
+function createSvgSprite(svgText, fileName) {
+    const svg = parseSvg(svgText);
+    if (!svg) {
+        alert("Le fichier SVG n'a pas pu etre importe.");
+        return;
+    }
+
+    const sprite = document.createElement("div");
+    const objectData = createObjectData(fileName, "svg");
+
+    sanitizeSvg(svg);
+    sprite.svgClassMap = namespaceSvgClasses(svg, objectData.id);
+    svg.removeAttribute("x");
+    svg.removeAttribute("y");
+    svg.setAttribute("overflow", "visible");
+    svg.classList.add("svg-content");
+
+    sprite.className = "sprite svg-sprite";
+    sprite.objectData = objectData;
+    sprite.svgElement = svg;
+    sprite.svgStyles = extractSvgStyleData(svg, sprite.svgClassMap);
+    sprite.style.width = `${SPRITE.defaultWidth}px`;
+    sprite.appendChild(svg);
+    sprite.addEventListener("mousedown", (event) => startSpriteMove(event, sprite));
+
+    dom.objectLayer.appendChild(sprite);
+    state.objects.push(sprite);
+
+    sprite.hierarchyItem = createHierarchyItem(sprite);
+    updateSprite(sprite);
+    refreshSceneOrder();
+    selectObject(sprite);
+    refreshSpriteLayout(sprite);
+}
+
+function createObjectData(fileName, type) {
+    return {
+        id: createId(),
+        name: getDefaultObjectName(fileName),
+        type,
+        x: SPRITE.defaultX,
+        y: SPRITE.defaultY,
+        rotation: 0,
+        scaleX: 1,
+        scaleY: 1
+    };
+}
+
+function getDefaultObjectName(fileName) {
+    if (!fileName) return `Sprite ${state.objects.length + 1}`;
+    return fileName.replace(/\.[^/.]+$/, "") || `Sprite ${state.objects.length + 1}`;
+}
+
+function isSvgFile(file) {
+    return file.type === "image/svg+xml" || file.name.toLowerCase().endsWith(".svg");
+}
+
+function createId() {
+    if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+    return `sprite-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function parseSvg(svgText) {
+    const parser = new DOMParser();
+    const parsedDocument = parser.parseFromString(svgText, "image/svg+xml");
+
+    if (parsedDocument.querySelector("parsererror")) return null;
+
+    const svg = parsedDocument.documentElement;
+    if (svg?.tagName.toLowerCase() !== "svg") return null;
+
+    return document.importNode(svg, true);
+}
+
+function sanitizeSvg(svg) {
+    svg.querySelectorAll("script, foreignObject").forEach((element) => element.remove());
+
+    svg.querySelectorAll("*").forEach((element) => {
+        [...element.attributes].forEach((attribute) => {
+            const name = attribute.name.toLowerCase();
+            const value = attribute.value.trim().toLowerCase();
+
+            if (name.startsWith("on") || value.startsWith("javascript:")) {
+                element.removeAttribute(attribute.name);
+            }
+        });
+    });
+}
+
+function namespaceSvgClasses(svg, objectId) {
+    const namespace = `svg-${objectId.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+    const classNames = getAllSvgClassNames(svg);
+    const classMap = Object.fromEntries(
+        classNames.map((className) => [className, `${namespace}-${className}`])
+    );
+
+    const styleElement = svg.querySelector("style");
+    if (styleElement) {
+        let styleText = styleElement.textContent;
+
+        Object.entries(classMap).forEach(([className, scopedClassName]) => {
+            styleText = styleText.replace(
+                new RegExp(`\\.${escapeRegExp(className)}\\b`, "g"),
+                `.${scopedClassName}`
+            );
+        });
+
+        styleElement.textContent = styleText;
+    }
+
+    svg.querySelectorAll("[class]").forEach((element) => {
+        Object.entries(classMap).forEach(([className, scopedClassName]) => {
+            if (element.classList.contains(className)) {
+                element.classList.remove(className);
+                element.classList.add(scopedClassName);
+            }
+        });
+    });
+
+    return classMap;
+}
+
+function extractSvgStyleData(svg, classMap = null) {
+    const styleElement = getOrCreateSvgStyleElement(svg);
+    const allClasses = classMap
+        ? Object.keys(classMap)
+        : getAllSvgClassNames(svg);
+
+    const classes = allClasses.filter((className) => {
+        const scopedClassName = classMap?.[className] || className;
+        return svgClassHasFill(styleElement.textContent, scopedClassName, svg);
+    });
+
+    return classes.map((className) => {
+        const scopedClassName = classMap?.[className] || className;
+
+        return {
+            className,
+            scopedClassName,
+            color: getSvgClassFill(styleElement.textContent, scopedClassName, svg),
+            targetIds: getSvgClassTargetIds(svg, scopedClassName)
+        };
+    });
+}
+
+function svgClassHasFill(styleText, className, svg) {
+    const escapedClass = escapeRegExp(className);
+    const rule = styleText.match(new RegExp(`\\.${escapedClass}\\s*\\{([^}]*)\\}`));
+    if (rule?.[1]?.match(/fill\s*:/i)) return true;
+
+    const element = svg.querySelector(`.${cssEscape(className)}`);
+    return Boolean(
+        normalizeHexColor(element?.getAttribute("fill")) ||
+        normalizeHexColor(element?.style.fill)
+    );
+}
+
+function getOrCreateSvgStyleElement(svg) {
+    let styleElement = svg.querySelector("style");
+
+    if (!styleElement) {
+        styleElement = document.createElementNS("http://www.w3.org/2000/svg", "style");
+        styleElement.setAttribute("type", "text/css");
+        svg.prepend(styleElement);
+    }
+
+    return styleElement;
+}
+
+function getSvgStyleClasses(svg) {
+    const styleElement = getOrCreateSvgStyleElement(svg);
+    return getAllSvgClassNames(svg)
+        .filter((className) => svgClassHasFill(styleElement.textContent, className, svg))
+        .sort(compareStClasses);
+}
+
+function getAllSvgClassNames(svg) {
+    const classNames = new Set();
+    const styleText = svg.querySelector("style")?.textContent || "";
+    const ruleRegex = /\.([a-zA-Z_][\w-]*)\s*\{/g;
+    let match = ruleRegex.exec(styleText);
+
+    while (match) {
+        classNames.add(match[1]);
+        match = ruleRegex.exec(styleText);
+    }
+
+    svg.querySelectorAll("[class]").forEach((element) => {
+        element.classList.forEach((className) => {
+            classNames.add(className);
+        });
+    });
+
+    return [...classNames];
+}
+
+function compareStClasses(a, b) {
+    const aNumber = parseInt(a.replace(/\D/g, ""), 10);
+    const bNumber = parseInt(b.replace(/\D/g, ""), 10);
+
+    if (Number.isFinite(aNumber) && Number.isFinite(bNumber)) {
+        return aNumber - bNumber;
+    }
+
+    return a.localeCompare(b);
+}
+
+function getSvgClassFill(styleText, className, svg) {
+    const escapedClass = escapeRegExp(className);
+    const rule = styleText.match(new RegExp(`\\.${escapedClass}\\s*\\{([^}]*)\\}`));
+    const fill = rule?.[1].match(/fill\s*:\s*([^;]+)\s*;?/i)?.[1];
+    const color = normalizeHexColor(fill);
+
+    if (color) return color;
+
+    const element = svg.querySelector(`.${cssEscape(className)}`);
+    return normalizeHexColor(element?.getAttribute("fill"))
+        || normalizeHexColor(element?.style.fill)
+        || "#000000";
+}
+
+function getSvgClassTargetIds(svg, className) {
+    return [...svg.querySelectorAll(`.${cssEscape(className)}`)]
+        .map((element) => getAssociatedSvgId(element, svg))
+        .filter(Boolean)
+        .filter((id, index, ids) => ids.indexOf(id) === index);
+}
+
+function getAssociatedSvgId(element, svg) {
+    if (element.id) return element.id;
+
+    let parent = element.parentElement;
+    while (parent && parent !== svg) {
+        if (parent.id) return parent.id;
+        parent = parent.parentElement;
+    }
+
+    return "";
+}
+
+function updateSvgClassColor(sprite, className, color) {
+    const hex = normalizeHexColor(color);
+    if (!hex || !sprite.svgElement) return false;
+
+    const styleElement = getOrCreateSvgStyleElement(sprite.svgElement);
+    const escapedClass = escapeRegExp(className);
+    const ruleRegex = new RegExp(`(\\.${escapedClass}\\s*\\{)([^}]*)(\\})`);
+    const rule = styleElement.textContent.match(ruleRegex);
+
+    if (rule) {
+        const body = rule[2].match(/fill\s*:/i)
+            ? rule[2].replace(/fill\s*:\s*[^;]+;?/i, `fill:${hex};`)
+            : `${rule[2].trim().replace(/;?$/, ";")}fill:${hex};`;
+
+        styleElement.textContent = styleElement.textContent.replace(ruleRegex, (_, start, __, end) => `${start}${body}${end}`);
+    } else {
+        styleElement.textContent += `\n.${className}{fill:${hex};}`;
+    }
+
+    sprite.svgStyles = sprite.svgStyles.map((style) => (
+        style.scopedClassName === className
+            ? { ...style, color: hex }
+            : style
+    ));
+
+    return true;
+}
+
+function createHierarchyItem(sprite) {
+    const item = document.createElement("div");
+    const label = document.createElement("span");
+    const button = document.createElement("button");
+
+    item.className = "hierarchy-item";
+    item.draggable = true;
+
+    label.className = "hierarchy-label";
+    label.textContent = sprite.objectData.name;
+
+    button.type = "button";
+    button.className = "hierarchy-actions-btn";
+    button.textContent = "...";
+    button.setAttribute("aria-label", `Actions pour ${sprite.objectData.name}`);
+
+    item.append(label, button);
+    dom.hierarchy.appendChild(item);
+
+    item.addEventListener("click", () => selectObject(sprite));
+    item.addEventListener("dragstart", () => startHierarchyDrag(item));
+    item.addEventListener("dragover", (event) => moveHierarchyItem(event, item));
+    item.addEventListener("dragend", finishHierarchyDrag);
+    item.addEventListener("drop", finishHierarchyDrag);
+
+    label.addEventListener("dblclick", (event) => {
+        event.stopPropagation();
+        startInlineRename(label, sprite);
+    });
+
+    button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        openContextMenu(event.clientX, event.clientY, sprite);
+    });
+
+    return item;
+}
+
+function startHierarchyDrag(item) {
+    state.draggedHierarchyItem = item;
+    item.classList.add("dragging");
+}
+
+function moveHierarchyItem(event, item) {
+    event.preventDefault();
+    if (!state.draggedHierarchyItem || state.draggedHierarchyItem === item) return;
+
+    const rect = item.getBoundingClientRect();
+    const insertBefore = event.clientY - rect.top < rect.height / 2;
+
+    dom.hierarchy.insertBefore(
+        state.draggedHierarchyItem,
+        insertBefore ? item : item.nextSibling
+    );
+}
+
+function finishHierarchyDrag(event) {
+    event?.preventDefault();
+    document.querySelectorAll(".hierarchy-item").forEach((item) => {
+        item.classList.remove("dragging");
+    });
+    state.draggedHierarchyItem = null;
+    refreshSceneOrder();
+}
+
+function refreshSceneOrder() {
+    const orderedObjects = [...dom.hierarchy.children]
+        .map((item) => state.objects.find((object) => object.hierarchyItem === item))
+        .filter(Boolean);
+
+    state.objects.length = 0;
+    state.objects.push(...orderedObjects);
+
+    state.objects.forEach((object, index) => {
+        object.style.zIndex = index + 1;
+        dom.objectLayer.appendChild(object);
+    });
+}
+
+function openContextMenu(x, y, sprite) {
+    state.contextTarget = sprite;
+    dom.contextMenu.style.left = `${x}px`;
+    dom.contextMenu.style.top = `${y}px`;
+    dom.contextMenu.classList.remove("hidden");
+}
+
+function closeContextMenu() {
+    dom.contextMenu.classList.add("hidden");
+}
+
+function renameContextTarget() {
+    const sprite = state.contextTarget;
+    if (!sprite) return;
+
+    const newName = prompt("Nouveau nom de l'objet :", sprite.objectData.name);
+    if (!newName?.trim()) return;
+
+    setObjectName(sprite, newName.trim());
+    closeContextMenu();
+}
+
+function deleteContextTarget() {
+    if (!state.contextTarget) return;
+    selectObject(state.contextTarget);
+    deleteSelectedObject();
+    closeContextMenu();
+}
+
+function startInlineRename(label, sprite) {
+    const oldName = sprite.objectData.name;
+    const input = document.createElement("input");
+    let isFinished = false;
+
+    input.type = "text";
+    input.value = oldName;
+    input.className = "hierarchy-rename-input";
+    label.replaceWith(input);
+    input.focus();
+    input.select();
+
+    const finish = (shouldCommit) => {
+        if (isFinished) return;
+        isFinished = true;
+
+        const newLabel = document.createElement("span");
+        const name = shouldCommit && input.value.trim() ? input.value.trim() : oldName;
+
+        setObjectName(sprite, name);
+        newLabel.className = "hierarchy-label";
+        newLabel.textContent = sprite.objectData.name;
+        newLabel.addEventListener("dblclick", (event) => {
+            event.stopPropagation();
+            startInlineRename(newLabel, sprite);
+        });
+
+        if (input.parentNode) input.replaceWith(newLabel);
+    };
+
+    input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            finish(true);
+        }
+
+        if (event.key === "Escape") {
+            event.preventDefault();
+            finish(false);
+        }
+    });
+
+    input.addEventListener("blur", () => finish(true), { once: true });
+}
+
+function setObjectName(sprite, name) {
+    sprite.objectData.name = name;
+    sprite.alt = name;
+
+    const label = sprite.hierarchyItem?.querySelector(".hierarchy-label");
+    if (label) label.textContent = name;
+
+    const button = sprite.hierarchyItem?.querySelector(".hierarchy-actions-btn");
+    if (button) button.setAttribute("aria-label", `Actions pour ${name}`);
+}
+
+function selectObject(sprite) {
+    if (!sprite?.objectData) return;
+
+    stopInteraction();
+    state.selected = sprite;
+
+    state.objects.forEach((object) => {
+        const isSelected = object === sprite;
+        object.classList.toggle("selected", isSelected);
+        object.hierarchyItem?.classList.toggle("hierarchy-selected", isSelected);
+    });
+
+    updateInspector({ refreshSvg: true });
+    updateGizmo();
+}
+
+function deselectAll() {
+    stopInteraction();
+    state.selected = null;
+
+    state.objects.forEach((object) => {
+        object.classList.remove("selected");
+        object.hierarchyItem?.classList.remove("hierarchy-selected");
+    });
+
+    updateInspector({ refreshSvg: true });
+    updateGizmo();
+}
+
+function updateInspector(options = {}) {
+    const { refreshSvg = false } = options;
+    const data = state.selected?.objectData;
+
+    dom.posXInput.value = data ? Math.round(data.x) : "";
+    dom.posYInput.value = data ? Math.round(data.y) : "";
+    dom.rotationInput.value = data ? Math.round(data.rotation) : "";
+    dom.scaleXInput.value = data ? formatScale(data.scaleX) : "";
+    dom.scaleYInput.value = data ? formatScale(data.scaleY) : "";
+
+    if (refreshSvg) {
+        updateSvgInspector();
+        updateRigInspector();
+        syncInspectorTabs();
+    }
+}
+
+function updateSvgInspector() {
+    const sprite = state.selected;
+
+    dom.svgInspector.replaceChildren();
+    dom.svgInspector.hidden = true;
+    dom.svgExportAction.replaceChildren();
+    dom.svgExportAction.hidden = true;
+
+    if (!sprite?.svgElement) return;
+
+    sprite.svgStyles = extractSvgStyleData(sprite.svgElement, sprite.svgClassMap);
+    dom.svgInspector.hidden = false;
+
+    const title = document.createElement("div");
+    title.className = "svg-inspector-title";
+    title.textContent = "Couleurs SVG";
+    dom.svgInspector.appendChild(title);
+
+    if (sprite.svgStyles.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "svg-inspector-empty";
+        empty.textContent = "Aucune classe .st trouvee.";
+        dom.svgInspector.appendChild(empty);
+    } else {
+        sprite.svgStyles.forEach((style) => {
+            dom.svgInspector.appendChild(createSvgColorField(sprite, style));
+        });
+    }
+
+    const exportBtn = document.createElement("button");
+    exportBtn.type = "button";
+    exportBtn.textContent = "Export SVG";
+    exportBtn.addEventListener("click", () => exportSvg(sprite));
+    dom.svgExportAction.appendChild(exportBtn);
+    dom.svgExportAction.hidden = false;
+}
+
+function exportSvg(sprite) {
+    if (!sprite?.svgElement) return;
+
+    const clone = sprite.svgElement.cloneNode(true);
+    clone.removeAttribute("overflow");
+
+    const serializer = new XMLSerializer();
+    const svgString = serializer.serializeToString(clone);
+    const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${sprite.objectData.name}.svg`;
+    link.click();
+
+    URL.revokeObjectURL(url);
+}
+
+function openExportModal() {
+    if (state.objects.length === 0) { alert("La scène est vide."); return; }
+    dom.exportModal.hidden = false;
+}
+
+function closeExportModal() {
+    dom.exportModal.hidden = true;
+}
+
+async function confirmExport() {
+    const mode = document.querySelector("input[name='exportMode']:checked")?.value;
+    const fixedW = parseInt(dom.exportWidthInput.value, 10);
+    const fixedH = parseInt(dom.exportHeightInput.value, 10);
+    const filename = dom.exportNameInput.value.trim() || "scene";
+    closeExportModal();
+    if (mode === "fixed" && fixedW > 0 && fixedH > 0) {
+        await doExportScene(fixedW, fixedH, filename);
+    } else {
+        await doExportScene(null, null, filename);
+    }
+}
+
+async function doExportScene(fixedWidth, fixedHeight, filename = "scene") {
+    // Calcul du bounding box de la scène
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+    state.objects.forEach((sprite) => {
+        const { x, y, rotation, scaleX, scaleY } = sprite.objectData;
+        const w = sprite.offsetWidth;
+        const h = sprite.offsetHeight;
+        const cx = x + w / 2;
+        const cy = y + h / 2;
+        const hw = (w / 2) * scaleX;
+        const hh = (h / 2) * scaleY;
+        const rad = rotation * Math.PI / 180;
+        const cos = Math.abs(Math.cos(rad));
+        const sin = Math.abs(Math.sin(rad));
+        const extentX = hw * cos + hh * sin;
+        const extentY = hw * sin + hh * cos;
+        minX = Math.min(minX, cx - extentX);
+        minY = Math.min(minY, cy - extentY);
+        maxX = Math.max(maxX, cx + extentX);
+        maxY = Math.max(maxY, cy + extentY);
+    });
+
+    const contentMinX = Math.floor(minX);
+    const contentMinY = Math.floor(minY);
+    const contentW = Math.ceil(maxX - contentMinX);
+    const contentH = Math.ceil(maxY - contentMinY);
+
+    let canvasW, canvasH, drawScale, offsetX, offsetY;
+    if (fixedWidth && fixedHeight) {
+        canvasW = fixedWidth;
+        canvasH = fixedHeight;
+        drawScale = Math.min(fixedWidth / contentW, fixedHeight / contentH);
+        offsetX = (fixedWidth - contentW * drawScale) / 2;
+        offsetY = (fixedHeight - contentH * drawScale) / 2;
+    } else {
+        canvasW = contentW;
+        canvasH = contentH;
+        drawScale = 1;
+        offsetX = 0;
+        offsetY = 0;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = canvasW;
+    canvas.height = canvasH;
+    const ctx = canvas.getContext("2d");
+
+    if (drawScale !== 1 || offsetX !== 0 || offsetY !== 0) {
+        ctx.translate(offsetX, offsetY);
+        ctx.scale(drawScale, drawScale);
+    }
+
+    const serializer = new XMLSerializer();
+
+    for (const sprite of state.objects) {
+        const { x, y, rotation, scaleX, scaleY } = sprite.objectData;
+        const w = sprite.offsetWidth;
+        const h = sprite.offsetHeight;
+
+        ctx.save();
+        ctx.translate(x + w / 2 - contentMinX, y + h / 2 - contentMinY);
+        ctx.rotate(rotation * Math.PI / 180);
+        ctx.scale(scaleX, scaleY);
+
+        try {
+            if (sprite.objectData.type === "svg") {
+                const { clone, drawX, drawY, drawW, drawH } = buildExportSvgForCanvas(sprite, w, h);
+                const svgStr = serializer.serializeToString(clone);
+                const blob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
+                const url = URL.createObjectURL(blob);
+                try {
+                    const img = await loadImageFromUrl(url);
+                    ctx.drawImage(img, drawX, drawY, drawW, drawH);
+                } finally {
+                    URL.revokeObjectURL(url);
+                }
+            } else {
+                const img = await loadImageFromUrl(sprite.src);
+                ctx.drawImage(img, -w / 2, -h / 2, w, h);
+            }
+        } catch (e) {
+            console.warn("Erreur lors du rendu du sprite:", e);
+        }
+
+        ctx.restore();
+    }
+
+    canvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${filename}.png`;
+        link.click();
+        URL.revokeObjectURL(url);
+    }, "image/png");
+}
+
+// Construit un clone SVG avec un viewBox étendu pour inclure les parties de rig
+// qui dépassent du cadre original, et retourne les coordonnées de dessin canvas.
+function buildExportSvgForCanvas(sprite, w, h) {
+    const svgEl = sprite.svgElement;
+    const vb = svgEl.viewBox?.baseVal;
+    const clone = svgEl.cloneNode(true);
+    clone.removeAttribute("overflow");
+
+    if (!vb || vb.width === 0) {
+        clone.setAttribute("width", w);
+        clone.setAttribute("height", h);
+        return { clone, drawX: -w / 2, drawY: -h / 2, drawW: w, drawH: h };
+    }
+
+    const contentBounds = computeSvgContentViewBox(svgEl, vb);
+    const svgUnitPerPxX = vb.width / w;
+    const svgUnitPerPxY = vb.height / h;
+
+    const drawW = contentBounds.width / svgUnitPerPxX;
+    const drawH = contentBounds.height / svgUnitPerPxY;
+    const drawX = -w / 2 + (contentBounds.x - vb.x) / svgUnitPerPxX;
+    const drawY = -h / 2 + (contentBounds.y - vb.y) / svgUnitPerPxY;
+
+    clone.setAttribute("viewBox", `${contentBounds.x} ${contentBounds.y} ${contentBounds.width} ${contentBounds.height}`);
+    clone.setAttribute("width", drawW);
+    clone.setAttribute("height", drawH);
+
+    return { clone, drawX, drawY, drawW, drawH };
+}
+
+// Calcule en coordonnées SVG le bounding box réel du contenu (incluant les transforms de rig).
+function computeSvgContentViewBox(svgEl, vb) {
+    let minX = vb.x, minY = vb.y;
+    let maxX = vb.x + vb.width, maxY = vb.y + vb.height;
+
+    try {
+        const svgCTM = svgEl.getScreenCTM();
+        if (svgCTM) {
+            const svgCTMInv = svgCTM.inverse();
+
+            svgEl.querySelectorAll("g[id]").forEach((el) => {
+                try {
+                    const bbox = el.getBBox();
+                    if (bbox.width === 0 && bbox.height === 0) return;
+
+                    const elCTM = el.getScreenCTM();
+                    if (!elCTM) return;
+
+                    const toViewport = svgCTMInv.multiply(elCTM);
+
+                    [
+                        [bbox.x, bbox.y],
+                        [bbox.x + bbox.width, bbox.y],
+                        [bbox.x + bbox.width, bbox.y + bbox.height],
+                        [bbox.x, bbox.y + bbox.height]
+                    ].forEach(([px, py]) => {
+                        const pt = svgEl.createSVGPoint();
+                        pt.x = px;
+                        pt.y = py;
+                        const { x, y } = pt.matrixTransform(toViewport);
+                        if (Number.isFinite(x) && Number.isFinite(y)) {
+                            minX = Math.min(minX, x);
+                            minY = Math.min(minY, y);
+                            maxX = Math.max(maxX, x);
+                            maxY = Math.max(maxY, y);
+                        }
+                    });
+                } catch (e) { /* ignorer les éléments incompatibles */ }
+            });
+        }
+    } catch (e) { /* utiliser le viewBox d'origine en cas d'erreur */ }
+
+    const pad = Math.max(vb.width, vb.height) * 0.02;
+    return {
+        x: minX - pad,
+        y: minY - pad,
+        width: maxX - minX + 2 * pad,
+        height: maxY - minY + 2 * pad
+    };
+}
+
+function loadImageFromUrl(src) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error(`Impossible de charger: ${src}`));
+        img.src = src;
+    });
+}
+
+function createSvgColorField(sprite, style) {
+    const row = document.createElement("div");
+    const meta = document.createElement("div");
+    const ids = document.createElement("div");
+    const controls = document.createElement("div");
+    const picker = document.createElement("input");
+    const textInput = document.createElement("input");
+
+    row.className = "svg-color-row";
+    meta.className = "svg-color-meta";
+    ids.className = "svg-class-ids";
+    controls.className = "svg-color-controls";
+
+    const initialHex = normalizeHexColor(style.color) || "#000000";
+
+    picker.type = "color";
+    picker.className = "svg-color-picker";
+    picker.value = initialHex;
+
+    textInput.type = "text";
+    textInput.className = "svg-color-input";
+    textInput.value = initialHex;
+    textInput.placeholder = "#RRGGBB";
+    textInput.spellcheck = false;
+    textInput.setAttribute("aria-label", `Couleur de .${style.className}`);
+
+    ids.textContent = style.targetIds.length > 0
+        ? style.targetIds.join(", ")
+        : "Aucun id associe";
+
+    let pickerSnap = null;
+    picker.addEventListener("pointerdown", () => {
+        pickerSnap = snapshotSvgColors(sprite);
+    });
+    picker.addEventListener("input", () => {
+        const hex = picker.value.toUpperCase();
+        textInput.value = hex;
+        textInput.classList.remove("invalid");
+        updateSvgClassColor(sprite, style.scopedClassName, hex);
+    });
+    picker.addEventListener("change", () => {
+        if (pickerSnap) {
+            pushColorHistory(sprite, pickerSnap, snapshotSvgColors(sprite));
+            pickerSnap = null;
+        }
+    });
+
+    let textSnap = null;
+    textInput.addEventListener("focus", () => { textSnap = snapshotSvgColors(sprite); });
+    textInput.addEventListener("input", () => {
+        const normalized = normalizeHexColor(textInput.value);
+        const isValid = Boolean(normalized);
+        textInput.classList.toggle("invalid", !isValid);
+        if (isValid) {
+            picker.value = normalized;
+            updateSvgClassColor(sprite, style.scopedClassName, normalized);
+        }
+    });
+    textInput.addEventListener("blur", () => {
+        if (textSnap) {
+            pushColorHistory(sprite, textSnap, snapshotSvgColors(sprite));
+            textSnap = null;
+        }
+    });
+
+    controls.append(picker, textInput);
+    meta.append(ids);
+    row.append(meta, controls);
+
+    return row;
+}
+
+function updateRigInspector() {
+    const sprite = state.selected;
+
+    dom.rigInspector.replaceChildren();
+    dom.rigInspector.hidden = true;
+
+    if (!sprite?.svgElement) return;
+
+    ensureSvgRig(sprite);
+    dom.rigInspector.hidden = false;
+
+    const title = document.createElement("div");
+    title.className = "rig-inspector-title";
+    title.textContent = "Rig SVG";
+
+    const actions = document.createElement("div");
+    actions.className = "rig-actions";
+
+    const resetButton = document.createElement("button");
+    resetButton.type = "button";
+    resetButton.dataset.rigAction = "reset";
+    resetButton.textContent = "Reset rig";
+
+    actions.appendChild(resetButton);
+    dom.rigInspector.append(title, actions);
+
+    if (sprite.svgRig.parts.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "rig-inspector-empty";
+        empty.textContent = "Aucun groupe SVG avec id trouve.";
+        dom.rigInspector.appendChild(empty);
+        return;
+    }
+
+    sprite.svgRig.parts.forEach((part) => {
+        dom.rigInspector.appendChild(createRigPartControls(part));
+    });
+}
+
+function syncInspectorTabs() {
+    const hasSvg = dom.svgInspector.children.length > 0;
+    const hasRig = dom.rigInspector.children.length > 0;
+
+    // Restore both panels before deciding which to show
+    dom.svgInspector.hidden = !hasSvg;
+    dom.rigInspector.hidden = !hasRig;
+
+    if (!hasSvg || !hasRig) {
+        dom.inspectorTabs.hidden = true;
+        return;
+    }
+
+    dom.inspectorTabs.hidden = false;
+    const active = state.activeInspectorTab;
+    dom.inspectorTabs.querySelectorAll("[data-tab]").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.tab === active);
+    });
+    dom.svgInspector.hidden = active !== "svg";
+    dom.rigInspector.hidden = active !== "rig";
+}
+
+function ensureSvgRig(sprite) {
+    if (sprite.svgRig) return;
+
+    const parts = [];
+    
+    // sprite.svgElement est l'élément SVG racine
+    // Chercher le groupe principal (premier g[id] qui n'est pas PivotReference)
+    let mainGroup = null;
+    for (const child of sprite.svgElement.children) {
+        if (child.tagName === "g" && child.id && !child.id.toLowerCase().includes("pivotreference")) {
+            mainGroup = child;
+            break;
+        }
+    }
+    
+    if (!mainGroup) {
+        sprite.svgRig = { parts: [] };
+        return;
+    }
+    
+    // Parcourir la configuration du rig et chercher chaque partie dans le groupe principal
+    for (const [partName, config] of Object.entries(RIG_CONFIG)) {
+        const groupElement = mainGroup.querySelector(`g#${partName}`);
+        if (!groupElement) continue;
+        
+        // Chercher le pivot attendu dans ce groupe
+        const pivotElement = groupElement.querySelector(`circle#${config.pivot}, ellipse#${config.pivot}`);
+        if (!pivotElement) continue;
+        
+        // Récupérer la position du pivot
+        const pivot = getPivotFromElement(pivotElement);
+        if (!pivot) continue;
+        
+        const rotationRange = config.range.rotation;
+        const xRange = config.range.x;
+        const yRange = config.range.y;
+        
+        const part = {
+            key: partName,
+            id: partName,
+            label: config.label,
+            parentKey: config.parent || null,
+            element: groupElement,
+            baseTransform: groupElement.getAttribute("transform") || "",
+            pivot,
+            pose: {
+                rotation: 0,
+                x: 0,
+                y: 0
+            },
+            ranges: {
+                rotation: rotationRange,
+                x: xRange,
+                y: yRange
+            }
+        };
+        
+        parts.push(part);
+    }
+
+    // Imbriquer les éléments selon la hiérarchie SEULEMENT si on a des parties valides
+    if (parts.length > 0) {
+        nestRigElementsByHierarchy(mainGroup, parts);
+    }
+
+    sprite.svgRig = { parts };
+}
+
+function nestRigElementsByHierarchy(mainGroup, parts) {
+    // Pour chaque partie avec un parent, déplacer son élément enfant du parent
+    const partsByKey = {};
+    parts.forEach(p => { partsByKey[p.key] = p; });
+    
+    for (const part of parts) {
+        if (part.parentKey) {
+            const parent = partsByKey[part.parentKey];
+            if (parent && parent.element && part.element) {
+                // Si le parent contient déjà cet enfant, ne rien faire
+                if (!parent.element.contains(part.element)) {
+                    // Retirer l'enfant de mainGroup et le mettre dans le parent
+                    part.element.remove();
+                    parent.element.appendChild(part.element);
+                }
+            }
+        }
+    }
+}
+
+function getPivotFromElement(element) {
+    try {
+        const cx = parseFloat(element.getAttribute("cx"));
+        const cy = parseFloat(element.getAttribute("cy"));
+        if (Number.isFinite(cx) && Number.isFinite(cy)) {
+            return { x: cx, y: cy };
+        }
+        return null;
+    } catch {
+        return null;
+    }
+}
+
+function isRigPartCandidate(element, svg) {
+    if (element === svg) return false;
+    if (element.id.toLowerCase().includes("pivotreference")) return false;
+    if (element.closest("#PivotReference")) return false;
+
+    return true;
+}
+
+function createRigPart(element, index) {
+    const pivot = getSvgElementCenter(element);
+    if (!pivot) return null;
+
+    return {
+        key: `part-${index}`,
+        id: element.id,
+        element,
+        baseTransform: element.getAttribute("transform") || "",
+        pivot,
+        pose: {
+            rotation: 0,
+            x: 0,
+            y: 0
+        }
+    };
+}
+
+function getSvgElementCenter(element) {
+    try {
+        const box = element.getBBox();
+        if (!Number.isFinite(box.width) || !Number.isFinite(box.height)) return null;
+
+        return {
+            x: box.x + box.width / 2,
+            y: box.y + box.height / 2
+        };
+    } catch {
+        return null;
+    }
+}
+
+function createRigPartControls(part) {
+    const item = document.createElement("details");
+    const summary = document.createElement("summary");
+    const controls = document.createElement("div");
+
+    item.className = "rig-part";
+    controls.className = "rig-part-controls";
+    summary.textContent = part.label || part.id;
+
+    const rotRange = part.ranges.rotation;
+    const xRange = part.ranges.x;
+    const yRange = part.ranges.y;
+
+    controls.append(
+        createRigSlider(part, "rotation", "Rotation", rotRange[0], rotRange[1], 1, "deg"),
+        createRigSlider(part, "x", "X", xRange[0], xRange[1], 1, "px"),
+        createRigSlider(part, "y", "Y", yRange[0], yRange[1], 1, "px")
+    );
+
+    item.append(summary, controls);
+    return item;
+}
+
+function createRigSlider(part, property, labelText, min, max, step, unit) {
+    const field = document.createElement("label");
+    const header = document.createElement("span");
+    const output = document.createElement("output");
+    const input = document.createElement("input");
+
+    field.className = "rig-slider";
+    header.textContent = labelText;
+    output.value = formatRigValue(part.pose[property], unit);
+
+    input.type = "range";
+    input.min = min;
+    input.max = max;
+    input.step = step;
+    input.value = part.pose[property];
+    input.dataset.rigPart = part.key;
+    input.dataset.rigProperty = property;
+
+    field.append(header, output, input);
+    return field;
+}
+
+function handleRigInspectorPointerDown(event) {
+    const input = event.target.closest("[data-rig-part][data-rig-property]");
+    if (!input || !state.selected?.svgRig) return;
+
+    state.rigSliderActive = true;
+    state._rigBeforeSnapshot = {
+        transform: snapshotTransform(state.selected),
+        rig: snapshotRigPose(state.selected)
+    };
+    dom.gizmo.hidden = true;
+}
+
+function handleRigInspectorPointerUp(event) {
+    if (!state.rigSliderActive) return;
+    state.rigSliderActive = false;
+    if (state._rigBeforeSnapshot && state.selected) {
+        const { transform, rig } = state._rigBeforeSnapshot;
+        pushHistory(
+            state.selected,
+            transform, rig,
+            snapshotTransform(state.selected),
+            snapshotRigPose(state.selected)
+        );
+        state._rigBeforeSnapshot = null;
+    }
+    updateGizmo();
+}
+
+function handleRigInspectorInput(event) {
+    const input = event.target.closest("[data-rig-part][data-rig-property]");
+    if (!input || !state.selected?.svgRig) return;
+
+    const part = state.selected.svgRig.parts.find((candidate) => candidate.key === input.dataset.rigPart);
+    if (!part) return;
+
+    part.pose[input.dataset.rigProperty] = Number(input.value);
+    input.previousElementSibling.value = formatRigValue(
+        part.pose[input.dataset.rigProperty],
+        input.dataset.rigProperty === "rotation" ? "deg" : "px"
+    );
+
+    // Appliquer la transform à cette partie ET à tous ses enfants
+    applyRigPartTransformRecursive(part, state.selected.svgRig.parts);
+}
+
+function handleRigInspectorClick(event) {
+    const resetButton = event.target.closest("[data-rig-action='reset']");
+    if (!resetButton || !state.selected?.svgRig) return;
+
+    state.selected.svgRig.parts.forEach((part) => {
+        part.pose.rotation = 0;
+        part.pose.x = 0;
+        part.pose.y = 0;
+    });
+
+    // Appliquer les transforms à toutes les parties racine (sans parent)
+    state.selected.svgRig.parts
+        .filter(part => !part.parentKey)
+        .forEach(part => applyRigPartTransformRecursive(part, state.selected.svgRig.parts));
+
+    updateRigInspector();
+}
+
+function applyRigPartTransformRecursive(part, allParts) {
+    // Appliquer la transform à cette partie
+    applyRigPartTransform(part, allParts);
+    
+    // Trouver et appliquer à tous les enfants
+    const children = allParts.filter(p => p.parentKey === part.key);
+    children.forEach(child => applyRigPartTransformRecursive(child, allParts));
+}
+
+function getCompositeTransform(part, allParts) {
+    // Avec l'imbricage DOM, on applique seulement la transformation de cette partie
+    // SVG composera automatiquement avec les parents
+    const { rotation, x, y } = part.pose;
+    let transforms = [];
+    
+    if (part.baseTransform) {
+        transforms.push(part.baseTransform);
+    }
+    
+    // Appliquer seulement la transformation de cette partie autour de son pivot
+    transforms.push(`translate(${x} ${y})`);
+    transforms.push(`rotate(${rotation} ${part.pivot.x} ${part.pivot.y})`);
+    
+    return transforms.filter(Boolean).join(" ");
+}
+
+function applyRigPartTransform(part, allParts) {
+    const transform = getCompositeTransform(part, allParts);
+    part.element.setAttribute("transform", transform);
+}
+
+function formatRigValue(value, unit) {
+    return `${Math.round(value)}${unit}`;
+}
+
+function updateSelectedFromInspector(property, value) {
+    if (!state.selected) return;
+
+    const number = parseFloat(value);
+    if (!Number.isFinite(number)) return;
+
+    state.selected.objectData[property] = property.startsWith("scale")
+        ? (number < 0 ? Math.min(-SPRITE.minScale, number) : Math.max(SPRITE.minScale, number))
+        : number;
+    updateSprite(state.selected);
+}
+
+function resetSelectedRotation() {
+    if (!state.selected) return;
+
+    const before = snapshotTransform(state.selected);
+    state.selected.objectData.rotation = 0;
+    updateSprite(state.selected);
+    pushHistory(state.selected, before, null, snapshotTransform(state.selected), null);
+}
+
+function resetSelectedScale() {
+    if (!state.selected) return;
+
+    const before = snapshotTransform(state.selected);
+    state.selected.objectData.scaleX = 1;
+    state.selected.objectData.scaleY = 1;
+    updateSprite(state.selected);
+    pushHistory(state.selected, before, null, snapshotTransform(state.selected), null);
+}
+
+function updateSprite(sprite) {
+    const data = sprite.objectData;
+
+    sprite.style.left = `${data.x}px`;
+    sprite.style.top = `${data.y}px`;
+    sprite.style.transform = `rotate(${data.rotation}deg) scale(${data.scaleX}, ${data.scaleY})`;
+
+    if (sprite === state.selected) {
+        updateInspector();
+        updateGizmo();
+    }
+}
+
+function refreshSpriteLayout(sprite) {
+    requestAnimationFrame(() => {
+        if (!sprite.isConnected || !sprite.objectData) return;
+
+        if (sprite === state.selected) {
+            updateGizmo();
+        }
+    });
+}
+
+function handleSceneMouseDown(event) {
+    if (event.target === dom.scene || event.target === dom.grid || event.target === dom.objectLayer) {
+        deselectAll();
+    }
+}
+
+function handleViewportMouseDown(event) {
+    if (event.button === 1) {
+        event.preventDefault();
+        state.interaction = {
+            type: "pan",
+            axis: null,
+            startSceneMouse: null,
+            startObjectPosition: null,
+            lastMouse: getMousePosition(event)
+        };
+        return;
+    }
+
+    if (event.target === dom.viewport) {
+        deselectAll();
+    }
+}
+
+function handleViewportWheel(event) {
+    event.preventDefault();
+
+    const direction = event.deltaY < 0 ? 1 : -1;
+    state.camera.zoom = clamp(
+        state.camera.zoom + direction * VIEWPORT.zoomStep,
+        VIEWPORT.minZoom,
+        VIEWPORT.maxZoom
+    );
+
+    updateCamera();
+}
+
+function updateCamera() {
+    dom.scene.style.width = `${VIEWPORT.sceneSize}px`;
+    dom.scene.style.height = `${VIEWPORT.sceneSize}px`;
+    dom.scene.style.transform = `translate(${state.camera.x}px, ${state.camera.y}px) scale(${state.camera.zoom})`;
+}
+
+function startSpriteMove(event, sprite) {
+    if (event.button !== 0) return;
+
+    event.stopPropagation();
+    selectObject(sprite);
+
+    state.interaction = {
+        type: "sprite-move",
+        axis: null,
+        startSceneMouse: screenToScene(event.clientX, event.clientY),
+        startObjectPosition: { x: sprite.objectData.x, y: sprite.objectData.y },
+        lastMouse: null,
+        beforeSnapshot: snapshotTransform(sprite),
+        beforeRigSnapshot: snapshotRigPose(sprite)
+    };
+}
+
+function startGizmoMove(event, axis) {
+    if (event.button !== 0 || !state.selected) return;
+
+    event.stopPropagation();
+    state.interaction = {
+        type: "gizmo-move",
+        axis,
+        startSceneMouse: null,
+        startObjectPosition: null,
+        lastMouse: getMousePosition(event),
+        beforeSnapshot: snapshotTransform(state.selected),
+        beforeRigSnapshot: null
+    };
+}
+
+function startGizmoRotation(event) {
+    if (event.button !== 0 || !state.selected) return;
+
+    event.stopPropagation();
+    const center = getSelectedCenterOnScreen();
+
+    state.interaction = {
+        type: "rotate",
+        axis: null,
+        startSceneMouse: null,
+        startObjectPosition: {
+            rotation: state.selected.objectData.rotation,
+            angle: getAngle(center.x, center.y, event.clientX, event.clientY)
+        },
+        lastMouse: null,
+        beforeSnapshot: snapshotTransform(state.selected),
+        beforeRigSnapshot: null
+    };
+}
+
+function startScale(event, handle) {
+    if (event.button !== 0 || !state.selected) return;
+
+    event.stopPropagation();
+
+    const data = state.selected.objectData;
+    state.interaction = {
+        type: "scale",
+        axis: handle,
+        startSceneMouse: screenToScene(event.clientX, event.clientY),
+        startObjectPosition: {
+            scaleX: data.scaleX,
+            scaleY: data.scaleY,
+            width: state.selected.offsetWidth,
+            height: state.selected.offsetHeight
+        },
+        lastMouse: null,
+        beforeSnapshot: snapshotTransform(state.selected),
+        beforeRigSnapshot: null
+    };
+}
+
+function handleDocumentMouseMove(event) {
+    const interaction = state.interaction;
+    if (!interaction.type) return;
+
+    if (interaction.type === "pan") {
+        const mouse = getMousePosition(event);
+        state.camera.x += mouse.x - interaction.lastMouse.x;
+        state.camera.y += mouse.y - interaction.lastMouse.y;
+        interaction.lastMouse = mouse;
+        updateCamera();
+        return;
+    }
+
+    if (!state.selected) return;
+
+    if (interaction.type === "sprite-move") {
+        moveSelectedSprite(event);
+    }
+
+    if (interaction.type === "gizmo-move") {
+        moveSelectedWithGizmo(event);
+    }
+
+    if (interaction.type === "rotate") {
+        rotateSelected(event);
+    }
+
+    if (interaction.type === "scale") {
+        scaleSelected(event);
+    }
+}
+
+function moveSelectedSprite(event) {
+    const mouse = screenToScene(event.clientX, event.clientY);
+    const dx = mouse.x - state.interaction.startSceneMouse.x;
+    const dy = mouse.y - state.interaction.startSceneMouse.y;
+
+    state.selected.objectData.x = state.interaction.startObjectPosition.x + dx;
+    state.selected.objectData.y = state.interaction.startObjectPosition.y + dy;
+    updateSprite(state.selected);
+}
+
+function moveSelectedWithGizmo(event) {
+    const mouse = getMousePosition(event);
+    const dx = (mouse.x - state.interaction.lastMouse.x) / state.camera.zoom;
+    const dy = (mouse.y - state.interaction.lastMouse.y) / state.camera.zoom;
+    const axis = getGizmoAxis(state.interaction.axis);
+    const projectedMovement = dx * axis.x + dy * axis.y;
+
+    state.interaction.lastMouse = mouse;
+    state.selected.objectData.x += axis.x * projectedMovement;
+    state.selected.objectData.y += axis.y * projectedMovement;
+    updateSprite(state.selected);
+}
+
+function rotateSelected(event) {
+    const center = getSelectedCenterOnScreen();
+    const currentAngle = getAngle(center.x, center.y, event.clientX, event.clientY);
+    const { angle, rotation } = state.interaction.startObjectPosition;
+
+    state.selected.objectData.rotation = rotation + currentAngle - angle;
+    updateSprite(state.selected);
+}
+
+function scaleSelected(event) {
+    const mouse = screenToScene(event.clientX, event.clientY);
+    const start = state.interaction.startSceneMouse;
+    const data = state.selected.objectData;
+    const { scaleX, scaleY, width, height } = state.interaction.startObjectPosition;
+    const localMovement = getLocalMovement(
+        mouse.x - start.x,
+        mouse.y - start.y,
+        data.rotation
+    );
+    const handle = state.interaction.axis;
+
+    if (event.shiftKey) {
+        scaleSelectedUniformly(handle, localMovement, width, height, scaleX, scaleY);
+        updateSprite(state.selected);
+        return;
+    }
+
+    if (handle.includes("e") || handle.includes("w")) {
+        const direction = handle.includes("e") ? 1 : -1;
+        const nextScaleX = scaleX + direction * (localMovement.x * 2) / width;
+        data.scaleX = Math.max(SPRITE.minScale, nextScaleX);
+    }
+
+    if (handle.includes("s") || handle.includes("n")) {
+        const direction = handle.includes("s") ? 1 : -1;
+        const nextScaleY = scaleY + direction * (localMovement.y * 2) / height;
+        data.scaleY = Math.max(SPRITE.minScale, nextScaleY);
+    }
+
+    updateSprite(state.selected);
+}
+
+function scaleSelectedUniformly(handle, localMovement, width, height, scaleX, scaleY) {
+    const data = state.selected.objectData;
+    const xFactor = getScaleFactorFromHandleAxis(
+        handle,
+        "x",
+        localMovement.x,
+        width,
+        scaleX
+    );
+    const yFactor = getScaleFactorFromHandleAxis(
+        handle,
+        "y",
+        localMovement.y,
+        height,
+        scaleY
+    );
+    const factor = chooseUniformScaleFactor(handle, xFactor, yFactor);
+
+    data.scaleX = Math.max(SPRITE.minScale, scaleX * factor);
+    data.scaleY = Math.max(SPRITE.minScale, scaleY * factor);
+}
+
+function getScaleFactorFromHandleAxis(handle, axis, movement, size, startScale) {
+    const negativeHandle = axis === "x" ? "w" : "n";
+    const positiveHandle = axis === "x" ? "e" : "s";
+
+    if (!handle.includes(negativeHandle) && !handle.includes(positiveHandle)) {
+        return null;
+    }
+
+    const direction = handle.includes(positiveHandle) ? 1 : -1;
+    const nextScale = startScale + direction * (movement * 2) / size;
+
+    return nextScale / startScale;
+}
+
+function chooseUniformScaleFactor(handle, xFactor, yFactor) {
+    if (xFactor === null) return yFactor;
+    if (yFactor === null) return xFactor;
+
+    return Math.abs(xFactor - 1) >= Math.abs(yFactor - 1)
+        ? xFactor
+        : yFactor;
+}
+
+function stopInteraction() {
+    const { beforeSnapshot, beforeRigSnapshot } = state.interaction;
+    if (beforeSnapshot && state.selected) {
+        pushHistory(
+            state.selected,
+            beforeSnapshot,
+            beforeRigSnapshot,
+            snapshotTransform(state.selected),
+            snapshotRigPose(state.selected)
+        );
+    }
+    state.interaction = {
+        type: null,
+        axis: null,
+        startSceneMouse: null,
+        startObjectPosition: null,
+        lastMouse: null,
+        beforeSnapshot: null,
+        beforeRigSnapshot: null
+    };
+}
+
+function snapshotTransform(sprite) {
+    const { x, y, rotation, scaleX, scaleY } = sprite.objectData;
+    return { x, y, rotation, scaleX, scaleY };
+}
+
+function snapshotRigPose(sprite) {
+    if (!sprite?.svgRig?.parts) return null;
+    return sprite.svgRig.parts.map(p => ({ key: p.key, pose: { ...p.pose } }));
+}
+
+function snapshotSvgColors(sprite) {
+    if (!sprite?.svgStyles) return null;
+    return sprite.svgStyles.map(s => ({ scopedClassName: s.scopedClassName, color: s.color }));
+}
+
+function pushColorHistory(sprite, beforeColors, afterColors) {
+    if (!beforeColors || !afterColors) return;
+    if (JSON.stringify(beforeColors) === JSON.stringify(afterColors)) return;
+    state.history.splice(state.historyIndex + 1);
+    state.history.push({ sprite, beforeColors, afterColors });
+    if (state.history.length > 50) state.history.shift();
+    state.historyIndex = state.history.length - 1;
+}
+
+function pushHistory(sprite, before, beforeRig, after, afterRig) {
+    const transformUnchanged =
+        before.x === after.x && before.y === after.y &&
+        before.rotation === after.rotation &&
+        before.scaleX === after.scaleX && before.scaleY === after.scaleY;
+    const rigUnchanged = !beforeRig || !afterRig ||
+        JSON.stringify(beforeRig) === JSON.stringify(afterRig);
+    if (transformUnchanged && rigUnchanged) return;
+
+    state.history.splice(state.historyIndex + 1);
+    state.history.push({ sprite, before, beforeRig, after, afterRig });
+    if (state.history.length > 50) state.history.shift();
+    state.historyIndex = state.history.length - 1;
+}
+
+function undo() {
+    if (state.historyIndex < 0) return;
+    const entry = state.history[state.historyIndex--];
+
+    if (entry.beforeColors) {
+        entry.beforeColors.forEach(({ scopedClassName, color }) => {
+            updateSvgClassColor(entry.sprite, scopedClassName, color);
+        });
+        if (state.selected === entry.sprite) {
+            updateSvgInspector();
+            syncInspectorTabs();
+        }
+        return;
+    }
+
+    Object.assign(entry.sprite.objectData, entry.before);
+
+    if (entry.beforeRig && entry.sprite.svgRig) {
+        entry.beforeRig.forEach(({ key, pose }) => {
+            const part = entry.sprite.svgRig.parts.find(p => p.key === key);
+            if (part) Object.assign(part.pose, pose);
+        });
+        entry.sprite.svgRig.parts.forEach(p =>
+            applyRigPartTransformRecursive(p, entry.sprite.svgRig.parts)
+        );
+    }
+
+    updateSprite(entry.sprite);
+
+    if (state.selected === entry.sprite) {
+        updateInspector();
+        updateGizmo();
+        if (entry.beforeRig) {
+            updateRigInspector();
+            syncInspectorTabs();
+        }
+    }
+}
+
+function updateGizmo() {
+    const sprite = state.selected;
+    if (!sprite) {
+        dom.gizmo.hidden = true;
+        return;
+    }
+
+    const { x, y, rotation } = sprite.objectData;
+    const bounds = getScaledSpriteBounds(sprite);
+    const gizmoRotation = state.transformSpace === "local" ? rotation : 0;
+    const unscaledWidth = bounds.width / sprite.objectData.scaleX;
+    const unscaledHeight = bounds.height / sprite.objectData.scaleY;
+
+    dom.gizmo.hidden = false;
+    dom.gizmo.style.left = `${x + unscaledWidth / 2}px`;
+    dom.gizmo.style.top = `${y + unscaledHeight / 2}px`;
+    dom.gizmo.style.transform = `rotate(${gizmoRotation}deg)`;
+    dom.scaleFrame.style.setProperty("--selection-width", `${bounds.width}px`);
+    dom.scaleFrame.style.setProperty("--selection-height", `${bounds.height}px`);
+    dom.scaleFrame.style.transform = `rotate(${rotation - gizmoRotation}deg)`;
+}
+
+function getGizmoAxis(axisName) {
+    const angle = state.transformSpace === "local"
+        ? degreesToRadians(state.selected.objectData.rotation)
+        : 0;
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+
+    return axisName === "x"
+        ? { x: cos, y: sin }
+        : { x: -sin, y: cos };
+}
+
+function getScaledSpriteBounds(sprite) {
+    const data = sprite.objectData;
+    const fallbackRect = sprite.getBoundingClientRect();
+    const width = sprite.offsetWidth || fallbackRect.width / state.camera.zoom || SPRITE.defaultWidth;
+    const height = sprite.offsetHeight || fallbackRect.height / state.camera.zoom || SPRITE.defaultWidth;
+
+    return {
+        width: width * data.scaleX,
+        height: height * data.scaleY
+    };
+}
+
+function getLocalMovement(dx, dy, rotation) {
+    const angle = degreesToRadians(rotation);
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+
+    return {
+        x: dx * cos + dy * sin,
+        y: -dx * sin + dy * cos
+    };
+}
+
+function toggleTransformSpace() {
+    setTransformSpace(state.transformSpace === "local" ? "world" : "local");
+}
+
+function setTransformSpace(mode) {
+    state.transformSpace = mode;
+    dom.spaceToggle.textContent = `Space: ${mode.toUpperCase()}`;
+    updateGizmo();
+}
+
+function deleteSelectedObject() {
+    const sprite = state.selected;
+    if (!sprite) return;
+
+    sprite.remove();
+    sprite.hierarchyItem?.remove();
+    state.objects = state.objects.filter((object) => object !== sprite);
+    state.contextTarget = state.contextTarget === sprite ? null : state.contextTarget;
+    state.selected = null;
+
+    updateInspector({ refreshSvg: true });
+    updateGizmo();
+}
+
+function handleDocumentKeyDown(event) {
+    if ((event.ctrlKey || event.metaKey) && event.key === "z") {
+        const active = document.activeElement;
+        if (!active?.matches("input, textarea")) {
+            event.preventDefault();
+            undo();
+            return;
+        }
+    }
+
+    if (event.key === "Escape") {
+        closeContextMenu();
+        stopInteraction();
+        return;
+    }
+
+    if (event.key !== "Delete" || !state.selected) return;
+
+    const activeElement = document.activeElement;
+    const isEditingText = activeElement?.matches("input, textarea");
+    if (isEditingText) return;
+
+    if (confirm("Supprimer cet objet ?")) {
+        deleteSelectedObject();
+    }
+}
+
+function getSelectedCenterOnScreen() {
+    const rect = state.selected.getBoundingClientRect();
+    return {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2
+    };
+}
+
+function screenToScene(clientX, clientY) {
+    const rect = dom.scene.getBoundingClientRect();
+    return {
+        x: (clientX - rect.left) / state.camera.zoom,
+        y: (clientY - rect.top) / state.camera.zoom
+    };
+}
+
+function getMousePosition(event) {
+    return {
+        x: event.clientX,
+        y: event.clientY
+    };
+}
+
+function getAngle(cx, cy, mx, my) {
+    return Math.atan2(my - cy, mx - cx) * 180 / Math.PI;
+}
+
+function degreesToRadians(degrees) {
+    return degrees * Math.PI / 180;
+}
+
+function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+}
+
+function formatScale(value) {
+    return Number.parseFloat(value.toFixed(2)).toString();
+}
+
+function normalizeHexColor(value) {
+    if (!value) return null;
+
+    const color = value.trim();
+    const shortHex = color.match(/^#([0-9a-f]{3})$/i);
+    const longHex = color.match(/^#([0-9a-f]{6})$/i);
+
+    if (longHex) return `#${longHex[1].toUpperCase()}`;
+
+    if (shortHex) {
+        return `#${shortHex[1]
+            .split("")
+            .map((character) => character + character)
+            .join("")
+            .toUpperCase()}`;
+    }
+
+    return null;
+}
+
+function cssEscape(value) {
+    if (window.CSS?.escape) return CSS.escape(value);
+    return value.replace(/[^a-zA-Z0-9_-]/g, "\\$&");
+}
+
+function escapeRegExp(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
