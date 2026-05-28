@@ -21,6 +21,10 @@
                         Importer image
                         <input type="file" id="imageInput" accept="image/*,.svg" hidden>
                     </label>
+                    <label class="dropdown-item">
+                        Import Scene
+                        <input type="file" id="sceneImportInput" accept=".svg" hidden>
+                    </label>
                     <button id="exportSceneBtn" class="dropdown-item" type="button">Exporter scène</button>
                 </div>
             </div>
@@ -58,6 +62,7 @@
             <div id="scene">
                 <div id="grid"></div>
                 <div id="objectLayer"></div>
+                <div id="selectionBox" class="selection-box" hidden></div>
                 <div id="gizmo" hidden>
 
                     <div class="axis axis-x"></div>
@@ -141,7 +146,18 @@
                     <input type="text" id="exportName" value="scene" placeholder="scene" spellcheck="false">
                 </div>
 
-                <div class="export-mode-row">
+                <div class="export-format-row">
+                    <label class="export-mode-option">
+                        <input type="radio" name="exportFormat" value="png" checked>
+                        PNG
+                    </label>
+                    <label class="export-mode-option">
+                        <input type="radio" name="exportFormat" value="svg">
+                        SVG
+                    </label>
+                </div>
+
+                <div id="exportModeRow" class="export-mode-row">
                     <label class="export-mode-option">
                         <input type="radio" name="exportMode" value="auto" checked>
                         Taille automatique

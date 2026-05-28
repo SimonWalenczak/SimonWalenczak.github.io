@@ -26,17 +26,21 @@ const dom = {
     rigInspector: document.getElementById("rigInspector"),
     exportSceneBtn: document.getElementById("exportSceneBtn"),
     exportModal: document.getElementById("exportModal"),
+    exportModeRow: document.getElementById("exportModeRow"),
     exportFixedFields: document.getElementById("exportFixedFields"),
     exportWidthInput: document.getElementById("exportWidth"),
     exportHeightInput: document.getElementById("exportHeight"),
     exportNameInput: document.getElementById("exportName"),
     exportCancelBtn: document.getElementById("exportCancelBtn"),
-    exportConfirmBtn: document.getElementById("exportConfirmBtn")
+    exportConfirmBtn: document.getElementById("exportConfirmBtn"),
+    sceneImportInput: document.getElementById("sceneImportInput"),
+    selectionBox: document.getElementById("selectionBox")
 };
 
 const state = {
     objects: [],
     selected: null,
+    selectedObjects: [],
     transformSpace: "local",
     contextTarget: null,
     draggedHierarchyItem: null,
@@ -55,6 +59,8 @@ const state = {
         axis: null,
         startSceneMouse: null,
         startObjectPosition: null,
+        startGroupPositions: null,
+        groupCenter: null,
         lastMouse: null,
         beforeSnapshot: null,
         beforeRigSnapshot: null
@@ -154,6 +160,14 @@ function bindEvents() {
             dom.exportFixedFields.hidden = radio.value !== "fixed" || !radio.checked;
         });
     });
+    document.querySelectorAll("input[name='exportFormat']").forEach((radio) => {
+        radio.addEventListener("change", () => {
+            const isSvg = radio.value === "svg" && radio.checked;
+            dom.exportModeRow.hidden = isSvg;
+            if (isSvg) dom.exportFixedFields.hidden = true;
+        });
+    });
+    dom.sceneImportInput.addEventListener("change", handleSceneImport);
     document.addEventListener("mousemove", handleDocumentMouseMove);
     document.addEventListener("mouseup", stopInteraction);
     document.addEventListener("pointerup", handleRigInspectorPointerUp);
@@ -249,6 +263,129 @@ function handleImageImport(event) {
     }
 
     event.target.value = "";
+}
+
+function handleSceneImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+        importSceneFromSvg(reader.result);
+    });
+    reader.readAsText(file);
+    event.target.value = "";
+}
+
+function importSceneFromSvg(svgText) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svgText, "image/svg+xml");
+
+    if (doc.querySelector("parsererror")) {
+        alert("Le fichier SVG n'a pas pu être importé.");
+        return;
+    }
+
+    const spriteGroups = [...doc.querySelectorAll("g[data-scene-sprite]")];
+
+    if (spriteGroups.length === 0) {
+        alert("Aucun sprite de scène trouvé dans ce fichier SVG.\nAssurez-vous d'importer un fichier exporté depuis Scene Creator.");
+        return;
+    }
+
+    spriteGroups.forEach((g) => {
+        const name = g.getAttribute("data-name") || "Sprite";
+        const type = g.getAttribute("data-type") || "svg";
+        const x = parseFloat(g.getAttribute("data-x")) || SPRITE.defaultX;
+        const y = parseFloat(g.getAttribute("data-y")) || SPRITE.defaultY;
+        const rotation = parseFloat(g.getAttribute("data-rotation")) || 0;
+        const scaleX = parseFloat(g.getAttribute("data-scale-x")) ?? 1;
+        const scaleY = parseFloat(g.getAttribute("data-scale-y")) ?? 1;
+        const width = parseFloat(g.getAttribute("data-width")) || SPRITE.defaultWidth;
+
+        if (type === "svg") {
+            const svgEl = g.querySelector("svg");
+            if (!svgEl) return;
+            const imported = document.importNode(svgEl, true);
+            imported.removeAttribute("x");
+            imported.removeAttribute("y");
+            imported.setAttribute("overflow", "visible");
+            imported.classList.add("svg-content");
+            createImportedSvgSprite(imported, name, { x, y, rotation, scaleX, scaleY, width });
+        } else if (type === "bitmap") {
+            const imgEl = g.querySelector("image");
+            if (!imgEl) return;
+            const href = imgEl.getAttribute("href") || imgEl.getAttributeNS("http://www.w3.org/1999/xlink", "href") || "";
+            if (!href) return;
+            createImportedBitmapSprite(href, name, { x, y, rotation, scaleX, scaleY, width });
+        }
+    });
+}
+
+function createImportedSvgSprite(svgEl, name, transform) {
+    sanitizeSvg(svgEl);
+
+    const sprite = document.createElement("div");
+    const objectData = {
+        id: createId(),
+        name,
+        type: "svg",
+        x: transform.x,
+        y: transform.y,
+        rotation: transform.rotation,
+        scaleX: transform.scaleX,
+        scaleY: transform.scaleY
+    };
+
+    sprite.svgClassMap = namespaceSvgClasses(svgEl, objectData.id);
+    sprite.className = "sprite svg-sprite";
+    sprite.objectData = objectData;
+    sprite.svgElement = svgEl;
+    sprite.svgStyles = extractSvgStyleData(svgEl, sprite.svgClassMap);
+    sprite.style.width = `${transform.width || SPRITE.defaultWidth}px`;
+    sprite.appendChild(svgEl);
+    sprite.addEventListener("mousedown", (event) => startSpriteMove(event, sprite));
+
+    dom.objectLayer.appendChild(sprite);
+    state.objects.push(sprite);
+
+    sprite.hierarchyItem = createHierarchyItem(sprite);
+    updateSprite(sprite);
+    refreshSceneOrder();
+    selectObject(sprite);
+    refreshSpriteLayout(sprite);
+}
+
+function createImportedBitmapSprite(src, name, transform) {
+    const image = document.createElement("img");
+    const objectData = {
+        id: createId(),
+        name,
+        type: "bitmap",
+        x: transform.x,
+        y: transform.y,
+        rotation: transform.rotation,
+        scaleX: transform.scaleX,
+        scaleY: transform.scaleY
+    };
+
+    image.src = src;
+    image.alt = name;
+    image.draggable = false;
+    image.className = "sprite";
+    image.objectData = objectData;
+    image.style.width = `${transform.width || SPRITE.defaultWidth}px`;
+    image.addEventListener("mousedown", (event) => startSpriteMove(event, image));
+    image.addEventListener("load", () => refreshSpriteLayout(image), { once: true });
+
+    dom.objectLayer.appendChild(image);
+    state.objects.push(image);
+
+    image.hierarchyItem = createHierarchyItem(image);
+    updateSprite(image);
+    refreshSceneOrder();
+    selectObject(image);
+    refreshSpriteLayout(image);
 }
 
 function createBitmapSprite(src, fileName) {
@@ -711,6 +848,7 @@ function selectObject(sprite) {
 
     stopInteraction();
     state.selected = sprite;
+    state.selectedObjects = [sprite];
 
     state.objects.forEach((object) => {
         const isSelected = object === sprite;
@@ -725,6 +863,7 @@ function selectObject(sprite) {
 function deselectAll() {
     stopInteraction();
     state.selected = null;
+    state.selectedObjects = [];
 
     state.objects.forEach((object) => {
         object.classList.remove("selected");
@@ -737,7 +876,8 @@ function deselectAll() {
 
 function updateInspector(options = {}) {
     const { refreshSvg = false } = options;
-    const data = state.selected?.objectData;
+    const isMulti = state.selectedObjects.length > 1;
+    const data = isMulti ? null : state.selected?.objectData;
 
     dom.posXInput.value = data ? Math.round(data.x) : "";
     dom.posYInput.value = data ? Math.round(data.y) : "";
@@ -746,9 +886,19 @@ function updateInspector(options = {}) {
     dom.scaleYInput.value = data ? formatScale(data.scaleY) : "";
 
     if (refreshSvg) {
-        updateSvgInspector();
-        updateRigInspector();
-        syncInspectorTabs();
+        if (isMulti) {
+            dom.svgInspector.replaceChildren();
+            dom.svgInspector.hidden = true;
+            dom.svgExportAction.replaceChildren();
+            dom.svgExportAction.hidden = true;
+            dom.rigInspector.replaceChildren();
+            dom.rigInspector.hidden = true;
+            dom.inspectorTabs.hidden = true;
+        } else {
+            updateSvgInspector();
+            updateRigInspector();
+            syncInspectorTabs();
+        }
     }
 }
 
@@ -818,12 +968,15 @@ function closeExportModal() {
 }
 
 async function confirmExport() {
+    const format = document.querySelector("input[name='exportFormat']:checked")?.value || "png";
     const mode = document.querySelector("input[name='exportMode']:checked")?.value;
     const fixedW = parseInt(dom.exportWidthInput.value, 10);
     const fixedH = parseInt(dom.exportHeightInput.value, 10);
     const filename = dom.exportNameInput.value.trim() || "scene";
     closeExportModal();
-    if (mode === "fixed" && fixedW > 0 && fixedH > 0) {
+    if (format === "svg") {
+        doExportSceneSvg(filename);
+    } else if (mode === "fixed" && fixedW > 0 && fixedH > 0) {
         await doExportScene(fixedW, fixedH, filename);
     } else {
         await doExportScene(null, null, filename);
@@ -926,6 +1079,118 @@ async function doExportScene(fixedWidth, fixedHeight, filename = "scene") {
         link.click();
         URL.revokeObjectURL(url);
     }, "image/png");
+}
+
+function doExportSceneSvg(filename = "scene") {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+    state.objects.forEach((sprite) => {
+        const { x, y, rotation, scaleX, scaleY } = sprite.objectData;
+        const w = sprite.offsetWidth;
+        const h = sprite.offsetHeight;
+        const cx = x + w / 2;
+        const cy = y + h / 2;
+        const hw = (w / 2) * scaleX;
+        const hh = (h / 2) * scaleY;
+        const rad = rotation * Math.PI / 180;
+        const cos = Math.abs(Math.cos(rad));
+        const sin = Math.abs(Math.sin(rad));
+        const extentX = hw * cos + hh * sin;
+        const extentY = hw * sin + hh * cos;
+        minX = Math.min(minX, cx - extentX);
+        minY = Math.min(minY, cy - extentY);
+        maxX = Math.max(maxX, cx + extentX);
+        maxY = Math.max(maxY, cy + extentY);
+    });
+
+    const contentMinX = Math.floor(minX);
+    const contentMinY = Math.floor(minY);
+    const contentW = Math.ceil(maxX - contentMinX);
+    const contentH = Math.ceil(maxY - contentMinY);
+
+    const ns = "http://www.w3.org/2000/svg";
+    const svgRoot = document.createElementNS(ns, "svg");
+    svgRoot.setAttribute("xmlns", ns);
+    svgRoot.setAttribute("viewBox", `${contentMinX} ${contentMinY} ${contentW} ${contentH}`);
+    svgRoot.setAttribute("width", contentW);
+    svgRoot.setAttribute("height", contentH);
+
+    for (const sprite of state.objects) {
+        const { x, y, rotation, scaleX, scaleY, name, type } = sprite.objectData;
+        const w = sprite.offsetWidth;
+        const h = sprite.offsetHeight;
+        const cx = x + w / 2;
+        const cy = y + h / 2;
+
+        const g = document.createElementNS(ns, "g");
+        g.setAttribute("data-scene-sprite", "true");
+        g.setAttribute("data-name", name);
+        g.setAttribute("data-type", type);
+        g.setAttribute("data-x", x);
+        g.setAttribute("data-y", y);
+        g.setAttribute("data-rotation", rotation);
+        g.setAttribute("data-scale-x", scaleX);
+        g.setAttribute("data-scale-y", scaleY);
+        g.setAttribute("data-width", w);
+        g.setAttribute("data-height", h);
+        g.setAttribute("transform", `translate(${cx}, ${cy}) rotate(${rotation}) scale(${scaleX}, ${scaleY})`);
+
+        if (type === "svg" && sprite.svgElement) {
+            const clone = sprite.svgElement.cloneNode(true);
+            deNamespaceSvg(clone, sprite.svgClassMap);
+            clone.removeAttribute("overflow");
+            clone.setAttribute("x", -w / 2);
+            clone.setAttribute("y", -h / 2);
+            clone.setAttribute("width", w);
+            clone.setAttribute("height", h);
+            g.appendChild(clone);
+        } else if (type === "bitmap" && sprite.src) {
+            const img = document.createElementNS(ns, "image");
+            img.setAttribute("href", sprite.src);
+            img.setAttribute("x", -w / 2);
+            img.setAttribute("y", -h / 2);
+            img.setAttribute("width", w);
+            img.setAttribute("height", h);
+            g.appendChild(img);
+        }
+
+        svgRoot.appendChild(g);
+    }
+
+    const serializer = new XMLSerializer();
+    const svgString = serializer.serializeToString(svgRoot);
+    const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${filename}.svg`;
+    link.click();
+    URL.revokeObjectURL(url);
+}
+
+function deNamespaceSvg(svgClone, classMap) {
+    if (!classMap || Object.keys(classMap).length === 0) return;
+
+    // Sort scoped names by length descending to avoid partial replacement
+    const entries = Object.entries(classMap).sort((a, b) => b[1].length - a[1].length);
+
+    const styleEl = svgClone.querySelector("style");
+    if (styleEl) {
+        let styleText = styleEl.textContent;
+        entries.forEach(([orig, scoped]) => {
+            styleText = styleText.split(`.${scoped}`).join(`.${orig}`);
+        });
+        styleEl.textContent = styleText;
+    }
+
+    svgClone.querySelectorAll("[class]").forEach((el) => {
+        entries.forEach(([orig, scoped]) => {
+            if (el.classList.contains(scoped)) {
+                el.classList.remove(scoped);
+                el.classList.add(orig);
+            }
+        });
+    });
 }
 
 // Construit un clone SVG avec un viewBox étendu pour inclure les parties de rig
@@ -1491,7 +1756,26 @@ function refreshSpriteLayout(sprite) {
 
 function handleSceneMouseDown(event) {
     if (event.target === dom.scene || event.target === dom.grid || event.target === dom.objectLayer) {
-        deselectAll();
+        if (event.button !== 0) return;
+        const scenePos = screenToScene(event.clientX, event.clientY);
+        state.interaction = {
+            type: "box-select",
+            axis: null,
+            startSceneMouse: scenePos,
+            startObjectPosition: null,
+            startGroupPositions: null,
+            groupCenter: null,
+            lastMouse: null,
+            beforeSnapshot: null,
+            beforeRigSnapshot: null,
+            boxStart: scenePos,
+            boxCurrent: scenePos
+        };
+        dom.selectionBox.style.left = `${scenePos.x}px`;
+        dom.selectionBox.style.top = `${scenePos.y}px`;
+        dom.selectionBox.style.width = "0px";
+        dom.selectionBox.style.height = "0px";
+        dom.selectionBox.hidden = false;
     }
 }
 
@@ -1536,6 +1820,25 @@ function startSpriteMove(event, sprite) {
     if (event.button !== 0) return;
 
     event.stopPropagation();
+
+    // If clicking a sprite already in a multi-selection, move the whole group
+    if (state.selectedObjects.length > 1 && state.selectedObjects.includes(sprite)) {
+        state.interaction = {
+            type: "sprite-move",
+            axis: null,
+            startSceneMouse: screenToScene(event.clientX, event.clientY),
+            startObjectPosition: null,
+            startGroupPositions: state.selectedObjects.map((s) => ({
+                sprite: s, x: s.objectData.x, y: s.objectData.y
+            })),
+            groupCenter: getGroupBounds(),
+            lastMouse: null,
+            beforeSnapshot: null,
+            beforeRigSnapshot: null
+        };
+        return;
+    }
+
     selectObject(sprite);
 
     state.interaction = {
@@ -1543,6 +1846,8 @@ function startSpriteMove(event, sprite) {
         axis: null,
         startSceneMouse: screenToScene(event.clientX, event.clientY),
         startObjectPosition: { x: sprite.objectData.x, y: sprite.objectData.y },
+        startGroupPositions: null,
+        groupCenter: null,
         lastMouse: null,
         beforeSnapshot: snapshotTransform(sprite),
         beforeRigSnapshot: snapshotRigPose(sprite)
@@ -1550,44 +1855,87 @@ function startSpriteMove(event, sprite) {
 }
 
 function startGizmoMove(event, axis) {
-    if (event.button !== 0 || !state.selected) return;
+    if (event.button !== 0) return;
+    if (!state.selected && state.selectedObjects.length === 0) return;
 
     event.stopPropagation();
+
+    const isGroup = state.selectedObjects.length > 1;
+
     state.interaction = {
         type: "gizmo-move",
         axis,
         startSceneMouse: null,
         startObjectPosition: null,
+        startGroupPositions: isGroup ? state.selectedObjects.map((s) => ({
+            sprite: s, x: s.objectData.x, y: s.objectData.y
+        })) : null,
+        groupCenter: isGroup ? getGroupBounds() : null,
         lastMouse: getMousePosition(event),
-        beforeSnapshot: snapshotTransform(state.selected),
+        beforeSnapshot: isGroup ? null : snapshotTransform(state.selected),
         beforeRigSnapshot: null
     };
 }
 
 function startGizmoRotation(event) {
-    if (event.button !== 0 || !state.selected) return;
+    if (event.button !== 0) return;
+    if (!state.selected && state.selectedObjects.length === 0) return;
 
     event.stopPropagation();
-    const center = getSelectedCenterOnScreen();
+
+    const isGroup = state.selectedObjects.length > 1;
+    const bounds = isGroup ? getGroupBounds() : null;
+    const center = isGroup
+        ? sceneToScreen(bounds.cx, bounds.cy)
+        : getSelectedCenterOnScreen();
 
     state.interaction = {
         type: "rotate",
         axis: null,
         startSceneMouse: null,
         startObjectPosition: {
-            rotation: state.selected.objectData.rotation,
+            rotation: isGroup ? 0 : state.selected.objectData.rotation,
             angle: getAngle(center.x, center.y, event.clientX, event.clientY)
         },
+        startGroupPositions: isGroup ? state.selectedObjects.map((s) => ({
+            sprite: s,
+            x: s.objectData.x, y: s.objectData.y,
+            rotation: s.objectData.rotation
+        })) : null,
+        groupCenter: bounds,
         lastMouse: null,
-        beforeSnapshot: snapshotTransform(state.selected),
+        beforeSnapshot: isGroup ? null : snapshotTransform(state.selected),
         beforeRigSnapshot: null
     };
 }
 
 function startScale(event, handle) {
-    if (event.button !== 0 || !state.selected) return;
+    if (event.button !== 0) return;
+    if (!state.selected && state.selectedObjects.length === 0) return;
 
     event.stopPropagation();
+
+    const isGroup = state.selectedObjects.length > 1;
+
+    if (isGroup) {
+        const bounds = getGroupBounds();
+        state.interaction = {
+            type: "scale",
+            axis: handle,
+            startSceneMouse: screenToScene(event.clientX, event.clientY),
+            startObjectPosition: { scaleX: 1, scaleY: 1, width: bounds.width, height: bounds.height },
+            startGroupPositions: state.selectedObjects.map((s) => ({
+                sprite: s,
+                x: s.objectData.x, y: s.objectData.y,
+                scaleX: s.objectData.scaleX, scaleY: s.objectData.scaleY
+            })),
+            groupCenter: bounds,
+            lastMouse: null,
+            beforeSnapshot: null,
+            beforeRigSnapshot: null
+        };
+        return;
+    }
 
     const data = state.selected.objectData;
     state.interaction = {
@@ -1600,6 +1948,8 @@ function startScale(event, handle) {
             width: state.selected.offsetWidth,
             height: state.selected.offsetHeight
         },
+        startGroupPositions: null,
+        groupCenter: null,
         lastMouse: null,
         beforeSnapshot: snapshotTransform(state.selected),
         beforeRigSnapshot: null
@@ -1619,7 +1969,22 @@ function handleDocumentMouseMove(event) {
         return;
     }
 
-    if (!state.selected) return;
+    if (interaction.type === "box-select") {
+        const pos = screenToScene(event.clientX, event.clientY);
+        interaction.boxCurrent = pos;
+        const start = interaction.boxStart;
+        const x = Math.min(start.x, pos.x);
+        const y = Math.min(start.y, pos.y);
+        const w = Math.abs(pos.x - start.x);
+        const h = Math.abs(pos.y - start.y);
+        dom.selectionBox.style.left = `${x}px`;
+        dom.selectionBox.style.top = `${y}px`;
+        dom.selectionBox.style.width = `${w}px`;
+        dom.selectionBox.style.height = `${h}px`;
+        return;
+    }
+
+    if (!state.selected && state.selectedObjects.length === 0) return;
 
     if (interaction.type === "sprite-move") {
         moveSelectedSprite(event);
@@ -1643,6 +2008,16 @@ function moveSelectedSprite(event) {
     const dx = mouse.x - state.interaction.startSceneMouse.x;
     const dy = mouse.y - state.interaction.startSceneMouse.y;
 
+    if (state.interaction.startGroupPositions) {
+        state.interaction.startGroupPositions.forEach(({ sprite, x, y }) => {
+            sprite.objectData.x = x + dx;
+            sprite.objectData.y = y + dy;
+            updateSprite(sprite);
+        });
+        updateGroupGizmo();
+        return;
+    }
+
     state.selected.objectData.x = state.interaction.startObjectPosition.x + dx;
     state.selected.objectData.y = state.interaction.startObjectPosition.y + dy;
     updateSprite(state.selected);
@@ -1656,12 +2031,46 @@ function moveSelectedWithGizmo(event) {
     const projectedMovement = dx * axis.x + dy * axis.y;
 
     state.interaction.lastMouse = mouse;
+
+    if (state.interaction.startGroupPositions) {
+        state.selectedObjects.forEach((sprite) => {
+            sprite.objectData.x += axis.x * projectedMovement;
+            sprite.objectData.y += axis.y * projectedMovement;
+            updateSprite(sprite);
+        });
+        updateGroupGizmo();
+        return;
+    }
+
     state.selected.objectData.x += axis.x * projectedMovement;
     state.selected.objectData.y += axis.y * projectedMovement;
     updateSprite(state.selected);
 }
 
 function rotateSelected(event) {
+    if (state.interaction.startGroupPositions) {
+        const gc = state.interaction.groupCenter;
+        const centerScreen = sceneToScreen(gc.cx, gc.cy);
+        const currentAngle = getAngle(centerScreen.x, centerScreen.y, event.clientX, event.clientY);
+        const angleDelta = currentAngle - state.interaction.startObjectPosition.angle;
+        const rad = degreesToRadians(angleDelta);
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
+
+        state.interaction.startGroupPositions.forEach(({ sprite, x, y, rotation }) => {
+            const w = sprite.offsetWidth;
+            const h = sprite.offsetHeight;
+            const dx = x + w / 2 - gc.cx;
+            const dy = y + h / 2 - gc.cy;
+            sprite.objectData.x = gc.cx + dx * cos - dy * sin - w / 2;
+            sprite.objectData.y = gc.cy + dx * sin + dy * cos - h / 2;
+            sprite.objectData.rotation = rotation + angleDelta;
+            updateSprite(sprite);
+        });
+        updateGroupGizmo();
+        return;
+    }
+
     const center = getSelectedCenterOnScreen();
     const currentAngle = getAngle(center.x, center.y, event.clientX, event.clientY);
     const { angle, rotation } = state.interaction.startObjectPosition;
@@ -1671,6 +2080,42 @@ function rotateSelected(event) {
 }
 
 function scaleSelected(event) {
+    if (state.interaction.startGroupPositions) {
+        const mouse = screenToScene(event.clientX, event.clientY);
+        const start = state.interaction.startSceneMouse;
+        const { width, height } = state.interaction.startObjectPosition;
+        const handle = state.interaction.axis;
+        const gc = state.interaction.groupCenter;
+
+        let factorX = 1, factorY = 1;
+        if (handle.includes("e") || handle.includes("w")) {
+            const dir = handle.includes("e") ? 1 : -1;
+            factorX = 1 + dir * ((mouse.x - start.x) * 2) / (width || 1);
+        }
+        if (handle.includes("n") || handle.includes("s")) {
+            const dir = handle.includes("s") ? 1 : -1;
+            factorY = 1 + dir * ((mouse.y - start.y) * 2) / (height || 1);
+        }
+        if (event.shiftKey) {
+            const factor = Math.abs(factorX - 1) >= Math.abs(factorY - 1) ? factorX : factorY;
+            factorX = factorY = factor;
+        }
+
+        state.interaction.startGroupPositions.forEach(({ sprite, x, y, scaleX, scaleY }) => {
+            const w = sprite.offsetWidth;
+            const h = sprite.offsetHeight;
+            const cx = x + w / 2 - gc.cx;
+            const cy = y + h / 2 - gc.cy;
+            sprite.objectData.x = gc.cx + cx * factorX - w / 2;
+            sprite.objectData.y = gc.cy + cy * factorY - h / 2;
+            sprite.objectData.scaleX = Math.max(SPRITE.minScale, Math.abs(scaleX * factorX));
+            sprite.objectData.scaleY = Math.max(SPRITE.minScale, Math.abs(scaleY * factorY));
+            updateSprite(sprite);
+        });
+        updateGroupGizmo();
+        return;
+    }
+
     const mouse = screenToScene(event.clientX, event.clientY);
     const start = state.interaction.startSceneMouse;
     const data = state.selected.objectData;
@@ -1749,7 +2194,27 @@ function chooseUniformScaleFactor(handle, xFactor, yFactor) {
 }
 
 function stopInteraction() {
-    const { beforeSnapshot, beforeRigSnapshot } = state.interaction;
+    const { type, beforeSnapshot, beforeRigSnapshot, boxStart, boxCurrent } = state.interaction;
+
+    state.interaction = {
+        type: null,
+        axis: null,
+        startSceneMouse: null,
+        startObjectPosition: null,
+        startGroupPositions: null,
+        groupCenter: null,
+        lastMouse: null,
+        beforeSnapshot: null,
+        beforeRigSnapshot: null
+    };
+
+    dom.selectionBox.hidden = true;
+
+    if (type === "box-select") {
+        finishBoxSelection(boxStart, boxCurrent);
+        return;
+    }
+
     if (beforeSnapshot && state.selected) {
         pushHistory(
             state.selected,
@@ -1759,15 +2224,6 @@ function stopInteraction() {
             snapshotRigPose(state.selected)
         );
     }
-    state.interaction = {
-        type: null,
-        axis: null,
-        startSceneMouse: null,
-        startObjectPosition: null,
-        lastMouse: null,
-        beforeSnapshot: null,
-        beforeRigSnapshot: null
-    };
 }
 
 function snapshotTransform(sprite) {
@@ -1849,6 +2305,11 @@ function undo() {
 }
 
 function updateGizmo() {
+    if (state.selectedObjects.length > 1) {
+        updateGroupGizmo();
+        return;
+    }
+
     const sprite = state.selected;
     if (!sprite) {
         dom.gizmo.hidden = true;
@@ -1871,7 +2332,7 @@ function updateGizmo() {
 }
 
 function getGizmoAxis(axisName) {
-    const angle = state.transformSpace === "local"
+    const angle = (state.selectedObjects.length <= 1 && state.selected && state.transformSpace === "local")
         ? degreesToRadians(state.selected.objectData.rotation)
         : 0;
     const cos = Math.cos(angle);
@@ -1916,6 +2377,21 @@ function setTransformSpace(mode) {
 }
 
 function deleteSelectedObject() {
+    if (state.selectedObjects.length > 1) {
+        const toDelete = [...state.selectedObjects];
+        toDelete.forEach((sprite) => {
+            sprite.remove();
+            sprite.hierarchyItem?.remove();
+        });
+        state.objects = state.objects.filter((obj) => !toDelete.includes(obj));
+        state.contextTarget = toDelete.includes(state.contextTarget) ? null : state.contextTarget;
+        state.selected = null;
+        state.selectedObjects = [];
+        updateInspector({ refreshSvg: true });
+        updateGizmo();
+        return;
+    }
+
     const sprite = state.selected;
     if (!sprite) return;
 
@@ -1945,7 +2421,7 @@ function handleDocumentKeyDown(event) {
         return;
     }
 
-    if (event.key !== "Delete" || !state.selected) return;
+    if (event.key !== "Delete" || state.selectedObjects.length === 0) return;
 
     const activeElement = document.activeElement;
     const isEditingText = activeElement?.matches("input, textarea");
@@ -2022,4 +2498,92 @@ function cssEscape(value) {
 
 function escapeRegExp(value) {
     return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function sceneToScreen(sceneX, sceneY) {
+    const rect = dom.scene.getBoundingClientRect();
+    return {
+        x: rect.left + sceneX * state.camera.zoom,
+        y: rect.top + sceneY * state.camera.zoom
+    };
+}
+
+function selectMultiple(sprites) {
+    if (sprites.length === 0) { deselectAll(); return; }
+    if (sprites.length === 1) { selectObject(sprites[0]); return; }
+
+    stopInteraction();
+    state.selected = null;
+    state.selectedObjects = sprites;
+
+    state.objects.forEach((obj) => {
+        const isSelected = sprites.includes(obj);
+        obj.classList.toggle("selected", isSelected);
+        obj.hierarchyItem?.classList.toggle("hierarchy-selected", isSelected);
+    });
+
+    updateInspector({ refreshSvg: true });
+    updateGizmo();
+}
+
+function updateGroupGizmo() {
+    const bounds = getGroupBounds();
+    if (!bounds) { dom.gizmo.hidden = true; return; }
+
+    dom.gizmo.hidden = false;
+    dom.gizmo.style.left = `${bounds.cx}px`;
+    dom.gizmo.style.top = `${bounds.cy}px`;
+    dom.gizmo.style.transform = "rotate(0deg)";
+    dom.scaleFrame.style.setProperty("--selection-width", `${bounds.width}px`);
+    dom.scaleFrame.style.setProperty("--selection-height", `${bounds.height}px`);
+    dom.scaleFrame.style.transform = "rotate(0deg)";
+}
+
+function getGroupBounds() {
+    if (state.selectedObjects.length === 0) return null;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+    state.selectedObjects.forEach((sprite) => {
+        const b = getSpriteBoundsInScene(sprite);
+        minX = Math.min(minX, b.left);
+        minY = Math.min(minY, b.top);
+        maxX = Math.max(maxX, b.right);
+        maxY = Math.max(maxY, b.bottom);
+    });
+
+    return {
+        x: minX, y: minY,
+        width: maxX - minX, height: maxY - minY,
+        cx: (minX + maxX) / 2, cy: (minY + maxY) / 2
+    };
+}
+
+function getSpriteBoundsInScene(sprite) {
+    const rect = sprite.getBoundingClientRect();
+    const tl = screenToScene(rect.left, rect.top);
+    const br = screenToScene(rect.right, rect.bottom);
+    return {
+        left: Math.min(tl.x, br.x), top: Math.min(tl.y, br.y),
+        right: Math.max(tl.x, br.x), bottom: Math.max(tl.y, br.y)
+    };
+}
+
+function finishBoxSelection(boxStart, boxCurrent) {
+    if (!boxStart || !boxCurrent) { deselectAll(); return; }
+
+    const dx = Math.abs(boxCurrent.x - boxStart.x);
+    const dy = Math.abs(boxCurrent.y - boxStart.y);
+    if (dx < 3 && dy < 3) { deselectAll(); return; }
+
+    const boxLeft = Math.min(boxStart.x, boxCurrent.x);
+    const boxTop = Math.min(boxStart.y, boxCurrent.y);
+    const boxRight = Math.max(boxStart.x, boxCurrent.x);
+    const boxBottom = Math.max(boxStart.y, boxCurrent.y);
+
+    const selected = state.objects.filter((sprite) => {
+        const b = getSpriteBoundsInScene(sprite);
+        return b.right > boxLeft && b.left < boxRight && b.bottom > boxTop && b.top < boxBottom;
+    });
+
+    selectMultiple(selected);
 }

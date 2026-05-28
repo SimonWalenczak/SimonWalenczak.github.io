@@ -312,6 +312,14 @@ button {
     inset: 0;
 }
 
+.selection-box {
+    position: absolute;
+    border: 1px dashed #4a9eff;
+    background: rgba(74, 158, 255, 0.08);
+    pointer-events: none;
+    z-index: 9998;
+}
+
 /* SPRITES */
 
 .sprite {
