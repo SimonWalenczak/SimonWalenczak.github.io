@@ -241,21 +241,16 @@
           "id": "origines-obesite",
           "category": "accompagnement",
           "internal": false,
-          "text": "J'interroge mon patient sur les origines qu'il associe à son obésité. (échelle de 1 à 10)",
+          "text": "J'interroge mon patient sur les origines qu'il associe à son obésité. (échelle de 1 à 5)",
           "responseKind": "scale10",
           "feedbackTitle": "Comprendre les explications du patient",
           "feedback": "Explorer les origines perçues par le patient peut aider à comprendre son histoire, ses représentations et les leviers d'accompagnement possibles.",
           "options": [
-            { "value": 1, "label": "1", "score": 1, "max": 10 },
-            { "value": 2, "label": "2", "score": 2, "max": 10 },
-            { "value": 3, "label": "3", "score": 3, "max": 10 },
-            { "value": 4, "label": "4", "score": 4, "max": 10 },
-            { "value": 5, "label": "5", "score": 5, "max": 10 },
-            { "value": 6, "label": "6", "score": 6, "max": 10 },
-            { "value": 7, "label": "7", "score": 7, "max": 10 },
-            { "value": 8, "label": "8", "score": 8, "max": 10 },
-            { "value": 9, "label": "9", "score": 9, "max": 10 },
-            { "value": 10, "label": "10", "score": 10, "max": 10 }
+            { "value": 1, "label": "1", "score": 1, "max": 5 },
+            { "value": 2, "label": "2", "score": 2, "max": 5 },
+            { "value": 3, "label": "3", "score": 3, "max": 5 },
+            { "value": 4, "label": "4", "score": 4, "max": 5 },
+            { "value": 5, "label": "5", "score": 5, "max": 5 }
           ]
         },
         {
@@ -498,8 +493,8 @@
           "feedbackTitle": "Connaître les modalités de transport",
           "feedback": "Le transport sanitaire adapté peut être un point critique du parcours. Connaître les modalités mobilisables peut éviter un renoncement aux soins.",
           "options": [
-            { "value": "oui", "label": "Oui, je pense connaître les modalités", "score": 5, "max": 5 },
-            { "value": "non", "label": "Non, je ne connais pas ces modalités", "score": 1, "max": 5 }
+            { "value": "oui", "label": "Oui", "score": 5, "max": 5 },
+            { "value": "non", "label": "Non", "score": 1, "max": 5 }
           ]
         },
         {

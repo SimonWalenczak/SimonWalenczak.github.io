@@ -776,13 +776,13 @@ html, body {
 .btn-equip:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
 .btn-equip-oui {
-  background: rgba(74,222,128,0.15);
-  color: #4ade80;
-  border: 1px solid rgba(74,222,128,0.4);
+  background: rgba(148,163,184,0.12);
+  color: var(--c-muted);
+  border: 1px solid var(--c-border);
 }
 
 .btn-equip-oui:hover:not(:disabled) {
-  background: rgba(74,222,128,0.28);
+  background: rgba(148,163,184,0.22);
 }
 
 .btn-equip-non {

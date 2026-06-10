@@ -234,6 +234,7 @@ let selectedOptId   = null;
 let selections      = []; // { step, option }
 let recapIndex      = 0;
 let equipmentAnswers = {}; // stepId -> "oui" | "non"
+let recapAwaitingNext = false;
 
 // ======================================================
 // DOM REFS
@@ -255,6 +256,7 @@ const recapPanel      = document.getElementById("recap-panel");
 const recapChip       = document.getElementById("recap-chip");
 const recapStatusBadge = document.getElementById("recap-status-badge");
 const recapBody       = document.getElementById("recap-body");
+const recapQuestionText = recapPanel.querySelector(".recap-q-text");
 const btnEquipOui     = document.getElementById("btn-equip-oui");
 const btnEquipNon     = document.getElementById("btn-equip-non");
 
@@ -428,25 +430,31 @@ function handleChoose() {
     c.classList.add("fading-out");
   });
 
-  // Place object in scene
-  placeObjectInScene(step, option);
+  // 1) Fade out the modal immediately
+  modalBackdrop.classList.add("fading");
 
-  // Advance after animation
+  // 2) After modal has fully faded, run the timer, then place the object
   setTimeout(() => {
-    modalBackdrop.classList.add("fading");
+    sparticles = [];
+    if (sparkRAF) { cancelAnimationFrame(sparkRAF); sparkRAF = null; }
+    ctx.clearRect(0, 0, sparkleCanvas.width, sparkleCanvas.height);
+
+    // 3) Short pause, then place object
     setTimeout(() => {
+      placeObjectInScene(step, option);
+
       currentStep++;
-      sparticles = []; // clear leftover sparticles between steps
-      if (sparkRAF) { cancelAnimationFrame(sparkRAF); sparkRAF = null; }
-      ctx.clearRect(0, 0, sparkleCanvas.width, sparkleCanvas.height);
       if (currentStep >= STEPS.length) {
         startRecap();
       } else {
-        modalBackdrop.classList.remove("fading");
-        renderStep();
+        // 4) Longer pause before bringing back the selection window
+        setTimeout(() => {
+          modalBackdrop.classList.remove("fading");
+          renderStep();
+        }, 1200);
       }
-    }, 350);
-  }, 850);
+    }, 300);
+  }, 350);
 }
 
 // ======================================================
@@ -482,7 +490,8 @@ function showRecapStep(i) {
   const sel    = selections[i];
   const step   = sel.step;
   const option = sel.option;
-  const optimalOpt = step.options.find((o) => o.optimal);
+  const optimalOpt = step.options.find((o) => o.optimal) || option;
+  recapAwaitingNext = false;
 
   // Highlight object in scene
   const placedObjs = placedObjects.querySelectorAll(".placed-obj");
@@ -495,40 +504,28 @@ function showRecapStep(i) {
   // Recap chip
   recapChip.textContent = `Analyse ${i + 1} / ${STEPS.length}`;
 
-  // Status badge
-  recapStatusBadge.className = "recap-status-badge " + (option.optimal ? "ok" : "warn");
-  recapStatusBadge.textContent = option.optimal ? "✓ Bon choix" : "⚠ À améliorer";
+  // No status badge text in part 2
+  recapStatusBadge.textContent = "";
+  recapStatusBadge.className = "recap-status-badge";
+  recapStatusBadge.style.display = "none";
 
-  // Body: chosen item feedback
+  // Body: show the reference equipment for the question (optimal/bariatric)
   let html = `
     <div class="recap-chosen-row">
-      <div class="recap-item-icon">${option.svg}</div>
+      <div class="recap-item-icon">${optimalOpt.svg}</div>
       <div class="recap-item-info">
-        <p class="recap-item-label">${option.label}</p>
-        <p class="recap-item-feedback ${option.optimal ? "" : "feedback-warn"}">${option.feedback}</p>
+        <p class="recap-item-label">${optimalOpt.label}</p>
       </div>
     </div>
   `;
 
-  // If wrong: show optimal hint
-  if (!option.optimal && optimalOpt) {
-    html += `
-      <div class="recap-optimal-hint">
-        <span class="hint-label">Il aurait été préférable de choisir :</span>
-        <div class="recap-optimal-row">
-          <div class="recap-item-icon small">${optimalOpt.svg}</div>
-          <div class="recap-item-info">
-            <p class="recap-item-label">${optimalOpt.label}</p>
-            <p class="recap-item-feedback feedback-optimal">${optimalOpt.feedback}</p>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
   recapBody.innerHTML = html;
 
-  // Reset equip buttons
+  // Reset equipment question UI
+  recapQuestionText.textContent = "Disposez-vous de cet équipement dans votre cabinet ?";
+  btnEquipNon.style.display = "inline-flex";
+  btnEquipOui.textContent = "✓ Oui";
+  btnEquipNon.textContent = "✗ Non";
   btnEquipOui.disabled = false;
   btnEquipNon.disabled = false;
 
@@ -538,15 +535,7 @@ function showRecapStep(i) {
   recapPanel.style.transform  = "translateY(0)";
 }
 
-function advanceRecap(answer) {
-  const stepId = selections[recapIndex].step.id;
-  equipmentAnswers[stepId] = answer;
-
-  // Lock buttons
-  btnEquipOui.disabled = true;
-  btnEquipNon.disabled = true;
-
-  // Fade panel out
+function goToNextRecapStep() {
   recapPanel.style.transition = "opacity 0.25s ease, transform 0.25s ease";
   recapPanel.style.opacity    = "0";
   recapPanel.style.transform  = "translateY(16px)";
@@ -568,6 +557,45 @@ function advanceRecap(answer) {
       showRecapStep(recapIndex);
     }
   }, 280);
+}
+
+function advanceRecap(answer) {
+  if (recapAwaitingNext) {
+    goToNextRecapStep();
+    return;
+  }
+
+  const sel = selections[recapIndex];
+  const step = sel.step;
+  const option = sel.option;
+  const optimalOpt = step.options.find((o) => o.optimal) || option;
+  const stepId = selections[recapIndex].step.id;
+  equipmentAnswers[stepId] = answer;
+
+  const pedagogicLead = answer === "oui"
+    ? "C'est très bien car savez-vous que..."
+    : "Savez-vous qu'il est préférable d'avoir...";
+
+  const pedagogicText = answer === "oui"
+    ? optimalOpt.feedback
+    : (optimalOpt ? `${optimalOpt.label} — ${optimalOpt.feedback}` : option.feedback);
+
+  recapBody.innerHTML += `
+    <div class="recap-optimal-hint">
+      <span class="hint-label">Message pédagogique</span>
+      <div class="recap-item-info">
+        <p class="recap-item-label">${pedagogicLead}</p>
+        <p class="recap-item-feedback feedback-optimal">${pedagogicText}</p>
+      </div>
+    </div>
+  `;
+
+  recapAwaitingNext = true;
+  recapQuestionText.textContent = "";
+  btnEquipNon.style.display = "none";
+  btnEquipOui.textContent = "Suivant";
+  btnEquipOui.disabled = false;
+  btnEquipNon.disabled = true;
 }
 
 // ======================================================
