@@ -20,6 +20,7 @@ const dom = {
     scaleYInput: document.getElementById("scaleY"),
     resetRotationBtn: document.getElementById("resetRotationBtn"),
     resetScaleBtn: document.getElementById("resetScaleBtn"),
+    hiddenInput: document.getElementById("hiddenInput"),
     inspectorTabs: document.getElementById("inspectorTabs"),
     svgExportAction: document.getElementById("svgExportAction"),
     svgInspector: document.getElementById("svgInspector"),
@@ -81,9 +82,9 @@ const SPRITE = {
     minScale: 0.05
 };
 
-// Configuration générique du rig humanoïde avec hiérarchie
+// Configuration gÃƒÂ©nÃƒÂ©rique du rig humanoÃƒÂ¯de avec hiÃƒÂ©rarchie
 const RIG_CONFIG = {
-    Head: { pivot: "Neck", label: "Tête", parent: null, range: { rotation: [-25, 25], x: [-20, 20], y: [-20, 20] } },
+    Head: { pivot: "Neck", label: "TÃƒÂªte", parent: null, range: { rotation: [-25, 25], x: [-20, 20], y: [-20, 20] } },
     
     LeftArm: { pivot: "LeftShoulder", label: "Bras gauche", parent: null, range: { rotation: [-90, 90], x: [-50, 50], y: [-50, 50] } },
     LeftForearm: { pivot: "LeftElbow", label: "Avant-bras gauche", parent: "LeftArm", range: { rotation: [-120, 120], x: [-50, 50], y: [-50, 50] } },
@@ -131,6 +132,7 @@ function bindEvents() {
     dom.scaleYInput.addEventListener("input", () => updateSelectedFromInspector("scaleY", dom.scaleYInput.value));
     dom.resetRotationBtn.addEventListener("click", resetSelectedRotation);
     dom.resetScaleBtn.addEventListener("click", resetSelectedScale);
+    dom.hiddenInput.addEventListener("change", updateSelectedHidden);
     [dom.posXInput, dom.posYInput, dom.rotationInput, dom.scaleXInput, dom.scaleYInput].forEach((input) => {
         let snap = null;
         input.addEventListener("focus", () => { if (state.selected) snap = snapshotTransform(state.selected); });
@@ -282,14 +284,14 @@ function importSceneFromSvg(svgText) {
     const doc = parser.parseFromString(svgText, "image/svg+xml");
 
     if (doc.querySelector("parsererror")) {
-        alert("Le fichier SVG n'a pas pu être importé.");
+        alert("Le fichier SVG n'a pas pu ÃƒÂªtre importÃƒÂ©.");
         return;
     }
 
     const spriteGroups = [...doc.querySelectorAll("g[data-scene-sprite]")];
 
     if (spriteGroups.length === 0) {
-        alert("Aucun sprite de scène trouvé dans ce fichier SVG.\nAssurez-vous d'importer un fichier exporté depuis Scene Creator.");
+        alert("Aucun sprite de scÃƒÂ¨ne trouvÃƒÂ© dans ce fichier SVG.\nAssurez-vous d'importer un fichier exportÃƒÂ© depuis Scene Creator.");
         return;
     }
 
@@ -334,7 +336,8 @@ function createImportedSvgSprite(svgEl, name, transform) {
         y: transform.y,
         rotation: transform.rotation,
         scaleX: transform.scaleX,
-        scaleY: transform.scaleY
+        scaleY: transform.scaleY,
+        hidden: Boolean(transform.hidden)
     };
 
     sprite.svgClassMap = namespaceSvgClasses(svgEl, objectData.id);
@@ -366,7 +369,8 @@ function createImportedBitmapSprite(src, name, transform) {
         y: transform.y,
         rotation: transform.rotation,
         scaleX: transform.scaleX,
-        scaleY: transform.scaleY
+        scaleY: transform.scaleY,
+        hidden: Boolean(transform.hidden)
     };
 
     image.src = src;
@@ -455,7 +459,8 @@ function createObjectData(fileName, type) {
         y: SPRITE.defaultY,
         rotation: 0,
         scaleX: 1,
-        scaleY: 1
+        scaleY: 1,
+        hidden: false
     };
 }
 
@@ -884,6 +889,8 @@ function updateInspector(options = {}) {
     dom.rotationInput.value = data ? Math.round(data.rotation) : "";
     dom.scaleXInput.value = data ? formatScale(data.scaleX) : "";
     dom.scaleYInput.value = data ? formatScale(data.scaleY) : "";
+    dom.hiddenInput.checked = data ? Boolean(data.hidden) : false;
+    dom.hiddenInput.disabled = !data;
 
     if (refreshSvg) {
         if (isMulti) {
@@ -959,7 +966,7 @@ function exportSvg(sprite) {
 }
 
 function openExportModal() {
-    if (state.objects.length === 0) { alert("La scène est vide."); return; }
+    if (state.objects.length === 0) { alert("La scÃƒÂ¨ne est vide."); return; }
     dom.exportModal.hidden = false;
 }
 
@@ -984,7 +991,7 @@ async function confirmExport() {
 }
 
 async function doExportScene(fixedWidth, fixedHeight, filename = "scene") {
-    // Calcul du bounding box de la scène
+    // Calcul du bounding box de la scÃƒÂ¨ne
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 
     state.objects.forEach((sprite) => {
@@ -1193,8 +1200,8 @@ function deNamespaceSvg(svgClone, classMap) {
     });
 }
 
-// Construit un clone SVG avec un viewBox étendu pour inclure les parties de rig
-// qui dépassent du cadre original, et retourne les coordonnées de dessin canvas.
+// Construit un clone SVG avec un viewBox ÃƒÂ©tendu pour inclure les parties de rig
+// qui dÃƒÂ©passent du cadre original, et retourne les coordonnÃƒÂ©es de dessin canvas.
 function buildExportSvgForCanvas(sprite, w, h) {
     const svgEl = sprite.svgElement;
     const vb = svgEl.viewBox?.baseVal;
@@ -1223,7 +1230,7 @@ function buildExportSvgForCanvas(sprite, w, h) {
     return { clone, drawX, drawY, drawW, drawH };
 }
 
-// Calcule en coordonnées SVG le bounding box réel du contenu (incluant les transforms de rig).
+// Calcule en coordonnÃƒÂ©es SVG le bounding box rÃƒÂ©el du contenu (incluant les transforms de rig).
 function computeSvgContentViewBox(svgEl, vb) {
     let minX = vb.x, minY = vb.y;
     let maxX = vb.x + vb.width, maxY = vb.y + vb.height;
@@ -1260,7 +1267,7 @@ function computeSvgContentViewBox(svgEl, vb) {
                             maxY = Math.max(maxY, y);
                         }
                     });
-                } catch (e) { /* ignorer les éléments incompatibles */ }
+                } catch (e) { /* ignorer les ÃƒÂ©lÃƒÂ©ments incompatibles */ }
             });
         }
     } catch (e) { /* utiliser le viewBox d'origine en cas d'erreur */ }
@@ -1421,7 +1428,7 @@ function ensureSvgRig(sprite) {
 
     const parts = [];
     
-    // sprite.svgElement est l'élément SVG racine
+    // sprite.svgElement est l'ÃƒÂ©lÃƒÂ©ment SVG racine
     // Chercher le groupe principal (premier g[id] qui n'est pas PivotReference)
     let mainGroup = null;
     for (const child of sprite.svgElement.children) {
@@ -1445,7 +1452,7 @@ function ensureSvgRig(sprite) {
         const pivotElement = groupElement.querySelector(`circle#${config.pivot}, ellipse#${config.pivot}`);
         if (!pivotElement) continue;
         
-        // Récupérer la position du pivot
+        // RÃƒÂ©cupÃƒÂ©rer la position du pivot
         const pivot = getPivotFromElement(pivotElement);
         if (!pivot) continue;
         
@@ -1476,7 +1483,7 @@ function ensureSvgRig(sprite) {
         parts.push(part);
     }
 
-    // Imbriquer les éléments selon la hiérarchie SEULEMENT si on a des parties valides
+    // Imbriquer les ÃƒÂ©lÃƒÂ©ments selon la hiÃƒÂ©rarchie SEULEMENT si on a des parties valides
     if (parts.length > 0) {
         nestRigElementsByHierarchy(mainGroup, parts);
     }
@@ -1485,7 +1492,7 @@ function ensureSvgRig(sprite) {
 }
 
 function nestRigElementsByHierarchy(mainGroup, parts) {
-    // Pour chaque partie avec un parent, déplacer son élément enfant du parent
+    // Pour chaque partie avec un parent, dÃƒÂ©placer son ÃƒÂ©lÃƒÂ©ment enfant du parent
     const partsByKey = {};
     parts.forEach(p => { partsByKey[p.key] = p; });
     
@@ -1493,7 +1500,7 @@ function nestRigElementsByHierarchy(mainGroup, parts) {
         if (part.parentKey) {
             const parent = partsByKey[part.parentKey];
             if (parent && parent.element && part.element) {
-                // Si le parent contient déjà cet enfant, ne rien faire
+                // Si le parent contient dÃƒÂ©jÃƒÂ  cet enfant, ne rien faire
                 if (!parent.element.contains(part.element)) {
                     // Retirer l'enfant de mainGroup et le mettre dans le parent
                     part.element.remove();
@@ -1643,7 +1650,7 @@ function handleRigInspectorInput(event) {
         input.dataset.rigProperty === "rotation" ? "deg" : "px"
     );
 
-    // Appliquer la transform à cette partie ET à tous ses enfants
+    // Appliquer la transform ÃƒÂ  cette partie ET ÃƒÂ  tous ses enfants
     applyRigPartTransformRecursive(part, state.selected.svgRig.parts);
 }
 
@@ -1657,7 +1664,7 @@ function handleRigInspectorClick(event) {
         part.pose.y = 0;
     });
 
-    // Appliquer les transforms à toutes les parties racine (sans parent)
+    // Appliquer les transforms ÃƒÂ  toutes les parties racine (sans parent)
     state.selected.svgRig.parts
         .filter(part => !part.parentKey)
         .forEach(part => applyRigPartTransformRecursive(part, state.selected.svgRig.parts));
@@ -1666,10 +1673,10 @@ function handleRigInspectorClick(event) {
 }
 
 function applyRigPartTransformRecursive(part, allParts) {
-    // Appliquer la transform à cette partie
+    // Appliquer la transform ÃƒÂ  cette partie
     applyRigPartTransform(part, allParts);
     
-    // Trouver et appliquer à tous les enfants
+    // Trouver et appliquer ÃƒÂ  tous les enfants
     const children = allParts.filter(p => p.parentKey === part.key);
     children.forEach(child => applyRigPartTransformRecursive(child, allParts));
 }
@@ -1731,9 +1738,18 @@ function resetSelectedScale() {
     pushHistory(state.selected, before, null, snapshotTransform(state.selected), null);
 }
 
+function updateSelectedHidden() {
+    if (!state.selected || state.selectedObjects.length > 1) return;
+
+    state.selected.objectData.hidden = dom.hiddenInput.checked;
+    updateSprite(state.selected);
+}
+
 function updateSprite(sprite) {
     const data = sprite.objectData;
 
+    sprite.classList.toggle("object-hidden", Boolean(data.hidden));
+    sprite.hierarchyItem?.classList.toggle("hierarchy-hidden", Boolean(data.hidden));
     sprite.style.left = `${data.x}px`;
     sprite.style.top = `${data.y}px`;
     sprite.style.transform = `rotate(${data.rotation}deg) scale(${data.scaleX}, ${data.scaleY})`;
@@ -2587,3 +2603,4 @@ function finishBoxSelection(boxStart, boxCurrent) {
 
     selectMultiple(selected);
 }
+

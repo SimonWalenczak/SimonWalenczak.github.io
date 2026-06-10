@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bloc A — Aménagement du cabinet</title>
+  <link rel="stylesheet" href="bloc_a.css"/>
+</head>
+<body>
+  <div id="app">
+
+    <!-- ===== TOPBAR ===== -->
+    <header class="topbar">
+      <span class="topbar-title">Bloc A · Aménagement du cabinet</span>
+      <div class="topbar-progress">
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <span class="progress-label" id="progress-label">0 / 4</span>
+      </div>
+    </header>
+
+    <!-- ===== MAIN: scene only ===== -->
+    <main class="main-area">
+
+      <!-- Cabinet scene (full height) -->
+      <div class="scene-section">
+        <div class="scene-inner" id="scene-inner">
+          <img class="scene-bg"
+               src="../Scene_Creator/Sprites/Background_Cabinet_Medical.svg"
+               alt="Cabinet médical"/>
+          <div class="scene-dim hidden" id="scene-dim"></div>
+          <div class="placed-objects" id="placed-objects"></div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- ===== SELECTION MODAL ===== -->
+    <div class="modal-backdrop" id="modal-backdrop">
+      <!-- sparkle canvas -->
+      <canvas class="sparkle-canvas" id="sparkle-canvas"></canvas>
+
+      <div class="selection-panel" id="selection-panel">
+        <div class="step-header">
+          <span class="step-chip" id="step-chip">Étape 1</span>
+          <p class="step-question" id="step-question"></p>
+        </div>
+        <div class="options-row" id="options-row"></div>
+        <div class="panel-footer">
+          <button class="btn-choose" id="btn-choose" disabled>Je choisis</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== RECAP OVERLAY ===== -->
+    <div class="recap-overlay hidden" id="recap-overlay">
+      <div class="recap-panel" id="recap-panel">
+        <div class="recap-header">
+          <span class="recap-chip" id="recap-chip">Analyse 1 / 4</span>
+          <span class="recap-status-badge" id="recap-status-badge"></span>
+        </div>
+        <div class="recap-body" id="recap-body"></div>
+        <div class="recap-question-row">
+          <p class="recap-q-text">Disposez-vous de cet équipement dans votre cabinet ?</p>
+          <div class="recap-answer-btns">
+            <button class="btn-equip btn-equip-oui" id="btn-equip-oui">✓ Oui</button>
+            <button class="btn-equip btn-equip-non" id="btn-equip-non">✗ Non</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <script src="bloc_a.js"></script>
+</body>
+</html>

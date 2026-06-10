@@ -1,0 +1,602 @@
+/* =====================================================
+   Bloc A — Aménagement du cabinet
+   script.js
+   ===================================================== */
+
+// ======================================================
+// SVG ILLUSTRATIONS — option card icons (viewBox 0 0 80 80)
+// ======================================================
+
+const SVG_CHAISE_STANDARD = `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <rect x="24" y="5"  width="32" height="28" rx="4" fill="#7a8fa3"/>
+  <rect x="18" y="31" width="44" height="11" rx="3" fill="#5e7484"/>
+  <rect x="7"  y="24" width="13" height="18" rx="2" fill="#4a5e72"/>
+  <rect x="60" y="24" width="13" height="18" rx="2" fill="#4a5e72"/>
+  <rect x="22" y="42" width="6"  height="34" rx="2" fill="#374050"/>
+  <rect x="52" y="42" width="6"  height="34" rx="2" fill="#374050"/>
+</svg>`;
+
+const SVG_FAUTEUIL_BARI = `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <rect x="8"  y="4"  width="64" height="27" rx="8" fill="#5e8fbf"/>
+  <rect x="3"  y="29" width="74" height="13" rx="6" fill="#4a7aad"/>
+  <rect x="2"  y="23" width="8"  height="19" rx="3" fill="#3a6a9a"/>
+  <rect x="70" y="23" width="8"  height="19" rx="3" fill="#3a6a9a"/>
+  <rect x="8"  y="42" width="9"  height="33" rx="2" fill="#2a5a88"/>
+  <rect x="63" y="42" width="9"  height="33" rx="2" fill="#2a5a88"/>
+</svg>`;
+
+const SVG_TABOURET = `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <ellipse cx="40" cy="23" rx="28" ry="10" fill="#7a8fa3"/>
+  <ellipse cx="40" cy="19" rx="28" ry="10" fill="#9ab0c4"/>
+  <line x1="15" y1="31" x2="9"  y2="74" stroke="#4a5e72" stroke-width="5" stroke-linecap="round"/>
+  <line x1="65" y1="31" x2="71" y2="74" stroke="#4a5e72" stroke-width="5" stroke-linecap="round"/>
+  <line x1="27" y1="33" x2="22" y2="74" stroke="#4a5e72" stroke-width="5" stroke-linecap="round"/>
+  <line x1="53" y1="33" x2="58" y2="74" stroke="#4a5e72" stroke-width="5" stroke-linecap="round"/>
+  <ellipse cx="40" cy="56" rx="22" ry="5" fill="none" stroke="#4a5e72" stroke-width="3"/>
+</svg>`;
+
+const SVG_PESE_SDB = `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <rect x="20" y="50" width="40" height="18" rx="8"  fill="#6e8096"/>
+  <rect x="18" y="43" width="44" height="11" rx="5"  fill="#8aa0b4"/>
+  <rect x="23" y="25" width="34" height="20" rx="4"  fill="#1e293b"/>
+  <rect x="27" y="29" width="26" height="12" rx="2"  fill="#0d1e2d"/>
+  <text x="40" y="38.5" text-anchor="middle" fill="#38bdf8" font-size="7.5" font-family="monospace" font-weight="bold">150 kg</text>
+  <rect x="36" y="43" width="8"  height="7"  fill="#5e7484"/>
+</svg>`;
+
+const SVG_BALANCE_BARI = `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <rect x="4"  y="52" width="72" height="21" rx="5"  fill="#5e7080"/>
+  <rect x="4"  y="43" width="72" height="13" rx="4"  fill="#7a8fa3"/>
+  <rect x="10" y="20" width="60" height="25" rx="5"  fill="#1e293b"/>
+  <rect x="14" y="24" width="52" height="17" rx="3"  fill="#0d1e2d"/>
+  <text x="40" y="35.5" text-anchor="middle" fill="#38bdf8" font-size="9" font-family="monospace" font-weight="bold">300 kg</text>
+</svg>`;
+
+const SVG_BRASSARD_STD = `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <rect x="4"  y="5"  width="32" height="23" rx="4"  fill="#374555"/>
+  <rect x="8"  y="9"  width="24" height="12" rx="2"  fill="#0d1e2d"/>
+  <text x="20" y="18.5" text-anchor="middle" fill="#38bdf8" font-size="6.5" font-family="monospace">120/80</text>
+  <path d="M20 28 Q 20 50 42 52" fill="none" stroke="#4a5e72" stroke-width="3.5" stroke-linecap="round"/>
+  <ellipse cx="54" cy="58" rx="20" ry="13" fill="#5e7484" opacity="0.35"/>
+  <ellipse cx="54" cy="54" rx="20" ry="13" fill="#7a8fa3"/>
+  <ellipse cx="54" cy="54" rx="11" ry="7"  fill="#1e293b"/>
+</svg>`;
+
+const SVG_BRASSARD_XL = `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <rect x="4"  y="5"  width="32" height="23" rx="4"  fill="#374555"/>
+  <rect x="8"  y="9"  width="24" height="12" rx="2"  fill="#0d1e2d"/>
+  <text x="20" y="18.5" text-anchor="middle" fill="#38bdf8" font-size="6.5" font-family="monospace">120/80</text>
+  <path d="M20 28 Q 20 50 36 54" fill="none" stroke="#4a5e72" stroke-width="3.5" stroke-linecap="round"/>
+  <ellipse cx="53" cy="63" rx="26" ry="16" fill="#5e7484" opacity="0.35"/>
+  <ellipse cx="53" cy="58" rx="26" ry="16" fill="#5e8fbf"/>
+  <ellipse cx="53" cy="58" rx="14" ry="8"  fill="#1e293b"/>
+  <text x="53" y="37" text-anchor="middle" fill="#7db5e0" font-size="11" font-weight="bold" font-family="sans-serif">XL</text>
+</svg>`;
+
+const SVG_BRASSARD_POIGNET = `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <rect x="18" y="50" width="44" height="13" rx="7" fill="#6e8096" opacity="0.45"/>
+  <rect x="18" y="44" width="44" height="13" rx="7" fill="#6e8096" opacity="0.25"/>
+  <rect x="22" y="18" width="36" height="28" rx="6"  fill="#374555"/>
+  <rect x="26" y="22" width="28" height="15" rx="3"  fill="#0d1e2d"/>
+  <text x="40" y="32.5" text-anchor="middle" fill="#38bdf8" font-size="6" font-family="monospace">130/85</text>
+  <rect x="31" y="45" width="5"  height="8"  fill="#4a5e72"/>
+  <rect x="44" y="45" width="5"  height="8"  fill="#4a5e72"/>
+</svg>`;
+
+const SVG_TABLE_STD = `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <rect x="10" y="16" width="60" height="14" rx="4"  fill="#9ab0c4"/>
+  <rect x="10" y="14" width="60" height="8"  rx="4"  fill="#b2c6d8"/>
+  <rect x="8"  y="22" width="64" height="7"  rx="2"  fill="#6e8096"/>
+  <circle cx="14" cy="24" r="6"  fill="#f8fafc" stroke="#8aa0b4" stroke-width="1.5"/>
+  <rect x="16" y="29" width="7"  height="46" rx="2"  fill="#374555"/>
+  <rect x="57" y="29" width="7"  height="46" rx="2"  fill="#374555"/>
+  <rect x="16" y="58" width="48" height="4"  rx="2"  fill="#2d3f50"/>
+</svg>`;
+
+const SVG_TABLE_BARI = `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <rect x="2"  y="14" width="76" height="16" rx="5"  fill="#5e8fbf"/>
+  <rect x="2"  y="12" width="76" height="9"  rx="5"  fill="#7aadcf"/>
+  <rect x="0"  y="20" width="80" height="8"  rx="2"  fill="#4a7aad"/>
+  <circle cx="8"  cy="23" r="6"  fill="#f8fafc" stroke="#7aadcf" stroke-width="1.5"/>
+  <rect x="10" y="28" width="9"  height="38" rx="2"  fill="#2a5a88"/>
+  <rect x="61" y="28" width="9"  height="38" rx="2"  fill="#2a5a88"/>
+  <rect x="8"  y="46" width="13" height="5"  rx="2"  fill="#3a6a9a"/>
+  <rect x="59" y="46" width="13" height="5"  rx="2"  fill="#3a6a9a"/>
+  <text x="40" y="72" text-anchor="middle"  fill="#7aadcf" font-size="7" font-weight="bold" font-family="sans-serif">350 kg</text>
+</svg>`;
+
+// ======================================================
+// STEPS DATA
+// ======================================================
+
+const STEPS = [
+  {
+    id: "siege",
+    badge: "Étape 1",
+    question: "Quel siège choisissez-vous pour accueillir vos patients ?",
+    // Position in scene (% from left / top of scene-inner)
+    placement: { left: "10%", top: "64%", size: "9%" },
+    options: [
+      {
+        id: "chaise-standard",
+        label: "Chaise standard",
+        desc: "Accoudoirs fixes, largeur standard",
+        optimal: false,
+        svg: SVG_CHAISE_STANDARD,
+        feedback: "Les accoudoirs fixes peuvent être inconfortables, voire inaccessibles pour les patients en situation d'obésité, et peuvent nuire à leur dignité.",
+      },
+      {
+        id: "fauteuil-bari",
+        label: "Fauteuil bariatrique",
+        desc: "Siège large, renforcé, accoudoirs réglables",
+        optimal: true,
+        svg: SVG_FAUTEUIL_BARI,
+        feedback: "Ce fauteuil plus large et sans accoudoirs bloquants garantit un accueil confortable et digne pour tous les patients, quelle que soit leur morphologie.",
+      },
+      {
+        id: "tabouret",
+        label: "Tabouret médical",
+        desc: "Sans dossier ni accoudoirs",
+        optimal: false,
+        svg: SVG_TABOURET,
+        feedback: "L'absence de dossier rend l'assise difficile et peu sécurisante pour les patients en situation d'obésité, qui ont besoin d'un support du dos.",
+      },
+    ],
+  },
+  {
+    id: "balance",
+    badge: "Étape 2",
+    question: "Quelle balance installez-vous dans votre cabinet ?",
+    placement: { left: "82%", top: "63%", size: "10%" },
+    options: [
+      {
+        id: "pese-sdb",
+        label: "Pèse-personne classique",
+        desc: "Petit plateau, portée max. 150 kg",
+        optimal: false,
+        svg: SVG_PESE_SDB,
+        feedback: "Un pèse-personne standard peut être incapable de mesurer certains patients et est souvent perçu comme humiliant en raison de sa petite taille.",
+      },
+      {
+        id: "balance-bari",
+        label: "Balance bariatrique",
+        desc: "Grand plateau, portée max. 300 kg",
+        optimal: true,
+        svg: SVG_BALANCE_BARI,
+        feedback: "La balance bariatrique permet de peser tous les patients dans des conditions dignes, avec un grand plateau stable et une portée adaptée à la réalité clinique.",
+      },
+    ],
+  },
+  {
+    id: "brassard",
+    badge: "Étape 3",
+    question: "Quel brassard de tensiomètre choisissez-vous ?",
+    placement: { left: "52%", top: "46%", size: "8%" },
+    options: [
+      {
+        id: "brassard-standard",
+        label: "Brassard standard",
+        desc: "Tour de bras jusqu'à 32 cm",
+        optimal: false,
+        svg: SVG_BRASSARD_STD,
+        feedback: "Un brassard standard peut comprimer le bras et générer des mesures tensionnelles inexactes chez les patients dont le bras dépasse les limites de l'embout.",
+      },
+      {
+        id: "brassard-xl",
+        label: "Brassard grande taille",
+        desc: "Tour de bras jusqu'à 52 cm",
+        optimal: true,
+        svg: SVG_BRASSARD_XL,
+        feedback: "Un brassard adapté à la circumférence du bras assure des mesures précises et évite toute gêne ou douleur liée à la compression, pour des données fiables.",
+      },
+      {
+        id: "brassard-poignet",
+        label: "Brassard de poignet",
+        desc: "Compact, mesure au poignet",
+        optimal: false,
+        svg: SVG_BRASSARD_POIGNET,
+        feedback: "Le brassard de poignet est moins précis pour la mesure de la tension artérielle, notamment chez les patients en situation d'obésité. Il n'est pas recommandé en première intention.",
+      },
+    ],
+  },
+  {
+    id: "table",
+    badge: "Étape 4",
+    question: "Quelle table d'examen installez-vous dans votre cabinet ?",
+    placement: { left: "58%", top: "60%", size: "14%" },
+    options: [
+      {
+        id: "table-standard",
+        label: "Table standard",
+        desc: "Larg. 60 cm, charge max. 180 kg",
+        optimal: false,
+        svg: SVG_TABLE_STD,
+        feedback: "Une table trop étroite et peu résistante peut être inconfortable, voire dangereuse. Elle peut aussi être source de honte et d'évitement des soins.",
+      },
+      {
+        id: "table-bari",
+        label: "Table bariatrique",
+        desc: "Larg. 90 cm, réglable, charge max. 350 kg",
+        optimal: true,
+        svg: SVG_TABLE_BARI,
+        feedback: "La table bariatrique offre l'espace, la robustesse et le confort nécessaires pour un examen sécurisé, et préserve la dignité du patient tout au long de la consultation.",
+      },
+    ],
+  },
+];
+
+// ======================================================
+// STATE
+// ======================================================
+
+let currentStep     = 0;
+let selectedOptId   = null;
+let selections      = []; // { step, option }
+let recapIndex      = 0;
+let equipmentAnswers = {}; // stepId -> "oui" | "non"
+
+// ======================================================
+// DOM REFS
+// ======================================================
+
+const stepChip        = document.getElementById("step-chip");
+const stepQuestion    = document.getElementById("step-question");
+const optionsRow      = document.getElementById("options-row");
+const btnChoose       = document.getElementById("btn-choose");
+const placedObjects   = document.getElementById("placed-objects");
+const progressFill    = document.getElementById("progress-fill");
+const progressLabel   = document.getElementById("progress-label");
+const modalBackdrop   = document.getElementById("modal-backdrop");
+const selectionPanel  = document.getElementById("selection-panel");
+const sparkleCanvas   = document.getElementById("sparkle-canvas");
+const sceneDim        = document.getElementById("scene-dim");
+const recapOverlay    = document.getElementById("recap-overlay");
+const recapPanel      = document.getElementById("recap-panel");
+const recapChip       = document.getElementById("recap-chip");
+const recapStatusBadge = document.getElementById("recap-status-badge");
+const recapBody       = document.getElementById("recap-body");
+const btnEquipOui     = document.getElementById("btn-equip-oui");
+const btnEquipNon     = document.getElementById("btn-equip-non");
+
+// ======================================================
+// SPARKLE ENGINE
+// ======================================================
+
+const ctx = sparkleCanvas.getContext("2d");
+let sparticles = [];
+let sparkRAF   = null;
+
+function resizeSparkCanvas() {
+  sparkleCanvas.width  = modalBackdrop.clientWidth;
+  sparkleCanvas.height = modalBackdrop.clientHeight;
+}
+
+function launchSparkles(cardEl) {
+  resizeSparkCanvas();
+  const rect   = cardEl.getBoundingClientRect();
+  const bRect  = modalBackdrop.getBoundingClientRect();
+  const cx     = rect.left + rect.width  / 2 - bRect.left;
+  const cy     = rect.top  + rect.height / 2 - bRect.top;
+
+  const COLORS = ["#4ade80", "#86efac", "#bbf7d0", "#fbbf24", "#f9a8d4", "#fff"];
+  const COUNT  = 32;
+
+  for (let i = 0; i < COUNT; i++) {
+    const angle  = (Math.PI * 2 * i) / COUNT + (Math.random() - 0.5) * 0.5;
+    const speed  = 2.5 + Math.random() * 5;
+    sparticles.push({
+      x:    cx, y: cy,
+      vx:   Math.cos(angle) * speed,
+      vy:   Math.sin(angle) * speed - Math.random() * 2,
+      r:    2 + Math.random() * 3,
+      life: 1,
+      decay: 0.025 + Math.random() * 0.025,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      shape: Math.random() > 0.5 ? "circle" : "star",
+      rot:  Math.random() * Math.PI * 2,
+      rotV: (Math.random() - 0.5) * 0.2,
+    });
+  }
+
+  if (!sparkRAF) animateSparticles();
+}
+
+function drawStar(x, y, r, rot) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rot);
+  ctx.beginPath();
+  for (let i = 0; i < 5; i++) {
+    const a1 = (Math.PI * 2 * i) / 5 - Math.PI / 2;
+    const a2 = a1 + Math.PI / 5;
+    ctx.lineTo(Math.cos(a1) * r, Math.sin(a1) * r);
+    ctx.lineTo(Math.cos(a2) * r * 0.45, Math.sin(a2) * r * 0.45);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function animateSparticles() {
+  ctx.clearRect(0, 0, sparkleCanvas.width, sparkleCanvas.height);
+
+  sparticles = sparticles.filter((p) => p.life > 0);
+  sparticles.forEach((p) => {
+    p.x    += p.vx;
+    p.y    += p.vy;
+    p.vy   += 0.18;      // gravity
+    p.life -= p.decay;
+    p.rot  += p.rotV;
+    ctx.globalAlpha = Math.max(0, p.life);
+    ctx.fillStyle   = p.color;
+    if (p.shape === "star") {
+      drawStar(p.x, p.y, p.r * 1.4, p.rot);
+    } else {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+  ctx.globalAlpha = 1;
+
+  if (sparticles.length > 0) {
+    sparkRAF = requestAnimationFrame(animateSparticles);
+  } else {
+    ctx.clearRect(0, 0, sparkleCanvas.width, sparkleCanvas.height);
+    sparkRAF = null;
+  }
+}
+
+// ======================================================
+// RENDER STEP
+// ======================================================
+
+function renderStep() {
+  const step = STEPS[currentStep];
+  selectedOptId = null;
+
+  // Update HUD
+  stepChip.textContent     = `${step.badge} / ${STEPS.length}`;
+  stepQuestion.textContent = step.question;
+  btnChoose.disabled       = true;
+
+  // Update progress bar
+  const pct = Math.round((currentStep / STEPS.length) * 100);
+  progressFill.style.width  = `${pct}%`;
+  progressLabel.textContent = `${currentStep} / ${STEPS.length}`;
+
+  // Render option cards
+  optionsRow.innerHTML = "";
+  step.options.forEach((opt) => {
+    const card = document.createElement("div");
+    card.className    = "option-card";
+    card.dataset.id   = opt.id;
+    card.innerHTML    = `
+      <div class="card-check">
+        <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+          <path d="M1.5 5.5 L4.5 8.5 L9.5 2.5"
+                stroke="white" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="option-svg">${opt.svg}</div>
+      <span class="option-label">${opt.label}</span>
+      <span class="option-desc">${opt.desc}</span>
+    `;
+    card.addEventListener("click", () => selectOption(opt.id));
+    optionsRow.appendChild(card);
+  });
+}
+
+// ======================================================
+// SELECT OPTION
+// ======================================================
+
+function selectOption(optId) {
+  selectedOptId = optId;
+  document.querySelectorAll(".option-card").forEach((c) => {
+    c.classList.toggle("selected", c.dataset.id === optId);
+  });
+  btnChoose.disabled = false;
+
+  // Sparkles from selected card
+  const card = document.querySelector(`.option-card[data-id="${optId}"]`);
+  if (card) launchSparkles(card);
+}
+
+// ======================================================
+// CONFIRM CHOICE
+// ======================================================
+
+function handleChoose() {
+  if (!selectedOptId) return;
+
+  const step   = STEPS[currentStep];
+  const option = step.options.find((o) => o.id === selectedOptId);
+
+  selections.push({ step, option });
+
+  // Lock UI
+  btnChoose.disabled = true;
+
+  // Mark confirmed card
+  const confirmedCard = document.querySelector(`.option-card[data-id="${selectedOptId}"]`);
+  confirmedCard.classList.add("confirmed");
+
+  // Dim other cards
+  document.querySelectorAll(".option-card:not(.confirmed)").forEach((c) => {
+    c.classList.add("fading-out");
+  });
+
+  // Place object in scene
+  placeObjectInScene(step, option);
+
+  // Advance after animation
+  setTimeout(() => {
+    modalBackdrop.classList.add("fading");
+    setTimeout(() => {
+      currentStep++;
+      sparticles = []; // clear leftover sparticles between steps
+      if (sparkRAF) { cancelAnimationFrame(sparkRAF); sparkRAF = null; }
+      ctx.clearRect(0, 0, sparkleCanvas.width, sparkleCanvas.height);
+      if (currentStep >= STEPS.length) {
+        startRecap();
+      } else {
+        modalBackdrop.classList.remove("fading");
+        renderStep();
+      }
+    }, 350);
+  }, 850);
+}
+
+// ======================================================
+// PLACE OBJECT IN SCENE
+// ======================================================
+
+function placeObjectInScene(step, option) {
+  const obj = document.createElement("div");
+  obj.className    = "placed-obj";
+  obj.style.left   = step.placement.left;
+  obj.style.top    = step.placement.top;
+  obj.style.width  = step.placement.size;
+  obj.innerHTML    = option.svg;
+  placedObjects.appendChild(obj);
+}
+
+// ======================================================
+// PART 2 — RECAP WALKTHROUGH
+// ======================================================
+
+function startRecap() {
+  // Update progress to 100%
+  progressFill.style.width  = "100%";
+  progressLabel.textContent = `${STEPS.length} / ${STEPS.length}`;
+
+  recapIndex = 0;
+  equipmentAnswers = {};
+  recapOverlay.classList.remove("hidden");
+  showRecapStep(0);
+}
+
+function showRecapStep(i) {
+  const sel    = selections[i];
+  const step   = sel.step;
+  const option = sel.option;
+  const optimalOpt = step.options.find((o) => o.optimal);
+
+  // Highlight object in scene
+  const placedObjs = placedObjects.querySelectorAll(".placed-obj");
+  placedObjs.forEach((el, idx) => {
+    el.classList.remove("highlighted", "dimmed");
+    el.classList.add(idx === i ? "highlighted" : "dimmed");
+  });
+  sceneDim.classList.remove("hidden");
+
+  // Recap chip
+  recapChip.textContent = `Analyse ${i + 1} / ${STEPS.length}`;
+
+  // Status badge
+  recapStatusBadge.className = "recap-status-badge " + (option.optimal ? "ok" : "warn");
+  recapStatusBadge.textContent = option.optimal ? "✓ Bon choix" : "⚠ À améliorer";
+
+  // Body: chosen item feedback
+  let html = `
+    <div class="recap-chosen-row">
+      <div class="recap-item-icon">${option.svg}</div>
+      <div class="recap-item-info">
+        <p class="recap-item-label">${option.label}</p>
+        <p class="recap-item-feedback ${option.optimal ? "" : "feedback-warn"}">${option.feedback}</p>
+      </div>
+    </div>
+  `;
+
+  // If wrong: show optimal hint
+  if (!option.optimal && optimalOpt) {
+    html += `
+      <div class="recap-optimal-hint">
+        <span class="hint-label">Il aurait été préférable de choisir :</span>
+        <div class="recap-optimal-row">
+          <div class="recap-item-icon small">${optimalOpt.svg}</div>
+          <div class="recap-item-info">
+            <p class="recap-item-label">${optimalOpt.label}</p>
+            <p class="recap-item-feedback feedback-optimal">${optimalOpt.feedback}</p>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  recapBody.innerHTML = html;
+
+  // Reset equip buttons
+  btnEquipOui.disabled = false;
+  btnEquipNon.disabled = false;
+
+  // Animate panel in
+  recapPanel.style.transition = "none";
+  recapPanel.style.opacity    = "1";
+  recapPanel.style.transform  = "translateY(0)";
+}
+
+function advanceRecap(answer) {
+  const stepId = selections[recapIndex].step.id;
+  equipmentAnswers[stepId] = answer;
+
+  // Lock buttons
+  btnEquipOui.disabled = true;
+  btnEquipNon.disabled = true;
+
+  // Fade panel out
+  recapPanel.style.transition = "opacity 0.25s ease, transform 0.25s ease";
+  recapPanel.style.opacity    = "0";
+  recapPanel.style.transform  = "translateY(16px)";
+
+  setTimeout(() => {
+    recapIndex++;
+    if (recapIndex >= selections.length) {
+      // All items reviewed
+      placedObjects.querySelectorAll(".placed-obj").forEach((el) => {
+        el.classList.remove("highlighted", "dimmed");
+      });
+      sceneDim.classList.add("hidden");
+      recapOverlay.classList.add("hidden");
+      showFinalSummary();
+    } else {
+      recapPanel.style.transition = "none";
+      recapPanel.style.opacity    = "1";
+      recapPanel.style.transform  = "translateY(0)";
+      showRecapStep(recapIndex);
+    }
+  }, 280);
+}
+
+// ======================================================
+// FINAL SUMMARY
+// ======================================================
+
+function showFinalSummary() {
+  // Recap complete — offer to restart
+  recapOverlay.classList.add("hidden");
+  sceneDim.classList.add("hidden");
+  placedObjects.querySelectorAll(".placed-obj").forEach((el) => {
+    el.classList.remove("highlighted", "dimmed");
+  });
+  if (confirm("Analyse terminée !\n\nVoulez-vous recommencer l'exercice ?")) {
+    location.reload();
+  }
+}
+
+// ======================================================
+// EVENT LISTENERS
+// ======================================================
+
+btnChoose.addEventListener("click", handleChoose);
+
+btnEquipOui.addEventListener("click", () => advanceRecap("oui"));
+btnEquipNon.addEventListener("click", () => advanceRecap("non"));
+
+// ======================================================
+// INIT
+// ======================================================
+
+renderStep();
