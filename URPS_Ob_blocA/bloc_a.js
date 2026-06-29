@@ -109,6 +109,10 @@ const SVG_TABLE_BARI = `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/s
 // STEPS DATA
 // ======================================================
 
+const MEDICAL_SPRITES_DIR = "MedicalSprites/Reel";
+const SPRITE_EXTENSIONS = ["png", "webp", "jpg", "jpeg", "svg"];
+const DEFAULT_COST_LEVEL = 1;
+
 const STEPS = [
   {
     id: "siege",
@@ -122,6 +126,9 @@ const STEPS = [
         label: "Chaise standard",
         desc: "Accoudoirs fixes, largeur standard",
         optimal: false,
+        sprite: "Chaise_Classique.png",
+        //scenesprite: "",
+        cost: 1,
         svg: SVG_CHAISE_STANDARD,
         feedback: "Les accoudoirs fixes peuvent être inconfortables, voire inaccessibles pour les patients en situation d'obésité, et peuvent nuire à leur dignité.",
       },
@@ -130,6 +137,8 @@ const STEPS = [
         label: "Fauteuil bariatrique",
         desc: "Siège large, renforcé, accoudoirs réglables",
         optimal: true,
+        sprite: "Chaise_Adapte.png",
+        cost: 3,
         svg: SVG_FAUTEUIL_BARI,
         feedback: "Ce fauteuil plus large et sans accoudoirs bloquants garantit un accueil confortable et digne pour tous les patients, quelle que soit leur morphologie.",
       },
@@ -138,6 +147,7 @@ const STEPS = [
         label: "Tabouret médical",
         desc: "Sans dossier ni accoudoirs",
         optimal: false,
+        cost: 1,
         svg: SVG_TABOURET,
         feedback: "L'absence de dossier rend l'assise difficile et peu sécurisante pour les patients en situation d'obésité, qui ont besoin d'un support du dos.",
       },
@@ -154,6 +164,8 @@ const STEPS = [
         label: "Pèse-personne classique",
         desc: "Petit plateau, portée max. 150 kg",
         optimal: false,
+        sprite: "Balance_Classique.png",
+        cost: 1,
         svg: SVG_PESE_SDB,
         feedback: "Un pèse-personne standard peut être incapable de mesurer certains patients et est souvent perçu comme humiliant en raison de sa petite taille.",
       },
@@ -162,6 +174,8 @@ const STEPS = [
         label: "Balance bariatrique",
         desc: "Grand plateau, portée max. 300 kg",
         optimal: true,
+        sprite: "Balance_Adapte.png",
+        cost: 3,
         svg: SVG_BALANCE_BARI,
         feedback: "La balance bariatrique permet de peser tous les patients dans des conditions dignes, avec un grand plateau stable et une portée adaptée à la réalité clinique.",
       },
@@ -178,6 +192,8 @@ const STEPS = [
         label: "Brassard standard",
         desc: "Tour de bras jusqu'à 32 cm",
         optimal: false,
+        sprite: "Brassard_Classique.png",
+        cost: 1,
         svg: SVG_BRASSARD_STD,
         feedback: "Un brassard standard peut comprimer le bras et générer des mesures tensionnelles inexactes chez les patients dont le bras dépasse les limites de l'embout.",
       },
@@ -186,6 +202,8 @@ const STEPS = [
         label: "Brassard grande taille",
         desc: "Tour de bras jusqu'à 52 cm",
         optimal: true,
+        sprite: "Brassard_Adapte.png",
+        cost: 2,
         svg: SVG_BRASSARD_XL,
         feedback: "Un brassard adapté à la circumférence du bras assure des mesures précises et évite toute gêne ou douleur liée à la compression, pour des données fiables.",
       },
@@ -194,6 +212,7 @@ const STEPS = [
         label: "Brassard de poignet",
         desc: "Compact, mesure au poignet",
         optimal: false,
+        cost: 2,
         svg: SVG_BRASSARD_POIGNET,
         feedback: "Le brassard de poignet est moins précis pour la mesure de la tension artérielle, notamment chez les patients en situation d'obésité. Il n'est pas recommandé en première intention.",
       },
@@ -210,6 +229,8 @@ const STEPS = [
         label: "Table standard",
         desc: "Larg. 60 cm, charge max. 180 kg",
         optimal: false,
+        sprite: "Table_Classique.png",
+        cost: 2,
         svg: SVG_TABLE_STD,
         feedback: "Une table trop étroite et peu résistante peut être inconfortable, voire dangereuse. Elle peut aussi être source de honte et d'évitement des soins.",
       },
@@ -218,6 +239,8 @@ const STEPS = [
         label: "Table bariatrique",
         desc: "Larg. 90 cm, réglable, charge max. 350 kg",
         optimal: true,
+        sprite: "Table_Adapte.png",
+        cost: 3,
         svg: SVG_TABLE_BARI,
         feedback: "La table bariatrique offre l'espace, la robustesse et le confort nécessaires pour un examen sécurisé, et préserve la dignité du patient tout au long de la consultation.",
       },
@@ -353,6 +376,47 @@ function animateSparticles() {
 // RENDER STEP
 // ======================================================
 
+function getSpriteSources(option) {
+  if (option.sprite) return [`${MEDICAL_SPRITES_DIR}/${option.sprite}`];
+  return SPRITE_EXTENSIONS.map((ext) => `${MEDICAL_SPRITES_DIR}/${option.id}.${ext}`);
+}
+
+function renderOptionAsset(option) {
+  const sources = getSpriteSources(option);
+  return `
+    <img class="medical-sprite"
+         src="${sources[0]}"
+         alt="${option.label}"
+         data-sprite-index="0"
+         data-sprite-sources='${JSON.stringify(sources)}'
+         data-fallback-svg="${encodeURIComponent(option.svg)}"/>
+  `;
+}
+
+function attachSpriteFallbacks(root) {
+  root.querySelectorAll(".medical-sprite").forEach((img) => {
+    img.addEventListener("error", () => {
+      const sources = JSON.parse(img.dataset.spriteSources || "[]");
+      const nextIndex = Number(img.dataset.spriteIndex || 0) + 1;
+
+      if (nextIndex < sources.length) {
+        img.dataset.spriteIndex = String(nextIndex);
+        img.src = sources[nextIndex];
+        return;
+      }
+
+      img.outerHTML = decodeURIComponent(img.dataset.fallbackSvg || "");
+    });
+  });
+}
+
+function getCostSymbols(option) {
+  if (typeof option.cost === "string") return option.cost;
+
+  const level = Number.isFinite(option.cost) ? option.cost : DEFAULT_COST_LEVEL;
+  return "$".repeat(Math.max(1, Math.min(3, level)));
+}
+
 function renderStep() {
   const step = STEPS[currentStep];
   selectedOptId = null;
@@ -381,11 +445,13 @@ function renderStep() {
                 stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
-      <div class="option-svg">${opt.svg}</div>
+      <div class="option-svg">${renderOptionAsset(opt)}</div>
       <span class="option-label">${opt.label}</span>
       <span class="option-desc">${opt.desc}</span>
+      <span class="option-cost" aria-label="Prix estimé : ${getCostSymbols(opt)}">${getCostSymbols(opt)}</span>
     `;
     card.addEventListener("click", () => selectOption(opt.id));
+    attachSpriteFallbacks(card);
     optionsRow.appendChild(card);
   });
 }
@@ -467,7 +533,8 @@ function placeObjectInScene(step, option) {
   obj.style.left   = step.placement.left;
   obj.style.top    = step.placement.top;
   obj.style.width  = step.placement.size;
-  obj.innerHTML    = option.svg;
+  obj.innerHTML    = renderOptionAsset(option);
+  attachSpriteFallbacks(obj);
   placedObjects.appendChild(obj);
 }
 
@@ -512,7 +579,7 @@ function showRecapStep(i) {
   // Body: show the reference equipment for the question (optimal/bariatric)
   let html = `
     <div class="recap-chosen-row">
-      <div class="recap-item-icon">${optimalOpt.svg}</div>
+      <div class="recap-item-icon">${renderOptionAsset(optimalOpt)}</div>
       <div class="recap-item-info">
         <p class="recap-item-label">${optimalOpt.label}</p>
       </div>
@@ -520,6 +587,7 @@ function showRecapStep(i) {
   `;
 
   recapBody.innerHTML = html;
+  attachSpriteFallbacks(recapBody);
 
   // Reset equipment question UI
   recapQuestionText.textContent = "Disposez-vous de cet équipement dans votre cabinet ?";

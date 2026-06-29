@@ -168,10 +168,15 @@ html, body {
   filter: drop-shadow(0 2px 6px rgba(0,0,0,0.55));
 }
 
-.placed-obj svg {
+.placed-obj svg,
+.placed-obj .medical-sprite {
   width: 100%;
   height: auto;
   display: block;
+}
+
+.medical-sprite {
+  object-fit: contain;
 }
 
 @keyframes popIn {
@@ -363,9 +368,11 @@ html, body {
   justify-content: center;
 }
 
-.option-svg svg {
+.option-svg svg,
+.option-svg .medical-sprite {
   width: 100%;
   height: 100%;
+  display: block;
 }
 
 .option-label {
@@ -381,6 +388,21 @@ html, body {
   color: var(--c-muted);
   text-align: center;
   line-height: 1.3;
+}
+
+.option-cost {
+  margin-top: auto;
+  min-width: 44px;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(251, 191, 36, 0.12);
+  border: 1px solid rgba(251, 191, 36, 0.28);
+  color: #fbbf24;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+  letter-spacing: 0.04em;
 }
 
 /* Panel footer */
@@ -544,7 +566,8 @@ html, body {
   height: 48px;
 }
 
-.rc-icon svg {
+.rc-icon svg,
+.rc-icon .medical-sprite {
   width: 100%;
   height: 100%;
 }
@@ -681,7 +704,12 @@ html, body {
   height: 48px;
 }
 
-.recap-item-icon svg { width: 100%; height: 100%; }
+.recap-item-icon svg,
+.recap-item-icon .medical-sprite {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
 
 .recap-item-info {
   flex: 1;

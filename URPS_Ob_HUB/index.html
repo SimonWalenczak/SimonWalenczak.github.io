@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>URPS Obesite - Hub</title>
+  <link rel="stylesheet" href="hub.css"/>
+</head>
+<body>
+  <main class="hub" aria-label="Accueil du centre medical">
+    <section class="intro-panel" id="intro-panel" aria-labelledby="intro-title">
+      <form class="intro-card" id="intro-form">
+        <p class="intro-kicker">Avant de commencer</p>
+        <h1 class="intro-title" id="intro-title">Quelle est votre specialite ?</h1>
+
+        <label class="intro-label" for="specialty-select">Specialite medicale</label>
+        <select class="intro-select" id="specialty-select" name="specialty" required>
+          <option value="">Choisissez une specialite</option>
+        </select>
+
+        <fieldset class="gender-field">
+          <legend class="intro-label">Etes-vous un homme ou une femme ?</legend>
+          <div class="gender-options" id="gender-options">
+            <button class="gender-option" type="button" data-gender="homme" aria-pressed="false">
+              <img src="CharacterDoctor.svg" alt="" aria-hidden="true"/>
+              <span>Homme</span>
+            </button>
+            <button class="gender-option" type="button" data-gender="femme" aria-pressed="false">
+              <img src="CharacterDoctor_Female.svg" alt="" aria-hidden="true"/>
+              <span>Femme</span>
+            </button>
+          </div>
+        </fieldset>
+
+        <button class="intro-submit" type="submit">Entrer dans le centre</button>
+      </form>
+    </section>
+
+    <div class="hub-stage" id="hub-stage">
+      <img class="hub-bg" src="MockUp_Accueil.svg" alt="Accueil du centre medical avec trois portes"/>
+
+      <button class="door-hotspot door-a" type="button" data-door="A" aria-label="Entrer dans le bloc A">
+        <span class="door-tooltip">Bloc A</span>
+      </button>
+
+      <button class="door-hotspot door-b" type="button" data-door="B" aria-label="Entrer dans le bloc B">
+        <span class="door-tooltip">Bloc B</span>
+      </button>
+
+      <button class="door-hotspot door-c" type="button" data-door="C" aria-label="Entrer dans le bloc C">
+        <span class="door-tooltip">Bloc C</span>
+      </button>
+    </div>
+
+    <p class="hub-status" id="hub-status" aria-live="polite"></p>
+  </main>
+
+  <script src="hub.js"></script>
+</body>
+</html>

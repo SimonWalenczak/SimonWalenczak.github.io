@@ -82,22 +82,101 @@ const SPRITE = {
     minScale: 0.05
 };
 
-// Configuration gÃƒÂ©nÃƒÂ©rique du rig humanoÃƒÂ¯de avec hiÃƒÂ©rarchie
+// Configuration generique du rig humanoide avec hierarchie
 const RIG_CONFIG = {
-    Head: { pivot: "Neck", label: "TÃƒÂªte", parent: null, range: { rotation: [-25, 25], x: [-20, 20], y: [-20, 20] } },
-    
+    Head: { pivot: "Neck", label: "Tete", parent: null, range: { rotation: [-25, 25], x: [-20, 20], y: [-20, 20] } },
+
     LeftArm: { pivot: "LeftShoulder", label: "Bras gauche", parent: null, range: { rotation: [-90, 90], x: [-50, 50], y: [-50, 50] } },
     LeftForearm: { pivot: "LeftElbow", label: "Avant-bras gauche", parent: "LeftArm", range: { rotation: [-120, 120], x: [-50, 50], y: [-50, 50] } },
-    
+
     RightArm: { pivot: "RightShoulder", label: "Bras droit", parent: null, range: { rotation: [-90, 90], x: [-50, 50], y: [-50, 50] } },
     RightForearm: { pivot: "RightElbow", label: "Avant-bras droit", parent: "RightArm", range: { rotation: [-120, 120], x: [-50, 50], y: [-50, 50] } },
-    
+
     LeftLeg: { pivot: "LeftHip", label: "Jambe haute gauche", parent: null, range: { rotation: [-60, 60], x: [-30, 30], y: [-30, 30] } },
     LeftLowerLeg: { pivot: "LeftKnee", label: "Jambe basse gauche", parent: "LeftLeg", range: { rotation: [0, 80], x: [-30, 30], y: [-30, 30] } },
-    
+
     RightLeg: { pivot: "RightHip", label: "Jambe haute droit", parent: null, range: { rotation: [-60, 60], x: [-30, 30], y: [-30, 30] } },
-    RightLowerLeg: { pivot: "RightKnee", label: "Jambe basse droit", parent: "RightLeg", range: { rotation: [0, 80], x: [-30, 30], y: [-30, 30] } }
+    RightLowerLeg: { pivot: "RightKnee", label: "Jambe basse droit", parent: "RightLeg", range: { rotation: [0, 80], x: [-30, 30], y: [-30, 30] } },
+
+    LeftEye: {
+        label: "Oeil gauche",
+        parent: "Head",
+        aliases: ["LeftEye", "Eye1"],
+        controls: [
+            { key: "scaleY", label: "Clignement", min: 0.05, max: 1, step: 0.01, unit: "x", defaultValue: 1 }
+        ]
+    },
+    RightEye: {
+        label: "Oeil droit",
+        parent: "Head",
+        aliases: ["RightEye", "Eye2"],
+        controls: [
+            { key: "scaleY", label: "Clignement", min: 0.05, max: 1, step: 0.01, unit: "x", defaultValue: 1 }
+        ]
+    },
+    LeftEyebrow: {
+        label: "Sourcil gauche",
+        parent: "Head",
+        aliases: ["LeftEyebrow", "Eyebrow1"],
+        controls: [
+            { key: "y", label: "Y", min: -20, max: 20, step: 1, unit: "px", defaultValue: 0 }
+        ]
+    },
+    RightEyebrow: {
+        label: "Sourcil droit",
+        parent: "Head",
+        aliases: ["RightEyebrow", "Eyebrow2"],
+        controls: [
+            { key: "y", label: "Y", min: -20, max: 20, step: 1, unit: "px", defaultValue: 0 }
+        ]
+    }
 };
+
+function getPartControls(config) {
+    if (Array.isArray(config.controls) && config.controls.length > 0) {
+        return config.controls;
+    }
+
+    return [
+        { key: "rotation", label: "Rotation", min: config.range.rotation[0], max: config.range.rotation[1], step: 1, unit: "deg", defaultValue: 0 },
+        { key: "x", label: "X", min: config.range.x[0], max: config.range.x[1], step: 1, unit: "px", defaultValue: 0 },
+        { key: "y", label: "Y", min: config.range.y[0], max: config.range.y[1], step: 1, unit: "px", defaultValue: 0 }
+    ];
+}
+
+function getDefaultPose(controls) {
+    const pose = {};
+    controls.forEach((control) => {
+        pose[control.key] = Number.isFinite(control.defaultValue) ? control.defaultValue : 0;
+    });
+    return pose;
+}
+
+function findRigPartElement(mainGroup, partName, config) {
+    const aliases = [partName, ...(config.aliases || [])];
+
+    for (const alias of aliases) {
+        const byGroupId = mainGroup.querySelector(`g#${cssEscape(alias)}`);
+        if (byGroupId) return byGroupId;
+
+        const byAnyId = mainGroup.querySelector(`#${cssEscape(alias)}`);
+        if (byAnyId && byAnyId !== mainGroup) return byAnyId;
+    }
+
+    const parentAliases = config.parentAliases || [];
+    const selectors = config.selectors || [];
+    for (const parentAlias of parentAliases) {
+        const parent = mainGroup.querySelector(`#${cssEscape(parentAlias)}`);
+        if (!parent) continue;
+
+        for (const selector of selectors) {
+            const candidate = parent.querySelector(selector);
+            if (candidate) return candidate;
+        }
+    }
+
+    return null;
+}
 
 const scaleHandles = createScaleHandles();
 
@@ -556,6 +635,7 @@ function extractSvgStyleData(svg, classMap = null) {
             className,
             scopedClassName,
             color: getSvgClassFill(styleElement.textContent, scopedClassName, svg),
+            alpha: getSvgClassAlpha(styleElement.textContent, scopedClassName, svg),
             targetIds: getSvgClassTargetIds(svg, scopedClassName)
         };
     });
@@ -637,6 +717,24 @@ function getSvgClassFill(styleText, className, svg) {
         || "#000000";
 }
 
+function getSvgClassAlpha(styleText, className, svg) {
+    const escapedClass = escapeRegExp(className);
+    const rule = styleText.match(new RegExp(`\\.${escapedClass}\\s*\\{([^}]*)\\}`));
+    const fromFillOpacity = normalizeAlphaValue(rule?.[1].match(/fill-opacity\s*:\s*([^;]+)\s*;?/i)?.[1]);
+    if (fromFillOpacity != null) return fromFillOpacity;
+
+    const fromOpacity = normalizeAlphaValue(rule?.[1].match(/opacity\s*:\s*([^;]+)\s*;?/i)?.[1]);
+    if (fromOpacity != null) return fromOpacity;
+
+    const element = svg.querySelector(`.${cssEscape(className)}`);
+    return normalizeAlphaValue(
+        element?.getAttribute("fill-opacity")
+        || element?.style.fillOpacity
+        || element?.getAttribute("opacity")
+        || element?.style.opacity
+    ) ?? 1;
+}
+
 function getSvgClassTargetIds(svg, className) {
     return [...svg.querySelectorAll(`.${cssEscape(className)}`)]
         .map((element) => getAssociatedSvgId(element, svg))
@@ -656,9 +754,14 @@ function getAssociatedSvgId(element, svg) {
     return "";
 }
 
-function updateSvgClassColor(sprite, className, color) {
+function updateSvgClassColor(sprite, className, color, alpha = null) {
     const hex = normalizeHexColor(color);
     if (!hex || !sprite.svgElement) return false;
+
+    const currentStyle = sprite.svgStyles?.find((style) => style.scopedClassName === className);
+    const normalizedAlpha = normalizeAlphaValue(alpha);
+    const nextAlpha = normalizedAlpha ?? currentStyle?.alpha ?? 1;
+    const alphaText = formatSvgAlpha(nextAlpha);
 
     const styleElement = getOrCreateSvgStyleElement(sprite.svgElement);
     const escapedClass = escapeRegExp(className);
@@ -666,18 +769,22 @@ function updateSvgClassColor(sprite, className, color) {
     const rule = styleElement.textContent.match(ruleRegex);
 
     if (rule) {
-        const body = rule[2].match(/fill\s*:/i)
+        let body = rule[2].match(/fill\s*:/i)
             ? rule[2].replace(/fill\s*:\s*[^;]+;?/i, `fill:${hex};`)
             : `${rule[2].trim().replace(/;?$/, ";")}fill:${hex};`;
 
+        body = body.match(/fill-opacity\s*:/i)
+            ? body.replace(/fill-opacity\s*:\s*[^;]+;?/i, `fill-opacity:${alphaText};`)
+            : `${body.trim().replace(/;?$/, ";")}fill-opacity:${alphaText};`;
+
         styleElement.textContent = styleElement.textContent.replace(ruleRegex, (_, start, __, end) => `${start}${body}${end}`);
     } else {
-        styleElement.textContent += `\n.${className}{fill:${hex};}`;
+        styleElement.textContent += `\n.${className}{fill:${hex};fill-opacity:${alphaText};}`;
     }
 
     sprite.svgStyles = sprite.svgStyles.map((style) => (
         style.scopedClassName === className
-            ? { ...style, color: hex }
+            ? { ...style, color: hex, alpha: nextAlpha }
             : style
     ));
 
@@ -949,8 +1056,11 @@ function updateSvgInspector() {
 function exportSvg(sprite) {
     if (!sprite?.svgElement) return;
 
-    const clone = sprite.svgElement.cloneNode(true);
-    clone.removeAttribute("overflow");
+    const w = sprite.offsetWidth || SPRITE.defaultWidth;
+    const h = sprite.offsetHeight || sprite.offsetWidth || SPRITE.defaultWidth;
+    const { clone } = buildExportSvgForCanvas(sprite, w, h);
+    clone.removeAttribute("x");
+    clone.removeAttribute("y");
 
     const serializer = new XMLSerializer();
     const svgString = serializer.serializeToString(clone);
@@ -990,45 +1100,91 @@ async function confirmExport() {
     }
 }
 
+function getSvgExportLocalRect(sprite, w, h) {
+    const svgEl = sprite.svgElement;
+    const vb = svgEl?.viewBox?.baseVal;
+
+    if (!svgEl || !vb || vb.width === 0) {
+        return { x: -w / 2, y: -h / 2, width: w, height: h };
+    }
+
+    const contentBounds = computeSvgContentViewBox(svgEl, vb);
+    const svgUnitPerPxX = vb.width / w;
+    const svgUnitPerPxY = vb.height / h;
+
+    const drawW = contentBounds.width / svgUnitPerPxX;
+    const drawH = contentBounds.height / svgUnitPerPxY;
+    const drawX = -w / 2 + (contentBounds.x - vb.x) / svgUnitPerPxX;
+    const drawY = -h / 2 + (contentBounds.y - vb.y) / svgUnitPerPxY;
+
+    return { x: drawX, y: drawY, width: drawW, height: drawH };
+}
+
+function getSpriteExportLocalRect(sprite, w, h) {
+    if (sprite.objectData.type === "svg" && sprite.svgElement) {
+        return getSvgExportLocalRect(sprite, w, h);
+    }
+
+    return { x: -w / 2, y: -h / 2, width: w, height: h };
+}
+
+function expandBoundsWithSprite(bounds, sprite, localRect, w, h) {
+    const { x, y, rotation, scaleX, scaleY } = sprite.objectData;
+    const cx = x + w / 2;
+    const cy = y + h / 2;
+    const rad = rotation * Math.PI / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+
+    const corners = [
+        [localRect.x, localRect.y],
+        [localRect.x + localRect.width, localRect.y],
+        [localRect.x + localRect.width, localRect.y + localRect.height],
+        [localRect.x, localRect.y + localRect.height]
+    ];
+
+    corners.forEach(([lx, ly]) => {
+        const sx = lx * scaleX;
+        const sy = ly * scaleY;
+        const wx = cx + sx * cos - sy * sin;
+        const wy = cy + sx * sin + sy * cos;
+        bounds.minX = Math.min(bounds.minX, wx);
+        bounds.minY = Math.min(bounds.minY, wy);
+        bounds.maxX = Math.max(bounds.maxX, wx);
+        bounds.maxY = Math.max(bounds.maxY, wy);
+    });
+}
+
 async function doExportScene(fixedWidth, fixedHeight, filename = "scene") {
     // Calcul du bounding box de la scÃƒÂ¨ne
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    const bounds = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
 
     state.objects.forEach((sprite) => {
-        const { x, y, rotation, scaleX, scaleY } = sprite.objectData;
         const w = sprite.offsetWidth;
         const h = sprite.offsetHeight;
-        const cx = x + w / 2;
-        const cy = y + h / 2;
-        const hw = (w / 2) * scaleX;
-        const hh = (h / 2) * scaleY;
-        const rad = rotation * Math.PI / 180;
-        const cos = Math.abs(Math.cos(rad));
-        const sin = Math.abs(Math.sin(rad));
-        const extentX = hw * cos + hh * sin;
-        const extentY = hw * sin + hh * cos;
-        minX = Math.min(minX, cx - extentX);
-        minY = Math.min(minY, cy - extentY);
-        maxX = Math.max(maxX, cx + extentX);
-        maxY = Math.max(maxY, cy + extentY);
+        const localRect = getSpriteExportLocalRect(sprite, w, h);
+        expandBoundsWithSprite(bounds, sprite, localRect, w, h);
     });
 
-    const contentMinX = Math.floor(minX);
-    const contentMinY = Math.floor(minY);
-    const contentW = Math.ceil(maxX - contentMinX);
-    const contentH = Math.ceil(maxY - contentMinY);
+    const contentMinX = Math.floor(bounds.minX);
+    const contentMinY = Math.floor(bounds.minY);
+    const contentW = Math.max(1, Math.ceil(bounds.maxX - contentMinX));
+    const contentH = Math.max(1, Math.ceil(bounds.maxY - contentMinY));
 
-    let canvasW, canvasH, drawScale, offsetX, offsetY;
+    let canvasW, canvasH, drawScaleX, drawScaleY, offsetX, offsetY;
     if (fixedWidth && fixedHeight) {
         canvasW = fixedWidth;
         canvasH = fixedHeight;
-        drawScale = Math.min(fixedWidth / contentW, fixedHeight / contentH);
-        offsetX = (fixedWidth - contentW * drawScale) / 2;
-        offsetY = (fixedHeight - contentH * drawScale) / 2;
+        // Scale independently on each axis so an overflow on width does not shrink height (and inverse).
+        drawScaleX = fixedWidth / contentW;
+        drawScaleY = fixedHeight / contentH;
+        offsetX = (fixedWidth - contentW * drawScaleX) / 2;
+        offsetY = (fixedHeight - contentH * drawScaleY) / 2;
     } else {
         canvasW = contentW;
         canvasH = contentH;
-        drawScale = 1;
+        drawScaleX = 1;
+        drawScaleY = 1;
         offsetX = 0;
         offsetY = 0;
     }
@@ -1038,9 +1194,9 @@ async function doExportScene(fixedWidth, fixedHeight, filename = "scene") {
     canvas.height = canvasH;
     const ctx = canvas.getContext("2d");
 
-    if (drawScale !== 1 || offsetX !== 0 || offsetY !== 0) {
+    if (drawScaleX !== 1 || drawScaleY !== 1 || offsetX !== 0 || offsetY !== 0) {
         ctx.translate(offsetX, offsetY);
-        ctx.scale(drawScale, drawScale);
+        ctx.scale(drawScaleX, drawScaleY);
     }
 
     const serializer = new XMLSerializer();
@@ -1089,31 +1245,19 @@ async function doExportScene(fixedWidth, fixedHeight, filename = "scene") {
 }
 
 function doExportSceneSvg(filename = "scene") {
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    const bounds = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
 
     state.objects.forEach((sprite) => {
-        const { x, y, rotation, scaleX, scaleY } = sprite.objectData;
         const w = sprite.offsetWidth;
         const h = sprite.offsetHeight;
-        const cx = x + w / 2;
-        const cy = y + h / 2;
-        const hw = (w / 2) * scaleX;
-        const hh = (h / 2) * scaleY;
-        const rad = rotation * Math.PI / 180;
-        const cos = Math.abs(Math.cos(rad));
-        const sin = Math.abs(Math.sin(rad));
-        const extentX = hw * cos + hh * sin;
-        const extentY = hw * sin + hh * cos;
-        minX = Math.min(minX, cx - extentX);
-        minY = Math.min(minY, cy - extentY);
-        maxX = Math.max(maxX, cx + extentX);
-        maxY = Math.max(maxY, cy + extentY);
+        const localRect = getSpriteExportLocalRect(sprite, w, h);
+        expandBoundsWithSprite(bounds, sprite, localRect, w, h);
     });
 
-    const contentMinX = Math.floor(minX);
-    const contentMinY = Math.floor(minY);
-    const contentW = Math.ceil(maxX - contentMinX);
-    const contentH = Math.ceil(maxY - contentMinY);
+    const contentMinX = Math.floor(bounds.minX);
+    const contentMinY = Math.floor(bounds.minY);
+    const contentW = Math.max(1, Math.ceil(bounds.maxX - contentMinX));
+    const contentH = Math.max(1, Math.ceil(bounds.maxY - contentMinY));
 
     const ns = "http://www.w3.org/2000/svg";
     const svgRoot = document.createElementNS(ns, "svg");
@@ -1143,13 +1287,11 @@ function doExportSceneSvg(filename = "scene") {
         g.setAttribute("transform", `translate(${cx}, ${cy}) rotate(${rotation}) scale(${scaleX}, ${scaleY})`);
 
         if (type === "svg" && sprite.svgElement) {
-            const clone = sprite.svgElement.cloneNode(true);
+            const { clone, drawX, drawY } = buildExportSvgForCanvas(sprite, w, h);
             deNamespaceSvg(clone, sprite.svgClassMap);
             clone.removeAttribute("overflow");
-            clone.setAttribute("x", -w / 2);
-            clone.setAttribute("y", -h / 2);
-            clone.setAttribute("width", w);
-            clone.setAttribute("height", h);
+            clone.setAttribute("x", drawX);
+            clone.setAttribute("y", drawY);
             g.appendChild(clone);
         } else if (type === "bitmap" && sprite.src) {
             const img = document.createElementNS(ns, "image");
@@ -1204,30 +1346,34 @@ function deNamespaceSvg(svgClone, classMap) {
 // qui dÃƒÂ©passent du cadre original, et retourne les coordonnÃƒÂ©es de dessin canvas.
 function buildExportSvgForCanvas(sprite, w, h) {
     const svgEl = sprite.svgElement;
-    const vb = svgEl.viewBox?.baseVal;
     const clone = svgEl.cloneNode(true);
     clone.removeAttribute("overflow");
+    const localRect = getSvgExportLocalRect(sprite, w, h);
 
-    if (!vb || vb.width === 0) {
-        clone.setAttribute("width", w);
-        clone.setAttribute("height", h);
-        return { clone, drawX: -w / 2, drawY: -h / 2, drawW: w, drawH: h };
+    if (svgEl.viewBox?.baseVal?.width > 0 && svgEl.viewBox?.baseVal?.height > 0) {
+        const vb = svgEl.viewBox.baseVal;
+        const svgUnitPerPxX = vb.width / w;
+        const svgUnitPerPxY = vb.height / h;
+        const contentBounds = {
+            x: vb.x + (localRect.x + w / 2) * svgUnitPerPxX,
+            y: vb.y + (localRect.y + h / 2) * svgUnitPerPxY,
+            width: localRect.width * svgUnitPerPxX,
+            height: localRect.height * svgUnitPerPxY
+        };
+
+        clone.setAttribute("viewBox", `${contentBounds.x} ${contentBounds.y} ${contentBounds.width} ${contentBounds.height}`);
     }
 
-    const contentBounds = computeSvgContentViewBox(svgEl, vb);
-    const svgUnitPerPxX = vb.width / w;
-    const svgUnitPerPxY = vb.height / h;
+    clone.setAttribute("width", localRect.width);
+    clone.setAttribute("height", localRect.height);
 
-    const drawW = contentBounds.width / svgUnitPerPxX;
-    const drawH = contentBounds.height / svgUnitPerPxY;
-    const drawX = -w / 2 + (contentBounds.x - vb.x) / svgUnitPerPxX;
-    const drawY = -h / 2 + (contentBounds.y - vb.y) / svgUnitPerPxY;
-
-    clone.setAttribute("viewBox", `${contentBounds.x} ${contentBounds.y} ${contentBounds.width} ${contentBounds.height}`);
-    clone.setAttribute("width", drawW);
-    clone.setAttribute("height", drawH);
-
-    return { clone, drawX, drawY, drawW, drawH };
+    return {
+        clone,
+        drawX: localRect.x,
+        drawY: localRect.y,
+        drawW: localRect.width,
+        drawH: localRect.height
+    };
 }
 
 // Calcule en coordonnÃƒÂ©es SVG le bounding box rÃƒÂ©el du contenu (incluant les transforms de rig).
@@ -1272,12 +1418,24 @@ function computeSvgContentViewBox(svgEl, vb) {
         }
     } catch (e) { /* utiliser le viewBox d'origine en cas d'erreur */ }
 
+    const originalMinX = vb.x;
+    const originalMinY = vb.y;
+    const originalMaxX = vb.x + vb.width;
+    const originalMaxY = vb.y + vb.height;
+    const overflowEpsilon = 0.001;
+    const overflowsX = minX < originalMinX - overflowEpsilon || maxX > originalMaxX + overflowEpsilon;
+    const overflowsY = minY < originalMinY - overflowEpsilon || maxY > originalMaxY + overflowEpsilon;
     const pad = Math.max(vb.width, vb.height) * 0.02;
+    const exportMinX = overflowsX ? minX - pad : originalMinX;
+    const exportMaxX = overflowsX ? maxX + pad : originalMaxX;
+    const exportMinY = overflowsY ? minY - pad : originalMinY;
+    const exportMaxY = overflowsY ? maxY + pad : originalMaxY;
+
     return {
-        x: minX - pad,
-        y: minY - pad,
-        width: maxX - minX + 2 * pad,
-        height: maxY - minY + 2 * pad
+        x: exportMinX,
+        y: exportMinY,
+        width: exportMaxX - exportMinX,
+        height: exportMaxY - exportMinY
     };
 }
 
@@ -1297,13 +1455,18 @@ function createSvgColorField(sprite, style) {
     const controls = document.createElement("div");
     const picker = document.createElement("input");
     const textInput = document.createElement("input");
+    const alphaControls = document.createElement("div");
+    const alphaRange = document.createElement("input");
+    const alphaInput = document.createElement("input");
 
     row.className = "svg-color-row";
     meta.className = "svg-color-meta";
     ids.className = "svg-class-ids";
     controls.className = "svg-color-controls";
+    alphaControls.className = "svg-alpha-controls";
 
     const initialHex = normalizeHexColor(style.color) || "#000000";
+    const initialAlpha = normalizeAlphaValue(style.alpha) ?? 1;
 
     picker.type = "color";
     picker.className = "svg-color-picker";
@@ -1315,6 +1478,21 @@ function createSvgColorField(sprite, style) {
     textInput.placeholder = "#RRGGBB";
     textInput.spellcheck = false;
     textInput.setAttribute("aria-label", `Couleur de .${style.className}`);
+
+    alphaRange.type = "range";
+    alphaRange.className = "svg-alpha-range";
+    alphaRange.min = "0";
+    alphaRange.max = "1";
+    alphaRange.step = "0.01";
+    alphaRange.value = formatSvgAlpha(initialAlpha);
+
+    alphaInput.type = "number";
+    alphaInput.className = "svg-alpha-input";
+    alphaInput.min = "0";
+    alphaInput.max = "1";
+    alphaInput.step = "0.01";
+    alphaInput.value = formatSvgAlpha(initialAlpha);
+    alphaInput.setAttribute("aria-label", `Alpha de .${style.className}`);
 
     ids.textContent = style.targetIds.length > 0
         ? style.targetIds.join(", ")
@@ -1328,7 +1506,7 @@ function createSvgColorField(sprite, style) {
         const hex = picker.value.toUpperCase();
         textInput.value = hex;
         textInput.classList.remove("invalid");
-        updateSvgClassColor(sprite, style.scopedClassName, hex);
+        updateSvgClassColor(sprite, style.scopedClassName, hex, alphaRange.value);
     });
     picker.addEventListener("change", () => {
         if (pickerSnap) {
@@ -1345,7 +1523,7 @@ function createSvgColorField(sprite, style) {
         textInput.classList.toggle("invalid", !isValid);
         if (isValid) {
             picker.value = normalized;
-            updateSvgClassColor(sprite, style.scopedClassName, normalized);
+            updateSvgClassColor(sprite, style.scopedClassName, normalized, alphaRange.value);
         }
     });
     textInput.addEventListener("blur", () => {
@@ -1355,7 +1533,52 @@ function createSvgColorField(sprite, style) {
         }
     });
 
-    controls.append(picker, textInput);
+    let alphaSnap = null;
+    alphaRange.addEventListener("pointerdown", () => {
+        alphaSnap = snapshotSvgColors(sprite);
+    });
+    alphaRange.addEventListener("input", () => {
+        const nextAlpha = normalizeAlphaValue(alphaRange.value);
+        if (nextAlpha == null) return;
+        alphaInput.value = formatSvgAlpha(nextAlpha);
+        alphaInput.classList.remove("invalid");
+        updateSvgClassColor(sprite, style.scopedClassName, picker.value, nextAlpha);
+    });
+    alphaRange.addEventListener("change", () => {
+        if (alphaSnap) {
+            pushColorHistory(sprite, alphaSnap, snapshotSvgColors(sprite));
+            alphaSnap = null;
+        }
+    });
+
+    let alphaTextSnap = null;
+    alphaInput.addEventListener("focus", () => { alphaTextSnap = snapshotSvgColors(sprite); });
+    alphaInput.addEventListener("input", () => {
+        const nextAlpha = normalizeAlphaValue(alphaInput.value);
+        const isValid = nextAlpha != null;
+        alphaInput.classList.toggle("invalid", !isValid);
+        if (!isValid) return;
+
+        const alphaText = formatSvgAlpha(nextAlpha);
+        alphaRange.value = alphaText;
+        alphaInput.value = alphaText;
+        updateSvgClassColor(sprite, style.scopedClassName, picker.value, nextAlpha);
+    });
+    alphaInput.addEventListener("blur", () => {
+        const nextAlpha = normalizeAlphaValue(alphaInput.value);
+        if (nextAlpha != null) {
+            const alphaText = formatSvgAlpha(nextAlpha);
+            alphaInput.value = alphaText;
+            alphaRange.value = alphaText;
+        }
+        if (alphaTextSnap) {
+            pushColorHistory(sprite, alphaTextSnap, snapshotSvgColors(sprite));
+            alphaTextSnap = null;
+        }
+    });
+
+    alphaControls.append(alphaRange, alphaInput);
+    controls.append(picker, textInput, alphaControls);
     meta.append(ids);
     row.append(meta, controls);
 
@@ -1388,6 +1611,11 @@ function updateRigInspector() {
     actions.appendChild(resetButton);
     dom.rigInspector.append(title, actions);
 
+    const globalControls = createRigGlobalControls(sprite);
+    if (globalControls) {
+        dom.rigInspector.appendChild(globalControls);
+    }
+
     if (sprite.svgRig.parts.length === 0) {
         const empty = document.createElement("div");
         empty.className = "rig-inspector-empty";
@@ -1399,6 +1627,79 @@ function updateRigInspector() {
     sprite.svgRig.parts.forEach((part) => {
         dom.rigInspector.appendChild(createRigPartControls(part));
     });
+}
+
+function findRigPart(sprite, key) {
+    return sprite?.svgRig?.parts?.find((part) => part.key === key) || null;
+}
+
+function createRigGlobalControls(sprite) {
+    const leftEye = findRigPart(sprite, "LeftEye");
+    const rightEye = findRigPart(sprite, "RightEye");
+    const leftEyebrow = findRigPart(sprite, "LeftEyebrow");
+    const rightEyebrow = findRigPart(sprite, "RightEyebrow");
+
+    const canLinkEyes = Boolean(leftEye && rightEye);
+    const canLinkEyebrows = Boolean(leftEyebrow && rightEyebrow);
+
+    if (!canLinkEyes && !canLinkEyebrows) return null;
+
+    const wrapper = document.createElement("div");
+    const title = document.createElement("div");
+    wrapper.className = "rig-global-controls";
+    title.className = "rig-inspector-title";
+    title.textContent = "Visage (symetrie)";
+    wrapper.appendChild(title);
+
+    if (canLinkEyes) {
+        const value = (Number(leftEye.pose.scaleY) + Number(rightEye.pose.scaleY)) / 2;
+        wrapper.appendChild(createRigGlobalSlider({
+            key: "eyesBlink",
+            label: "Clignement yeux (L+R)",
+            min: 0.05,
+            max: 1,
+            step: 0.01,
+            unit: "x",
+            value
+        }));
+    }
+
+    if (canLinkEyebrows) {
+        const value = (Number(leftEyebrow.pose.y) + Number(rightEyebrow.pose.y)) / 2;
+        wrapper.appendChild(createRigGlobalSlider({
+            key: "eyebrowsY",
+            label: "Sourcils Y (L+R)",
+            min: -20,
+            max: 20,
+            step: 1,
+            unit: "px",
+            value
+        }));
+    }
+
+    return wrapper;
+}
+
+function createRigGlobalSlider(config) {
+    const field = document.createElement("label");
+    const header = document.createElement("span");
+    const output = document.createElement("output");
+    const input = document.createElement("input");
+
+    field.className = "rig-slider";
+    header.textContent = config.label;
+    output.value = formatRigValue(config.value, config.unit);
+
+    input.type = "range";
+    input.min = config.min;
+    input.max = config.max;
+    input.step = config.step;
+    input.value = config.value;
+    input.dataset.rigGlobal = config.key;
+    input.dataset.rigUnit = config.unit;
+
+    field.append(header, output, input);
+    return field;
 }
 
 function syncInspectorTabs() {
@@ -1445,20 +1746,22 @@ function ensureSvgRig(sprite) {
     
     // Parcourir la configuration du rig et chercher chaque partie dans le groupe principal
     for (const [partName, config] of Object.entries(RIG_CONFIG)) {
-        const groupElement = mainGroup.querySelector(`g#${partName}`);
+        const groupElement = findRigPartElement(mainGroup, partName, config);
         if (!groupElement) continue;
-        
-        // Chercher le pivot attendu dans ce groupe
-        const pivotElement = groupElement.querySelector(`circle#${config.pivot}, ellipse#${config.pivot}`);
-        if (!pivotElement) continue;
-        
-        // RÃƒÂ©cupÃƒÂ©rer la position du pivot
-        const pivot = getPivotFromElement(pivotElement);
-        if (!pivot) continue;
-        
-        const rotationRange = config.range.rotation;
-        const xRange = config.range.x;
-        const yRange = config.range.y;
+        const controls = getPartControls(config);
+        const needsPivot = controls.some((control) => control.key === "rotation" || control.key.startsWith("scale"));
+
+        let pivot = null;
+        if (config.pivot) {
+            const pivotElement = groupElement.querySelector(`circle#${config.pivot}, ellipse#${config.pivot}`);
+            pivot = getPivotFromElement(pivotElement);
+        }
+
+        if (!pivot && needsPivot) {
+            pivot = getSvgElementCenter(groupElement);
+        }
+
+        if (needsPivot && !pivot) continue;
         
         const part = {
             key: partName,
@@ -1468,16 +1771,8 @@ function ensureSvgRig(sprite) {
             element: groupElement,
             baseTransform: groupElement.getAttribute("transform") || "",
             pivot,
-            pose: {
-                rotation: 0,
-                x: 0,
-                y: 0
-            },
-            ranges: {
-                rotation: rotationRange,
-                x: xRange,
-                y: yRange
-            }
+            controls,
+            pose: getDefaultPose(controls)
         };
         
         parts.push(part);
@@ -1573,44 +1868,39 @@ function createRigPartControls(part) {
     controls.className = "rig-part-controls";
     summary.textContent = part.label || part.id;
 
-    const rotRange = part.ranges.rotation;
-    const xRange = part.ranges.x;
-    const yRange = part.ranges.y;
-
-    controls.append(
-        createRigSlider(part, "rotation", "Rotation", rotRange[0], rotRange[1], 1, "deg"),
-        createRigSlider(part, "x", "X", xRange[0], xRange[1], 1, "px"),
-        createRigSlider(part, "y", "Y", yRange[0], yRange[1], 1, "px")
-    );
+    part.controls.forEach((control) => {
+        controls.appendChild(createRigSlider(part, control));
+    });
 
     item.append(summary, controls);
     return item;
 }
 
-function createRigSlider(part, property, labelText, min, max, step, unit) {
+function createRigSlider(part, control) {
     const field = document.createElement("label");
     const header = document.createElement("span");
     const output = document.createElement("output");
     const input = document.createElement("input");
 
     field.className = "rig-slider";
-    header.textContent = labelText;
-    output.value = formatRigValue(part.pose[property], unit);
+    header.textContent = control.label;
+    output.value = formatRigValue(part.pose[control.key], control.unit);
 
     input.type = "range";
-    input.min = min;
-    input.max = max;
-    input.step = step;
-    input.value = part.pose[property];
+    input.min = control.min;
+    input.max = control.max;
+    input.step = control.step;
+    input.value = part.pose[control.key];
     input.dataset.rigPart = part.key;
-    input.dataset.rigProperty = property;
+    input.dataset.rigProperty = control.key;
+    input.dataset.rigUnit = control.unit;
 
     field.append(header, output, input);
     return field;
 }
 
 function handleRigInspectorPointerDown(event) {
-    const input = event.target.closest("[data-rig-part][data-rig-property]");
+    const input = event.target.closest("[data-rig-part][data-rig-property], [data-rig-global]");
     if (!input || !state.selected?.svgRig) return;
 
     state.rigSliderActive = true;
@@ -1638,6 +1928,12 @@ function handleRigInspectorPointerUp(event) {
 }
 
 function handleRigInspectorInput(event) {
+    const globalInput = event.target.closest("[data-rig-global]");
+    if (globalInput && state.selected?.svgRig) {
+        handleRigGlobalInput(globalInput);
+        return;
+    }
+
     const input = event.target.closest("[data-rig-part][data-rig-property]");
     if (!input || !state.selected?.svgRig) return;
 
@@ -1645,13 +1941,81 @@ function handleRigInspectorInput(event) {
     if (!part) return;
 
     part.pose[input.dataset.rigProperty] = Number(input.value);
-    input.previousElementSibling.value = formatRigValue(
-        part.pose[input.dataset.rigProperty],
-        input.dataset.rigProperty === "rotation" ? "deg" : "px"
-    );
+    input.previousElementSibling.value = formatRigValue(part.pose[input.dataset.rigProperty], input.dataset.rigUnit || "px");
 
     // Appliquer la transform ÃƒÂ  cette partie ET ÃƒÂ  tous ses enfants
     applyRigPartTransformRecursive(part, state.selected.svgRig.parts);
+    syncGlobalRigInputs();
+}
+
+function syncPartRigInputs(partKeys, property, value, unit) {
+    partKeys.forEach((partKey) => {
+        const input = dom.rigInspector.querySelector(`[data-rig-part='${partKey}'][data-rig-property='${property}']`);
+        if (!input) return;
+        input.value = value;
+        if (input.previousElementSibling) {
+            input.previousElementSibling.value = formatRigValue(value, unit);
+        }
+    });
+}
+
+function syncGlobalRigInputs() {
+    if (!state.selected?.svgRig) return;
+
+    const leftEye = findRigPart(state.selected, "LeftEye");
+    const rightEye = findRigPart(state.selected, "RightEye");
+    const eyesInput = dom.rigInspector.querySelector("[data-rig-global='eyesBlink']");
+    if (eyesInput && leftEye && rightEye) {
+        const eyesValue = (Number(leftEye.pose.scaleY) + Number(rightEye.pose.scaleY)) / 2;
+        eyesInput.value = eyesValue;
+        if (eyesInput.previousElementSibling) {
+            eyesInput.previousElementSibling.value = formatRigValue(eyesValue, eyesInput.dataset.rigUnit || "x");
+        }
+    }
+
+    const leftEyebrow = findRigPart(state.selected, "LeftEyebrow");
+    const rightEyebrow = findRigPart(state.selected, "RightEyebrow");
+    const eyebrowsInput = dom.rigInspector.querySelector("[data-rig-global='eyebrowsY']");
+    if (eyebrowsInput && leftEyebrow && rightEyebrow) {
+        const eyebrowsValue = (Number(leftEyebrow.pose.y) + Number(rightEyebrow.pose.y)) / 2;
+        eyebrowsInput.value = eyebrowsValue;
+        if (eyebrowsInput.previousElementSibling) {
+            eyebrowsInput.previousElementSibling.value = formatRigValue(eyebrowsValue, eyebrowsInput.dataset.rigUnit || "px");
+        }
+    }
+}
+
+function handleRigGlobalInput(input) {
+    const value = Number(input.value);
+    const globalKey = input.dataset.rigGlobal;
+    const sprite = state.selected;
+    if (!sprite?.svgRig) return;
+
+    if (globalKey === "eyesBlink") {
+        const leftEye = findRigPart(sprite, "LeftEye");
+        const rightEye = findRigPart(sprite, "RightEye");
+        [leftEye, rightEye].forEach((part) => {
+            if (!part) return;
+            part.pose.scaleY = value;
+            applyRigPartTransformRecursive(part, sprite.svgRig.parts);
+        });
+        syncPartRigInputs(["LeftEye", "RightEye"], "scaleY", value, input.dataset.rigUnit || "x");
+    }
+
+    if (globalKey === "eyebrowsY") {
+        const leftEyebrow = findRigPart(sprite, "LeftEyebrow");
+        const rightEyebrow = findRigPart(sprite, "RightEyebrow");
+        [leftEyebrow, rightEyebrow].forEach((part) => {
+            if (!part) return;
+            part.pose.y = value;
+            applyRigPartTransformRecursive(part, sprite.svgRig.parts);
+        });
+        syncPartRigInputs(["LeftEyebrow", "RightEyebrow"], "y", value, input.dataset.rigUnit || "px");
+    }
+
+    if (input.previousElementSibling) {
+        input.previousElementSibling.value = formatRigValue(value, input.dataset.rigUnit || "px");
+    }
 }
 
 function handleRigInspectorClick(event) {
@@ -1659,9 +2023,7 @@ function handleRigInspectorClick(event) {
     if (!resetButton || !state.selected?.svgRig) return;
 
     state.selected.svgRig.parts.forEach((part) => {
-        part.pose.rotation = 0;
-        part.pose.x = 0;
-        part.pose.y = 0;
+        part.pose = getDefaultPose(part.controls || []);
     });
 
     // Appliquer les transforms ÃƒÂ  toutes les parties racine (sans parent)
@@ -1684,7 +2046,11 @@ function applyRigPartTransformRecursive(part, allParts) {
 function getCompositeTransform(part, allParts) {
     // Avec l'imbricage DOM, on applique seulement la transformation de cette partie
     // SVG composera automatiquement avec les parents
-    const { rotation, x, y } = part.pose;
+    const rotation = Number(part.pose.rotation) || 0;
+    const x = Number(part.pose.x) || 0;
+    const y = Number(part.pose.y) || 0;
+    const scaleX = Number(part.pose.scaleX);
+    const scaleY = Number(part.pose.scaleY);
     let transforms = [];
     
     if (part.baseTransform) {
@@ -1692,8 +2058,29 @@ function getCompositeTransform(part, allParts) {
     }
     
     // Appliquer seulement la transformation de cette partie autour de son pivot
-    transforms.push(`translate(${x} ${y})`);
-    transforms.push(`rotate(${rotation} ${part.pivot.x} ${part.pivot.y})`);
+    if (x !== 0 || y !== 0) {
+        transforms.push(`translate(${x} ${y})`);
+    }
+
+    if (rotation !== 0) {
+        if (part.pivot) {
+            transforms.push(`rotate(${rotation} ${part.pivot.x} ${part.pivot.y})`);
+        } else {
+            transforms.push(`rotate(${rotation})`);
+        }
+    }
+
+    if (Number.isFinite(scaleX) || Number.isFinite(scaleY)) {
+        const sx = Number.isFinite(scaleX) ? scaleX : 1;
+        const sy = Number.isFinite(scaleY) ? scaleY : 1;
+        if (part.pivot) {
+            transforms.push(`translate(${part.pivot.x} ${part.pivot.y})`);
+            transforms.push(`scale(${sx} ${sy})`);
+            transforms.push(`translate(${-part.pivot.x} ${-part.pivot.y})`);
+        } else {
+            transforms.push(`scale(${sx} ${sy})`);
+        }
+    }
     
     return transforms.filter(Boolean).join(" ");
 }
@@ -1704,6 +2091,10 @@ function applyRigPartTransform(part, allParts) {
 }
 
 function formatRigValue(value, unit) {
+    if (unit === "x") {
+        return `${Number(value).toFixed(2)}${unit}`;
+    }
+
     return `${Math.round(value)}${unit}`;
 }
 
@@ -2254,7 +2645,7 @@ function snapshotRigPose(sprite) {
 
 function snapshotSvgColors(sprite) {
     if (!sprite?.svgStyles) return null;
-    return sprite.svgStyles.map(s => ({ scopedClassName: s.scopedClassName, color: s.color }));
+    return sprite.svgStyles.map(s => ({ scopedClassName: s.scopedClassName, color: s.color, alpha: s.alpha ?? 1 }));
 }
 
 function pushColorHistory(sprite, beforeColors, afterColors) {
@@ -2286,8 +2677,8 @@ function undo() {
     const entry = state.history[state.historyIndex--];
 
     if (entry.beforeColors) {
-        entry.beforeColors.forEach(({ scopedClassName, color }) => {
-            updateSvgClassColor(entry.sprite, scopedClassName, color);
+        entry.beforeColors.forEach(({ scopedClassName, color, alpha }) => {
+            updateSvgClassColor(entry.sprite, scopedClassName, color, alpha);
         });
         if (state.selected === entry.sprite) {
             updateSvgInspector();
@@ -2507,6 +2898,17 @@ function normalizeHexColor(value) {
     return null;
 }
 
+function normalizeAlphaValue(value) {
+    if (value == null || value === "") return null;
+    const numeric = Number.parseFloat(String(value).trim());
+    if (!Number.isFinite(numeric)) return null;
+    return clamp(numeric, 0, 1);
+}
+
+function formatSvgAlpha(value) {
+    return (normalizeAlphaValue(value) ?? 1).toFixed(2);
+}
+
 function cssEscape(value) {
     if (window.CSS?.escape) return CSS.escape(value);
     return value.replace(/[^a-zA-Z0-9_-]/g, "\\$&");
@@ -2603,4 +3005,3 @@ function finishBoxSelection(boxStart, boxCurrent) {
 
     selectMultiple(selected);
 }
-

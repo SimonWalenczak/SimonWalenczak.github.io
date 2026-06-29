@@ -58,6 +58,23 @@ Cette spécification définit une structure SVG générique **minimale** pour un
       <path .../>
       <circle id="RightKnee" cx="..." cy="..." r="..."/>
     </g>
+
+    <!-- VISAGE (optionnel) -->
+    <g id="LeftEye">
+      <path .../>
+    </g>
+
+    <g id="RightEye">
+      <path .../>
+    </g>
+
+    <g id="LeftEyebrow">
+      <path .../>
+    </g>
+
+    <g id="RightEyebrow">
+      <path .../>
+    </g>
     
   </g>
   
@@ -84,6 +101,10 @@ Les groupes doivent suivre la nomenclature exacte :
 | Jambe basse gauche | `LeftLowerLeg` | `LeftKnee` |
 | Jambe haute droit | `RightLeg` | `RightHip` |
 | Jambe basse droit | `RightLowerLeg` | `RightKnee` |
+| Oeil gauche (optionnel) | `LeftEye` | Centre du groupe (auto) |
+| Oeil droit (optionnel) | `RightEye` | Centre du groupe (auto) |
+| Sourcil gauche (optionnel) | `LeftEyebrow` | Aucun pivot requis |
+| Sourcil droit (optionnel) | `RightEyebrow` | Aucun pivot requis |
 
 ### Points de pivot (circle[id] ou ellipse[id])
 Les pivots sont des éléments `<circle>` ou `<ellipse>` **enfants directs** du groupe de partie.
@@ -111,6 +132,11 @@ RightLeg       → pivot autour de RightHip
 RightLowerLeg  → pivot autour de RightKnee
 
 Head           → pivot autour de Neck
+
+LeftEye        → scale verticale (clignement)
+RightEye       → scale verticale (clignement)
+LeftEyebrow    → translation verticale
+RightEyebrow   → translation verticale
 ```
 
 ## Points clés
@@ -120,6 +146,7 @@ Head           → pivot autour de Neck
 3. **Noms fixes** : Les IDs des groupes ET des pivots doivent correspondre exactement (voir tableau)
 4. **Groupes à la même profondeur** : Tous les groupes de parties sont enfants directs du groupe racine
 5. **Support de contenu** : Les groupes peuvent contenir plusieurs `<path>`, `<rect>`, `<g>` imbriqués - seul le pivot direct est utilisé
+6. **Parties visage optionnelles** : `LeftEye`, `RightEye`, `LeftEyebrow`, `RightEyebrow` activent des sliders dedies dans l'inspecteur
 
 ## Exemple complet (minimum)
 

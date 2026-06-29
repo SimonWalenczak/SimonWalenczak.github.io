@@ -683,6 +683,7 @@ button {
     display: flex;
     align-items: center;
     gap: 6px;
+    flex-wrap: wrap;
 }
 
 .svg-color-picker {
@@ -727,6 +728,36 @@ button {
 }
 
 .svg-color-input.invalid {
+    border-color: #f04b4b;
+}
+
+.svg-alpha-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.svg-alpha-range {
+    width: 78px;
+    accent-color: var(--accent);
+}
+
+.svg-alpha-input {
+    width: 58px;
+    padding: 6px;
+    color: var(--text);
+    background: var(--field);
+    border: 1px solid transparent;
+    outline: none;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 12px;
+}
+
+.svg-alpha-input:focus {
+    border-color: var(--accent);
+}
+
+.svg-alpha-input.invalid {
     border-color: #f04b4b;
 }
 
