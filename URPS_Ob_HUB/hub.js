@@ -1,32 +1,24 @@
-const DOORS = {
-  A: {
-    label: "Bloc A",
-    url: "../URPS_Ob_blocA/index.html",
-  },
-  B: {
-    label: "Bloc B",
-    url: "../URPS_Ob_blocB/index.html",
-  },
-  C: {
-    label: "Bloc C",
-    url: "",
-    disabledMessage: "Le bloc C n'est pas encore disponible.",
-  },
-};
+const HUB_PROGRESS_KEY = "urps_ob_hub_progress";
+const HUB_PROGRESS_BLOC_A_COMPLETED = "blocA_completed";
 
 const SPECIALTIES = [
-  "Medecine generale",
-  "Cardiologie",
-  "Dermatologie",
-  "Endocrinologie",
-  "Gastro-enterologie",
-  "Gynecologie",
-  "Pediatrie",
-  "Pneumologie",
-  "Psychiatrie",
-  "Rhumatologie",
-  "Chirurgie",
-  "Anesthesie-reanimation",
+  "Médecin généraliste",
+  "Pédiatre",
+  "Gynécologue",
+  "Dermatologue",
+  "Ophtalmologue",
+  "ORL (oto-rhino-laryngologiste)",
+  "Cardiologue",
+  "Rhumatologue",
+  "Neurologue",
+  "Psychiatre",
+  "Endocrinologue",
+  "Gastro-entérologue",
+  "Pneumologue",
+  "Néphrologue",
+  "Urologue",
+  "Allergologue",
+  "Angiologue"
 ];
 
 let selectedSpecialty = "";
@@ -37,7 +29,13 @@ const introForm = document.getElementById("intro-form");
 const specialtySelect = document.getElementById("specialty-select");
 const genderOptions = document.querySelectorAll(".gender-option");
 const statusEl = document.getElementById("hub-status");
+const mainDoor = document.querySelector(".door-hotspot[data-door='main']");
+const doorLabel = document.getElementById("door-label");
 let statusTimer = null;
+let activeDoor = {
+  label: "En travaux",
+  url: "../URPS_Ob_blocA/index.html",
+};
 
 function populateSpecialties() {
   SPECIALTIES.forEach((specialty) => {
@@ -54,6 +52,46 @@ function completeIntro() {
   sessionStorage.setItem("urps_ob_gender", selectedGender);
   introPanel.classList.add("is-hidden");
   showStatus(`Specialite : ${selectedSpecialty}`);
+}
+
+function syncIntroFromSession() {
+  const savedSpecialty = sessionStorage.getItem("urps_ob_specialty") || "";
+  const savedGender = sessionStorage.getItem("urps_ob_gender") || "";
+
+  if (!savedSpecialty || !savedGender) {
+    return;
+  }
+
+  selectedSpecialty = savedSpecialty;
+  selectedGender = savedGender;
+  specialtySelect.value = savedSpecialty;
+
+  genderOptions.forEach((option) => {
+    const isSelected = option.dataset.gender === savedGender;
+    option.classList.toggle("is-selected", isSelected);
+    option.setAttribute("aria-pressed", String(isSelected));
+  });
+
+  introPanel.classList.add("is-hidden");
+}
+
+function resolveDoorState() {
+  const progress = sessionStorage.getItem(HUB_PROGRESS_KEY);
+
+  if (progress === HUB_PROGRESS_BLOC_A_COMPLETED) {
+    activeDoor = {
+      label: "Salle de consultation",
+      url: "../URPS_Ob_blocB/index.html",
+    };
+  } else {
+    activeDoor = {
+      label: "En travaux",
+      url: "../URPS_Ob_blocA/index.html",
+    };
+  }
+
+  doorLabel.textContent = activeDoor.label;
+  mainDoor.setAttribute("aria-label", `Entrer dans ${activeDoor.label.toLowerCase()}`);
 }
 
 function selectGender(button) {
@@ -82,27 +120,15 @@ function openDoor(button) {
     return;
   }
 
-  const doorId = button.dataset.door;
-  const door = DOORS[doorId];
-
-  if (!door) return;
-
-  if (!door.url) {
-    showStatus(door.disabledMessage || `${door.label} indisponible.`);
-    return;
-  }
-
   button.classList.add("is-entering");
-  showStatus(`Ouverture de ${door.label}...`);
+  showStatus(`Ouverture de ${activeDoor.label}...`);
 
   window.setTimeout(() => {
-    window.location.href = door.url;
+    window.location.href = activeDoor.url;
   }, 220);
 }
 
-document.querySelectorAll(".door-hotspot").forEach((button) => {
-  button.addEventListener("click", () => openDoor(button));
-});
+mainDoor.addEventListener("click", () => openDoor(mainDoor));
 
 genderOptions.forEach((button) => {
   button.addEventListener("click", () => selectGender(button));
@@ -125,3 +151,5 @@ introForm.addEventListener("submit", (event) => {
 });
 
 populateSpecialties();
+syncIntroFromSession();
+resolveDoorState();

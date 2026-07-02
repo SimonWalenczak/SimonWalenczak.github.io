@@ -27,6 +27,8 @@ html, body {
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
+.hidden { display: none !important; }
+
 /* ===== APP SHELL ===== */
 #app {
   display: flex;
@@ -92,6 +94,66 @@ html, body {
   display: flex;
   flex-direction: column;
   position: relative;
+}
+
+/* ===== GENERIC CENTER OVERLAY ===== */
+.center-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(6, 12, 28, 0.62);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.center-overlay-card {
+  width: min(560px, 100%);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 14px;
+  padding: 1.35rem 1.4rem;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.58);
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  text-align: center;
+}
+
+.center-overlay-title {
+  color: var(--c-accent);
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.center-overlay-text {
+  color: var(--c-text);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.center-overlay-btn {
+  align-self: center;
+  min-width: 130px;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.1rem;
+  background: var(--c-accent2);
+  color: #fff;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.center-overlay-btn:hover,
+.center-overlay-btn:focus-visible {
+  background: #16a34a;
+  transform: translateY(-1px);
+  outline: none;
 }
 
 /* ===== SCENE SECTION ===== */
@@ -298,7 +360,7 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.5rem;
   position: relative;
   transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s, opacity 0.4s;
   opacity: 0;
@@ -361,8 +423,8 @@ html, body {
 .option-card.selected .card-check { display: flex; }
 
 .option-svg {
-  width: 100px;
-  height: 100px;
+  width: 118px;
+  height: 118px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -384,10 +446,10 @@ html, body {
 }
 
 .option-desc {
-  font-size: 0.73rem;
+  font-size: 0.77rem;
   color: var(--c-muted);
   text-align: center;
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
 .option-cost {
@@ -835,3 +897,123 @@ html, body {
 
 .rc-equip-answer.has  { background: rgba(74,222,128,0.12); color: #4ade80; }
 .rc-equip-answer.none { background: rgba(148,163,184,0.1);  color: var(--c-muted); }
+
+@media (max-height: 540px) and (orientation: landscape) {
+  :root {
+    --topbar-h: 44px;
+  }
+
+  .topbar {
+    padding: 0 0.8rem;
+    gap: 0.6rem;
+  }
+
+  .topbar-title {
+    font-size: 0.78rem;
+  }
+
+  .progress-track {
+    width: 100px;
+  }
+
+  .progress-label {
+    font-size: 0.68rem;
+  }
+
+  .scene-section {
+    padding: 0.25rem;
+  }
+
+  .center-overlay {
+    padding: 0.5rem;
+  }
+
+  .center-overlay-card {
+    max-height: 88vh;
+    overflow-y: auto;
+    padding: 0.95rem 1rem;
+    gap: 0.55rem;
+  }
+
+  .center-overlay-title {
+    font-size: 1rem;
+  }
+
+  .center-overlay-text {
+    font-size: 0.84rem;
+  }
+
+  .center-overlay-btn {
+    min-width: 112px;
+    padding: 0.45rem 0.8rem;
+    font-size: 0.78rem;
+  }
+
+  .modal-backdrop,
+  .recap-overlay {
+    padding: 0.6rem;
+  }
+
+  .selection-panel,
+  .recap-panel {
+    max-height: calc(100vh - var(--topbar-h) - 0.8rem);
+    overflow-y: auto;
+    min-width: 0;
+  }
+
+  .selection-panel {
+    padding: 0.9rem 1rem;
+    gap: 0.7rem;
+  }
+
+  .step-question {
+    font-size: 0.82rem;
+  }
+
+  .options-row {
+    gap: 0.7rem;
+    min-height: 0;
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
+  }
+
+  .option-card {
+    width: 148px;
+    padding: 0.82rem 0.7rem 0.75rem;
+  }
+
+  .option-svg {
+    width: 84px;
+    height: 84px;
+  }
+
+  .option-desc {
+    font-size: 0.68rem;
+  }
+
+  .option-cost {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+  }
+
+  .btn-choose,
+  .btn-equip {
+    font-size: 0.76rem;
+    padding: 0.42rem 0.9rem;
+  }
+
+  .recap-panel {
+    padding: 0.95rem 1rem;
+    gap: 0.7rem;
+  }
+
+  .recap-question-row {
+    padding-top: 0.6rem;
+  }
+
+  .recap-q-text,
+  .recap-item-label,
+  .recap-item-feedback {
+    font-size: 0.75rem;
+  }
+}

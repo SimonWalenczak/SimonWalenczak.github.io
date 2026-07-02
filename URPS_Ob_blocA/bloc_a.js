@@ -112,6 +112,8 @@ const SVG_TABLE_BARI = `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/s
 const MEDICAL_SPRITES_DIR = "MedicalSprites/Reel";
 const SPRITE_EXTENSIONS = ["png", "webp", "jpg", "jpeg", "svg"];
 const DEFAULT_COST_LEVEL = 1;
+const HUB_PROGRESS_KEY = "urps_ob_hub_progress";
+const HUB_PROGRESS_BLOC_A_COMPLETED = "blocA_completed";
 
 const STEPS = [
   {
@@ -138,7 +140,7 @@ const STEPS = [
         desc: "Siège large, renforcé, accoudoirs réglables",
         optimal: true,
         sprite: "Chaise_Adapte.png",
-        cost: 3,
+        cost: 2,
         svg: SVG_FAUTEUIL_BARI,
         feedback: "Ce fauteuil plus large et sans accoudoirs bloquants garantit un accueil confortable et digne pour tous les patients, quelle que soit leur morphologie.",
       },
@@ -175,7 +177,7 @@ const STEPS = [
         desc: "Grand plateau, portée max. 300 kg",
         optimal: true,
         sprite: "Balance_Adapte.png",
-        cost: 3,
+        cost: 2,
         svg: SVG_BALANCE_BARI,
         feedback: "La balance bariatrique permet de peser tous les patients dans des conditions dignes, avec un grand plateau stable et une portée adaptée à la réalité clinique.",
       },
@@ -240,7 +242,7 @@ const STEPS = [
         desc: "Larg. 90 cm, réglable, charge max. 350 kg",
         optimal: true,
         sprite: "Table_Adapte.png",
-        cost: 3,
+        cost: 2,
         svg: SVG_TABLE_BARI,
         feedback: "La table bariatrique offre l'espace, la robustesse et le confort nécessaires pour un examen sécurisé, et préserve la dignité du patient tout au long de la consultation.",
       },
@@ -282,6 +284,12 @@ const recapBody       = document.getElementById("recap-body");
 const recapQuestionText = recapPanel.querySelector(".recap-q-text");
 const btnEquipOui     = document.getElementById("btn-equip-oui");
 const btnEquipNon     = document.getElementById("btn-equip-non");
+const welcomeOverlay  = document.getElementById("welcome-overlay");
+const btnWelcomeClose = document.getElementById("btn-welcome-close");
+const surveyOverlay   = document.getElementById("survey-overlay");
+const btnSurveyClose  = document.getElementById("btn-survey-close");
+
+let recapPendingStart = false;
 
 // ======================================================
 // SPARKLE ENGINE
@@ -414,7 +422,7 @@ function getCostSymbols(option) {
   if (typeof option.cost === "string") return option.cost;
 
   const level = Number.isFinite(option.cost) ? option.cost : DEFAULT_COST_LEVEL;
-  return "$".repeat(Math.max(1, Math.min(3, level)));
+  return "$".repeat(Math.max(1, Math.min(2, level)));
 }
 
 function renderStep() {
@@ -446,7 +454,6 @@ function renderStep() {
         </svg>
       </div>
       <div class="option-svg">${renderOptionAsset(opt)}</div>
-      <span class="option-label">${opt.label}</span>
       <span class="option-desc">${opt.desc}</span>
       <span class="option-cost" aria-label="Prix estimé : ${getCostSymbols(opt)}">${getCostSymbols(opt)}</span>
     `;
@@ -511,7 +518,7 @@ function handleChoose() {
 
       currentStep++;
       if (currentStep >= STEPS.length) {
-        startRecap();
+        openSurveyOverlay();
       } else {
         // 4) Longer pause before bringing back the selection window
         setTimeout(() => {
@@ -521,6 +528,26 @@ function handleChoose() {
       }
     }, 300);
   }, 350);
+}
+
+function closeWelcomeOverlay() {
+  welcomeOverlay.classList.add("hidden");
+}
+
+function openSurveyOverlay() {
+  recapPendingStart = true;
+  surveyOverlay.classList.remove("hidden");
+}
+
+function closeSurveyOverlay() {
+  surveyOverlay.classList.add("hidden");
+
+  if (!recapPendingStart) {
+    return;
+  }
+
+  recapPendingStart = false;
+  startRecap();
 }
 
 // ======================================================
@@ -671,15 +698,14 @@ function advanceRecap(answer) {
 // ======================================================
 
 function showFinalSummary() {
-  // Recap complete — offer to restart
+  // Recap complete — save progression and go back to HUB
   recapOverlay.classList.add("hidden");
   sceneDim.classList.add("hidden");
   placedObjects.querySelectorAll(".placed-obj").forEach((el) => {
     el.classList.remove("highlighted", "dimmed");
   });
-  if (confirm("Analyse terminée !\n\nVoulez-vous recommencer l'exercice ?")) {
-    location.reload();
-  }
+  sessionStorage.setItem(HUB_PROGRESS_KEY, HUB_PROGRESS_BLOC_A_COMPLETED);
+  window.location.href = "../URPS_Ob_HUB/index.html";
 }
 
 // ======================================================
@@ -690,6 +716,8 @@ btnChoose.addEventListener("click", handleChoose);
 
 btnEquipOui.addEventListener("click", () => advanceRecap("oui"));
 btnEquipNon.addEventListener("click", () => advanceRecap("non"));
+btnWelcomeClose.addEventListener("click", closeWelcomeOverlay);
+btnSurveyClose.addEventListener("click", closeSurveyOverlay);
 
 // ======================================================
 // INIT
