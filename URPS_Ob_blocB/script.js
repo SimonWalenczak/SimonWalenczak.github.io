@@ -139,6 +139,9 @@ let openFeedback = {};
 let selectedCategory = null;
 let radarChart = null;
 let pendingAnswer = null; // current selected option value
+const HUB_PROGRESS_KEY = "urps_ob_hub_progress";
+const HUB_PROGRESS_BLOC_B_COMPLETED = "blocB_completed";
+const HUB_RESULTS_KEY = "urps_ob_bloc_b_results";
 
 // ======================================================
 // DOM REFS
@@ -511,87 +514,38 @@ function scoreComment(score, count) {
   return "Axe prioritaire pour la restitution pédagogique.";
 }
 
+function buildCategoryDetailsData(categoryKey) {
+  return flatSteps
+    .filter((step) => step.type === "question" && step.category === categoryKey && answers[step.id] !== undefined)
+    .map((step) => {
+      const val = answers[step.id];
+      const meta = getAnswerMeta(step, val);
+      return {
+        answer: meta ? meta.label : String(val),
+        feedbackTitle: step.feedbackTitle,
+        feedback: step.feedback,
+      };
+    });
+}
+
+function persistResultsAndReturnToHub() {
+  const scores = getCategoryScores();
+  const payload = {
+    scores,
+    details: Object.fromEntries(scores.map((item) => [item.key, buildCategoryDetailsData(item.key)])),
+  };
+
+  sessionStorage.setItem(HUB_RESULTS_KEY, JSON.stringify(payload));
+  sessionStorage.setItem(HUB_PROGRESS_KEY, HUB_PROGRESS_BLOC_B_COMPLETED);
+  window.location.href = "../URPS_Ob_HUB/index.html";
+}
+
 // ======================================================
 // RESULTS
 // ======================================================
 
 function showResults() {
-  showScreen("screen-results");
-
-  const scores = getCategoryScores();
-  const answered = scores.filter((s) => s.count > 0);
-  const feedbackPanel = document.getElementById("results-feedback");
-  if (feedbackPanel) feedbackPanel.classList.add("hidden");
-
-  // Radar
-  const ctx = document.getElementById("radar-chart").getContext("2d");
-  if (radarChart) radarChart.destroy();
-  radarChart = new Chart(ctx, {
-    type: "radar",
-    data: {
-      labels: scores.map((s) => s.label),
-      datasets: [{
-        data: scores.map((s) => s.score),
-        backgroundColor: "rgba(56,189,248,0.15)",
-        borderColor: "#38bdf8",
-        borderWidth: 2,
-        pointBackgroundColor: "#38bdf8",
-        pointRadius: 4,
-      }],
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      scales: {
-        r: {
-          min: 0, max: 100,
-          ticks: { display: false },
-          grid:  { color: "#334155" },
-          pointLabels: { color: "#e2e8f0", font: { size: 12 } },
-          angleLines: { color: "#334155" },
-        },
-      },
-      plugins: {
-        legend: { display: false },
-        tooltip: { enabled: false },
-      },
-    },
-  });
-
-  // Category grid
-  const grid = document.getElementById("results-cat-grid");
-  grid.innerHTML = "";
-  if (!selectedCategory && answered.length) selectedCategory = answered[0].key;
-  if (!selectedCategory && scores.length) selectedCategory = scores[0].key;
-
-  scores.forEach((item) => {
-    const itemWrap = document.createElement("div");
-    itemWrap.className = "cat-result-item";
-    itemWrap.dataset.catKey = item.key;
-
-    const btn = document.createElement("button");
-    btn.className = "cat-result-btn" + (item.key === selectedCategory ? " active" : "");
-    btn.dataset.catKey = item.key;
-    btn.innerHTML = `
-      <div style="flex:1; min-width:0;">
-        <span class="cat-btn-label">${item.label}</span>
-        <div class="cat-btn-bar"><div class="cat-btn-bar-fill" style="width:${item.score}%"></div></div>
-      </div>`;
-
-    const details = document.createElement("div");
-    details.className = "cat-result-details" + (item.key === selectedCategory ? " open" : "");
-    details.innerHTML = buildCategoryDetails(item.key);
-
-    btn.addEventListener("click", () => {
-      selectedCategory = item.key;
-      document.querySelectorAll(".cat-result-btn").forEach((b) => b.classList.toggle("active", b.dataset.catKey === selectedCategory));
-      document.querySelectorAll(".cat-result-details").forEach((d) => d.classList.remove("open"));
-      details.classList.add("open");
-    });
-
-    itemWrap.appendChild(btn);
-    itemWrap.appendChild(details);
-    grid.appendChild(itemWrap);
-  });
+  persistResultsAndReturnToHub();
 }
 
 function buildCategoryDetails(categoryKey) {

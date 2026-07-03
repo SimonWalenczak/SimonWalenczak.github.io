@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>URPS Obesite - Hub</title>
   <link rel="stylesheet" href="hub.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 </head>
 <body>
   <main class="hub" aria-label="Accueil du centre medical">
@@ -55,12 +56,51 @@
         aria-label="Ouvrir le site URPS ML Hauts-de-France"
       ></a>
 
+      <a
+        class="scene-logo-link logo-obesite-link is-hidden"
+        id="logo-obesite-link"
+        href="https://cnao.fr/annuaire/"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Ouvrir l'annuaire CNAO"
+      >
+        <img src="Logo_obesite.png" alt="Logo obesite"/>
+      </a>
+
       <button class="door-hotspot door-main" type="button" data-door="main" aria-label="Entrer dans la salle">
         <span class="door-label" id="door-label">En travaux</span>
       </button>
     </div>
 
     <p class="hub-status" id="hub-status" aria-live="polite"></p>
+
+    <button class="hub-results-reopen is-hidden" id="hub-results-reopen" type="button">Voir le bilan</button>
+
+    <section class="hub-results-overlay is-hidden" id="hub-results-overlay" aria-labelledby="hub-results-title">
+      <div class="hub-results-card">
+        <div class="hub-results-header">
+          <div>
+            <p class="hub-results-kicker">Fin de consultation</p>
+            <h2 class="hub-results-title" id="hub-results-title">Votre bilan</h2>
+            <p class="hub-results-subtitle">La synthèse du Bloc B s'affiche maintenant depuis le HUB.</p>
+          </div>
+          <button class="hub-results-close" id="hub-results-close" type="button" aria-label="Fermer le bilan">Fermer</button>
+        </div>
+
+        <div class="hub-results-body">
+          <div class="hub-results-radar-panel">
+            <div class="hub-results-radar-wrap">
+              <canvas id="hub-results-radar"></canvas>
+            </div>
+          </div>
+
+          <div class="hub-results-details-panel">
+            <div class="hub-results-categories" id="hub-results-categories"></div>
+            <div class="hub-results-category-details" id="hub-results-category-details"></div>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <script src="hub.js"></script>
