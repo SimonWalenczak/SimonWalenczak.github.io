@@ -455,7 +455,6 @@
             { "value": "oui", "label": "Oui", "score": 5, "max": 5 },
             { "value": "non_envisage", "label": "Non mais je pourrais l'envisager", "score": 3, "max": 5 },
             { "value": "non_complique", "label": "Non et cela me semble compliqué", "score": 1, "max": 5 },
-            { "value": "sans_objet", "label": "Sans objet", "score": null, "max": 5 },
             { "value": "ne_sais_pas", "label": "Je ne sais pas", "score": 2, "max": 5 }
           ]
         },
