@@ -3,8 +3,6 @@ const HUB_PROGRESS_BLOC_A_COMPLETED = "blocA_completed";
 const HUB_PROGRESS_BLOC_B_COMPLETED = "blocB_completed";
 const HUB_RESULTS_KEY = "urps_ob_bloc_b_results";
 const HUB_RESULTS_SAVED_KEY = "urps_ob_bloc_b_results_saved";
-const HUB_DEBUG_REPORT_PARAM = "debugHubBilan";
-const HUB_DEBUG_LAYOUT_PLACEHOLDER_COUNT = 6;
 
 const SPECIALTIES = [
   "Médecin généraliste",
@@ -62,27 +60,6 @@ const HUB_BLUE_PALETTE = [
   { color: "#1e40af", soft: "#93c5fd" },
 ];
 
-function isHubDebugReportEnabled() {
-  const params = new URLSearchParams(window.location.search);
-  const value = params.get(HUB_DEBUG_REPORT_PARAM);
-  return value === "1" || value === "true";
-}
-
-function renderDebugLayoutPlaceholders() {
-  if (!wallCategoriesScroll) {
-    return;
-  }
-
-  wallCategoriesScroll.innerHTML = "";
-  for (let index = 1; index <= HUB_DEBUG_LAYOUT_PLACEHOLDER_COUNT; index += 1) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "hub-wall-category-btn";
-    button.textContent = `Categorie ${index}`;
-    wallCategoriesScroll.appendChild(button);
-  }
-}
-
 function populateSpecialties() {
   SPECIALTIES.forEach((specialty) => {
     const option = document.createElement("option");
@@ -122,7 +99,6 @@ function syncIntroFromSession() {
 }
 
 function resolveDoorState() {
-  const isDebugPreview = isHubDebugReportEnabled();
   const progress = sessionStorage.getItem(HUB_PROGRESS_KEY);
   const isBilanPhase = progress === HUB_PROGRESS_BLOC_B_COMPLETED;
 
@@ -151,7 +127,7 @@ function resolveDoorState() {
     link.setAttribute("aria-disabled", String(!shouldShowBlocBAssets));
   });
   logoObesiteLink.classList.toggle("is-hidden", !shouldShowBlocBAssets);
-  wallResults.classList.toggle("is-hidden", (!shouldShowBlocBAssets || !hasSavedResults) && !isDebugPreview);
+  wallResults.classList.toggle("is-hidden", !shouldShowBlocBAssets || !hasSavedResults);
 }
 
 function hexToRgba(hex, alpha) {
@@ -274,15 +250,10 @@ function closeCategoryOverlay() {
 }
 
 function maybeShowHubResults() {
-  const isDebugPreview = isHubDebugReportEnabled();
   const raw = sessionStorage.getItem(HUB_RESULTS_KEY);
   const savedRaw = sessionStorage.getItem(HUB_RESULTS_SAVED_KEY);
   const source = raw || savedRaw;
   if (!source) {
-    if (isDebugPreview) {
-      wallResults.classList.remove("is-hidden");
-      renderDebugLayoutPlaceholders();
-    }
     return;
   }
 
@@ -378,11 +349,6 @@ introForm.addEventListener("submit", (event) => {
 
 populateSpecialties();
 syncIntroFromSession();
-if (isHubDebugReportEnabled()) {
-  document.body.classList.add("hub-debug-layout");
-  selectedSpecialty = sessionStorage.getItem("urps_ob_specialty") || "Mode debug";
-  introPanel.classList.add("is-hidden");
-}
 resolveDoorState();
 maybeShowHubResults();
 categoryCloseButton.addEventListener("click", closeCategoryOverlay);
