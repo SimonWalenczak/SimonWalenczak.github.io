@@ -38,7 +38,7 @@
     </section>
 
     <div class="hub-stage" id="hub-stage">
-      <img class="hub-bg" src="Accueil_Background_Remake.png" alt="Accueil du centre medical"/>
+      <img class="hub-bg" src="Accueil_Background_RemakeV2.png" alt="Accueil du centre medical"/>
 
       <a
         class="poster-hotspot poster-ordre-medecins"
@@ -70,35 +70,24 @@
       <button class="door-hotspot door-main" type="button" data-door="main" aria-label="Entrer dans la salle">
         <span class="door-label" id="door-label">En travaux</span>
       </button>
+
+      <section class="hub-wall-results is-hidden" id="hub-wall-results" aria-label="Bilan consultation">
+        <div class="hub-wall-radar-wrap">
+          <canvas id="hub-wall-radar"></canvas>
+        </div>
+        <div class="hub-wall-categories-scroll" id="hub-wall-categories-scroll" aria-label="Categories du bilan"></div>
+      </section>
     </div>
 
     <p class="hub-status" id="hub-status" aria-live="polite"></p>
 
-    <button class="hub-results-reopen is-hidden" id="hub-results-reopen" type="button">Voir le bilan</button>
-
-    <section class="hub-results-overlay is-hidden" id="hub-results-overlay" aria-labelledby="hub-results-title">
-      <div class="hub-results-card">
-        <div class="hub-results-header">
-          <div>
-            <p class="hub-results-kicker">Fin de consultation</p>
-            <h2 class="hub-results-title" id="hub-results-title">Votre bilan</h2>
-            <p class="hub-results-subtitle">La synthèse du Bloc B s'affiche maintenant depuis le HUB.</p>
-          </div>
-          <button class="hub-results-close" id="hub-results-close" type="button" aria-label="Fermer le bilan">Fermer</button>
-        </div>
-
-        <div class="hub-results-body">
-          <div class="hub-results-radar-panel">
-            <div class="hub-results-radar-wrap">
-              <canvas id="hub-results-radar"></canvas>
-            </div>
-          </div>
-
-          <div class="hub-results-details-panel">
-            <div class="hub-results-categories" id="hub-results-categories"></div>
-            <div class="hub-results-category-details" id="hub-results-category-details"></div>
-          </div>
-        </div>
+    <section class="hub-category-overlay is-hidden" id="hub-category-overlay" aria-labelledby="hub-category-title">
+      <div class="hub-category-card">
+        <header class="hub-category-header">
+          <h2 class="hub-category-title" id="hub-category-title">Detail categorie</h2>
+          <button class="hub-category-close" id="hub-category-close" type="button" aria-label="Fermer le detail">Fermer</button>
+        </header>
+        <div class="hub-category-content" id="hub-category-content"></div>
       </div>
     </section>
   </main>

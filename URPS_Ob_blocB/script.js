@@ -183,6 +183,7 @@ const vqQuestion        = document.getElementById("vq-question");
 const vqOptions         = document.getElementById("vq-options");
 const vqScaleLabels     = document.getElementById("vq-scale-labels");
 const vqConfirm         = document.getElementById("vq-confirm");
+const vnViewport        = document.getElementById("vn-viewport");
 
 // ======================================================
 // SCENARIO EMBEDDED — fallback when fetch is unavailable
@@ -434,6 +435,22 @@ function advance() {
   renderStep();
 }
 
+function advanceOnViewportClick(event) {
+  const clickedInteractive = event.target.closest("button, a, input, select, textarea, label");
+  if (clickedInteractive) {
+    return;
+  }
+
+  const isDialogueVisible = !vnDialog.classList.contains("hidden");
+  const isNarrationVisible = !vnNarration.classList.contains("hidden");
+  const isQuestionVisible = !vnQuestionOverlay.classList.contains("hidden");
+  const isMenuVisible = !menuOverlay.classList.contains("hidden");
+
+  if ((isDialogueVisible || isNarrationVisible) && !isQuestionVisible && !isMenuVisible) {
+    advance();
+  }
+}
+
 // ======================================================
 // EVENT LISTENERS
 // ======================================================
@@ -447,6 +464,7 @@ btnTitleStart.addEventListener("click", async () => {
 
 dialogNext.addEventListener("click",    advance);
 narrationNext.addEventListener("click", advance);
+vnViewport.addEventListener("click", advanceOnViewportClick);
 
 vqConfirm.addEventListener("click", () => {
   if (pendingAnswer === null && pendingAnswer !== 0) return;

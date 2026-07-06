@@ -252,6 +252,7 @@ html, body { height: 100%; font-family: var(--font); background: var(--c-bg); co
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
   animation: blink 1.5s ease infinite;
+  display: none;
 }
 @keyframes blink {
   0%, 100% { opacity: 1; }

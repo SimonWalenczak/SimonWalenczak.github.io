@@ -3,6 +3,8 @@ const HUB_PROGRESS_BLOC_A_COMPLETED = "blocA_completed";
 const HUB_PROGRESS_BLOC_B_COMPLETED = "blocB_completed";
 const HUB_RESULTS_KEY = "urps_ob_bloc_b_results";
 const HUB_RESULTS_SAVED_KEY = "urps_ob_bloc_b_results_saved";
+const HUB_DEBUG_REPORT_PARAM = "debugHubBilan";
+const HUB_DEBUG_LAYOUT_PLACEHOLDER_COUNT = 6;
 
 const SPECIALTIES = [
   "Médecin généraliste",
@@ -33,18 +35,19 @@ const specialtySelect = document.getElementById("specialty-select");
 const genderOptions = document.querySelectorAll(".gender-option");
 const statusEl = document.getElementById("hub-status");
 const mainDoor = document.querySelector(".door-hotspot[data-door='main']");
+const posterHotspots = document.querySelectorAll(".poster-hotspot");
 const doorLabel = document.getElementById("door-label");
-const resultsOverlay = document.getElementById("hub-results-overlay");
-const resultsCloseButton = document.getElementById("hub-results-close");
-const resultsReopenButton = document.getElementById("hub-results-reopen");
-const resultsCategories = document.getElementById("hub-results-categories");
-const resultsCategoryDetails = document.getElementById("hub-results-category-details");
-const resultsRadarCanvas = document.getElementById("hub-results-radar");
+const wallResults = document.getElementById("hub-wall-results");
+const wallCategoriesScroll = document.getElementById("hub-wall-categories-scroll");
+const resultsRadarCanvas = document.getElementById("hub-wall-radar");
+const categoryOverlay = document.getElementById("hub-category-overlay");
+const categoryCloseButton = document.getElementById("hub-category-close");
+const categoryTitle = document.getElementById("hub-category-title");
+const categoryContent = document.getElementById("hub-category-content");
 const logoObesiteLink = document.getElementById("logo-obesite-link");
 let statusTimer = null;
 let hubResultsChart = null;
 let hubResultsPayload = null;
-let selectedResultsCategory = "";
 let activeDoor = {
   label: "En travaux",
   url: "../URPS_Ob_blocA/index.html",
@@ -58,6 +61,27 @@ const HUB_BLUE_PALETTE = [
   { color: "#0284c7", soft: "#38bdf8" },
   { color: "#1e40af", soft: "#93c5fd" },
 ];
+
+function isHubDebugReportEnabled() {
+  const params = new URLSearchParams(window.location.search);
+  const value = params.get(HUB_DEBUG_REPORT_PARAM);
+  return value === "1" || value === "true";
+}
+
+function renderDebugLayoutPlaceholders() {
+  if (!wallCategoriesScroll) {
+    return;
+  }
+
+  wallCategoriesScroll.innerHTML = "";
+  for (let index = 1; index <= HUB_DEBUG_LAYOUT_PLACEHOLDER_COUNT; index += 1) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "hub-wall-category-btn";
+    button.textContent = `Categorie ${index}`;
+    wallCategoriesScroll.appendChild(button);
+  }
+}
 
 function populateSpecialties() {
   SPECIALTIES.forEach((specialty) => {
@@ -98,7 +122,9 @@ function syncIntroFromSession() {
 }
 
 function resolveDoorState() {
+  const isDebugPreview = isHubDebugReportEnabled();
   const progress = sessionStorage.getItem(HUB_PROGRESS_KEY);
+  const isBilanPhase = progress === HUB_PROGRESS_BLOC_B_COMPLETED;
 
   if (progress === HUB_PROGRESS_BLOC_A_COMPLETED || progress === HUB_PROGRESS_BLOC_B_COMPLETED) {
     activeDoor = {
@@ -114,11 +140,18 @@ function resolveDoorState() {
 
   doorLabel.textContent = activeDoor.label;
   mainDoor.setAttribute("aria-label", `Entrer dans ${activeDoor.label.toLowerCase()}`);
+  mainDoor.disabled = isBilanPhase;
+  mainDoor.classList.toggle("is-disabled", isBilanPhase);
+  mainDoor.setAttribute("aria-disabled", String(isBilanPhase));
 
   const hasSavedResults = Boolean(sessionStorage.getItem(HUB_RESULTS_SAVED_KEY));
   const shouldShowBlocBAssets = progress === HUB_PROGRESS_BLOC_B_COMPLETED;
+  posterHotspots.forEach((link) => {
+    link.classList.toggle("is-locked", !shouldShowBlocBAssets);
+    link.setAttribute("aria-disabled", String(!shouldShowBlocBAssets));
+  });
   logoObesiteLink.classList.toggle("is-hidden", !shouldShowBlocBAssets);
-  resultsReopenButton.classList.toggle("is-hidden", !shouldShowBlocBAssets || !hasSavedResults);
+  wallResults.classList.toggle("is-hidden", (!shouldShowBlocBAssets || !hasSavedResults) && !isDebugPreview);
 }
 
 function hexToRgba(hex, alpha) {
@@ -195,12 +228,14 @@ function renderCategoryDetails(categoryKey) {
   const details = hubResultsPayload.details[categoryKey] || [];
   const palette = score ? score.palette : getCategoryPalette(0);
 
+  categoryTitle.textContent = score ? score.label : "Detail categorie";
+
   if (!details.length) {
-    resultsCategoryDetails.innerHTML = `<p class="hub-results-empty">Aucune réponse enregistrée pour cette catégorie.</p>`;
+    categoryContent.innerHTML = `<p class="hub-results-empty">Aucune réponse enregistrée pour cette catégorie.</p>`;
     return;
   }
 
-  resultsCategoryDetails.innerHTML = details.map((detail) => `
+  categoryContent.innerHTML = details.map((detail) => `
     <article class="hub-results-detail-card" style="--cat-color:${palette.color}; --cat-color-soft:${palette.soft};">
       <p class="hub-results-detail-answer">Réponse : ${detail.answer}</p>
       <h3 class="hub-results-detail-title">${detail.feedbackTitle}</h3>
@@ -214,55 +249,40 @@ function renderResultsCategories() {
     return;
   }
 
-  resultsCategories.innerHTML = "";
+  wallCategoriesScroll.innerHTML = "";
 
   hubResultsPayload.scores.forEach((item) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "hub-results-category-btn" + (item.key === selectedResultsCategory ? " is-active" : "");
+    button.className = "hub-wall-category-btn";
     button.style.setProperty("--cat-color", item.palette.color);
     button.style.setProperty("--cat-color-soft", item.palette.soft);
     button.style.setProperty("--cat-bg", hexToRgba(item.palette.color, 0.16));
-    button.innerHTML = `
-      <div class="hub-results-category-top">
-        <span class="hub-results-category-label">${item.label}</span>
-      </div>
-      <div class="hub-results-category-bar">
-        <div class="hub-results-category-bar-fill" style="--score-width:${item.score}%;"></div>
-      </div>
-      <p class="hub-results-category-description">${item.description}</p>
-    `;
+    button.textContent = item.label;
 
     button.addEventListener("click", () => {
-      selectedResultsCategory = item.key;
-      renderResultsCategories();
       renderCategoryDetails(item.key);
+      categoryOverlay.classList.remove("is-hidden");
     });
 
-    resultsCategories.appendChild(button);
+    wallCategoriesScroll.appendChild(button);
   });
 }
 
-function closeResultsOverlay() {
-  resultsOverlay.classList.add("is-hidden");
-}
-
-function openResultsOverlay() {
-  if (!hubResultsPayload) {
-    return;
-  }
-
-  renderResultsRadar(hubResultsPayload.scores);
-  renderResultsCategories();
-  renderCategoryDetails(selectedResultsCategory);
-  resultsOverlay.classList.remove("is-hidden");
+function closeCategoryOverlay() {
+  categoryOverlay.classList.add("is-hidden");
 }
 
 function maybeShowHubResults() {
+  const isDebugPreview = isHubDebugReportEnabled();
   const raw = sessionStorage.getItem(HUB_RESULTS_KEY);
   const savedRaw = sessionStorage.getItem(HUB_RESULTS_SAVED_KEY);
   const source = raw || savedRaw;
   if (!source) {
+    if (isDebugPreview) {
+      wallResults.classList.remove("is-hidden");
+      renderDebugLayoutPlaceholders();
+    }
     return;
   }
 
@@ -283,13 +303,12 @@ function maybeShowHubResults() {
     };
 
     sessionStorage.removeItem(HUB_RESULTS_KEY);
-    sessionStorage.setItem(HUB_RESULTS_SAVED_KEY, JSON.stringify(parsed));
-    selectedResultsCategory = hubResultsPayload.scores[0].key;
-    resultsReopenButton.classList.remove("is-hidden");
-
-    if (raw) {
-      openResultsOverlay();
+    if (raw || savedRaw) {
+      sessionStorage.setItem(HUB_RESULTS_SAVED_KEY, JSON.stringify(parsed));
     }
+    wallResults.classList.remove("is-hidden");
+    renderResultsRadar(hubResultsPayload.scores);
+    renderResultsCategories();
   } catch {
     sessionStorage.removeItem(HUB_RESULTS_KEY);
     sessionStorage.removeItem(HUB_RESULTS_SAVED_KEY);
@@ -317,6 +336,11 @@ function showStatus(message) {
 }
 
 function openDoor(button) {
+  if (button.disabled) {
+    showStatus("Acces Bloc B desactive pendant la phase bilan.");
+    return;
+  }
+
   if (!selectedSpecialty) {
     showStatus("Selectionnez votre specialite avant de continuer.");
     return;
@@ -354,7 +378,11 @@ introForm.addEventListener("submit", (event) => {
 
 populateSpecialties();
 syncIntroFromSession();
+if (isHubDebugReportEnabled()) {
+  document.body.classList.add("hub-debug-layout");
+  selectedSpecialty = sessionStorage.getItem("urps_ob_specialty") || "Mode debug";
+  introPanel.classList.add("is-hidden");
+}
 resolveDoorState();
 maybeShowHubResults();
-resultsCloseButton.addEventListener("click", closeResultsOverlay);
-resultsReopenButton.addEventListener("click", openResultsOverlay);
+categoryCloseButton.addEventListener("click", closeCategoryOverlay);
