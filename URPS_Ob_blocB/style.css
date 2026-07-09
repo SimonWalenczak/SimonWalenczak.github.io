@@ -184,6 +184,8 @@ html, body { height: 100%; font-family: var(--font); background: var(--c-bg); co
   transform-origin: bottom center;
 }
 .vn-char svg { width: 100%; height: 100%; }
+.vn-char img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.doctor-sprite.is-mirrored { transform: scaleX(-1); transform-origin: center; }
 .vn-char.dim { filter: brightness(0.45) saturate(0.5); }
 .vn-char.active { filter: brightness(1) saturate(1); }
 .vn-char-left  { align-self: flex-end; }

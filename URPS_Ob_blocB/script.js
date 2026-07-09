@@ -11,118 +11,7 @@ const SVG_BACKGROUNDS = {
   cabinet: `<img src="Cabinet_Medical.svg" style="width:100%;height:100%;object-fit:cover;display:block;" alt=""/>`
 };
 
-const SVG_CHARACTERS = {
-  patient: `<svg viewBox="0 0 200 500" xmlns="http://www.w3.org/2000/svg" fill="none">
-    <!-- Shadow -->
-    <ellipse cx="100" cy="490" rx="55" ry="10" fill="rgba(0,0,0,0.18)"/>
-    <!-- Legs -->
-    <rect x="72" y="340" width="24" height="140" rx="10" fill="#4a5568"/>
-    <rect x="104" y="340" width="24" height="140" rx="10" fill="#4a5568"/>
-    <!-- Shoes -->
-    <ellipse cx="84" cy="478" rx="20" ry="10" fill="#2d3748"/>
-    <ellipse cx="116" cy="478" rx="20" ry="10" fill="#2d3748"/>
-    <!-- Body -->
-    <ellipse cx="100" cy="270" rx="52" ry="80" fill="#e8a87c"/>
-    <!-- Top / blouse -->
-    <rect x="52" y="220" width="96" height="140" rx="14" fill="#7c3aed" opacity=".9"/>
-    <!-- Collar detail -->
-    <path d="M100 220 L86 246 L100 240 L114 246 Z" fill="#6d28d9"/>
-    <!-- Arms -->
-    <rect x="18" y="218" width="36" height="90" rx="16" fill="#7c3aed" opacity=".85"/>
-    <rect x="146" y="218" width="36" height="90" rx="16" fill="#7c3aed" opacity=".85"/>
-    <!-- Hands -->
-    <ellipse cx="36" cy="310" rx="16" ry="20" fill="#e8a87c"/>
-    <ellipse cx="164" cy="310" rx="16" ry="20" fill="#e8a87c"/>
-    <!-- Neck -->
-    <rect x="86" y="155" width="28" height="40" rx="10" fill="#e8a87c"/>
-    <!-- Head -->
-    <ellipse cx="100" cy="136" rx="52" ry="58" fill="#e8a87c"/>
-    <!-- Hair -->
-    <ellipse cx="100" cy="95"  rx="52" ry="44" fill="#5a3825"/>
-    <rect x="48"  y="90"  width="18" height="60" rx="9"  fill="#5a3825"/>
-    <rect x="134" y="90"  width="18" height="60" rx="9"  fill="#5a3825"/>
-    <!-- Eyes -->
-    <ellipse cx="82"  cy="138" rx="8" ry="9" fill="white"/>
-    <ellipse cx="118" cy="138" rx="8" ry="9" fill="white"/>
-    <ellipse cx="83"  cy="140" rx="5" ry="5" fill="#3d2314"/>
-    <ellipse cx="119" cy="140" rx="5" ry="5" fill="#3d2314"/>
-    <ellipse cx="84"  cy="139" rx="2" ry="2" fill="white"/>
-    <ellipse cx="120" cy="139" rx="2" ry="2" fill="white"/>
-    <!-- Eyebrows -->
-    <path d="M74 126 Q82 121 90 126" stroke="#5a3825" stroke-width="2.5" stroke-linecap="round"/>
-    <path d="M110 126 Q118 121 126 126" stroke="#5a3825" stroke-width="2.5" stroke-linecap="round"/>
-    <!-- Nose -->
-    <path d="M96 148 Q100 158 104 148" stroke="#c08060" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-    <!-- Mouth neutral -->
-    <path d="M88 164 Q100 170 112 164" stroke="#c07050" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-    <!-- Earrings -->
-    <circle cx="48"  cy="155" r="5" fill="#f59e0b"/>
-    <circle cx="152" cy="155" r="5" fill="#f59e0b"/>
-    <!-- Bag -->
-    <rect x="145" y="295" width="40" height="50" rx="8" fill="#b45309" opacity=".7"/>
-    <path d="M155 295 Q165 278 175 295" stroke="#92400e" stroke-width="3" fill="none"/>
-  </svg>`,
-
-  doctor: `<svg viewBox="0 0 200 500" xmlns="http://www.w3.org/2000/svg" fill="none">
-    <!-- Shadow -->
-    <ellipse cx="100" cy="490" rx="55" ry="10" fill="rgba(0,0,0,0.18)"/>
-    <!-- Legs -->
-    <rect x="72"  y="340" width="24" height="140" rx="10" fill="#374151"/>
-    <rect x="104" y="340" width="24" height="140" rx="10" fill="#374151"/>
-    <!-- Shoes -->
-    <ellipse cx="84"  cy="478" rx="20" ry="10" fill="#1f2937"/>
-    <ellipse cx="116" cy="478" rx="20" ry="10" fill="#1f2937"/>
-    <!-- White coat body -->
-    <rect x="50" y="215" width="100" height="145" rx="14" fill="#f1f5f9"/>
-    <!-- Shirt under coat -->
-    <rect x="82" y="216" width="36" height="80" fill="#bfdbfe"/>
-    <!-- Tie -->
-    <polygon points="96,220 104,220 108,270 100,276 92,270" fill="#1d4ed8" opacity=".8"/>
-    <!-- Coat lapels -->
-    <path d="M100 216 L72 250 L88 250 Z" fill="#e2e8f0"/>
-    <path d="M100 216 L128 250 L112 250 Z" fill="#e2e8f0"/>
-    <!-- White coat arms -->
-    <rect x="14" y="215" width="38" height="95" rx="16" fill="#f1f5f9"/>
-    <rect x="148" y="215" width="38" height="95" rx="16" fill="#f1f5f9"/>
-    <!-- Hands -->
-    <ellipse cx="33"  cy="313" rx="16" ry="20" fill="#d4a888"/>
-    <ellipse cx="167" cy="313" rx="16" ry="20" fill="#d4a888"/>
-    <!-- Stethoscope -->
-    <path d="M72 240 Q56 280 52 310 Q50 330 64 338" stroke="#94a3b8" stroke-width="4" stroke-linecap="round" fill="none"/>
-    <path d="M128 240 Q144 280 148 310 Q150 330 136 338" stroke="#94a3b8" stroke-width="4" stroke-linecap="round" fill="none"/>
-    <circle cx="100" cy="338" r="12" fill="#64748b"/>
-    <!-- Pocket + pen -->
-    <rect x="128" y="270" width="20" height="25" rx="3" fill="#e2e8f0"/>
-    <line x1="134" y1="258" x2="133" y2="270" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round"/>
-    <line x1="140" y1="256" x2="139" y2="270" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round"/>
-    <!-- Neck -->
-    <rect x="86" y="155" width="28" height="42" rx="10" fill="#d4a888"/>
-    <!-- Head -->
-    <ellipse cx="100" cy="136" rx="52" ry="58" fill="#d4a888"/>
-    <!-- Hair short -->
-    <ellipse cx="100" cy="88"  rx="52" ry="38" fill="#2d2116"/>
-    <rect x="48"  y="85"  width="14" height="40" rx="7" fill="#2d2116"/>
-    <rect x="138" y="85"  width="14" height="40" rx="7" fill="#2d2116"/>
-    <!-- Glasses -->
-    <rect x="68"  y="132" width="24" height="18" rx="6" fill="none" stroke="#94a3b8" stroke-width="2"/>
-    <rect x="108" y="132" width="24" height="18" rx="6" fill="none" stroke="#94a3b8" stroke-width="2"/>
-    <line x1="92" y1="141" x2="108" y2="141" stroke="#94a3b8" stroke-width="2"/>
-    <line x1="48" y1="141" x2="68"  y2="141" stroke="#94a3b8" stroke-width="2"/>
-    <line x1="132" y1="141" x2="152" y2="141" stroke="#94a3b8" stroke-width="2"/>
-    <!-- Eyes -->
-    <ellipse cx="80"  cy="141" rx="6" ry="6" fill="white"/>
-    <ellipse cx="120" cy="141" rx="6" ry="6" fill="white"/>
-    <ellipse cx="81"  cy="142" rx="3.5" ry="3.5" fill="#2d3748"/>
-    <ellipse cx="121" cy="142" rx="3.5" ry="3.5" fill="#2d3748"/>
-    <!-- Eyebrows -->
-    <path d="M72 126 Q80 122 88 127" stroke="#2d2116" stroke-width="2.5" stroke-linecap="round"/>
-    <path d="M112 127 Q120 122 128 126" stroke="#2d2116" stroke-width="2.5" stroke-linecap="round"/>
-    <!-- Nose -->
-    <path d="M96 150 Q100 160 104 150" stroke="#b08060" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-    <!-- Mouth -->
-    <path d="M88 166 Q100 173 112 166" stroke="#a07050" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-  </svg>`,
-};
+// Character artwork is loaded from sprite files instead of inline generated SVG.
 
 // Emotion mouth paths for patient (swap mouth for emotion variety)
 // (slight enhancement - apply class on char el instead for simplicity)
@@ -142,6 +31,13 @@ let pendingAnswer = null; // current selected option value
 const HUB_PROGRESS_KEY = "urps_ob_hub_progress";
 const HUB_PROGRESS_BLOC_B_COMPLETED = "blocB_completed";
 const HUB_RESULTS_KEY = "urps_ob_bloc_b_results";
+const HUB_GENDER_KEY = "urps_ob_gender";
+
+const DOCTOR_SPRITES = {
+  homme: "../URPS_Ob_HUB/CharacterDoctor.svg",
+  femme: "../URPS_Ob_HUB/CharacterDoctor_Female.svg",
+};
+const PATIENT_SPRITE = "CharactersSprites/Patient_Femme.png";
 
 // ======================================================
 // DOM REFS
@@ -184,6 +80,30 @@ const vqOptions         = document.getElementById("vq-options");
 const vqScaleLabels     = document.getElementById("vq-scale-labels");
 const vqConfirm         = document.getElementById("vq-confirm");
 const vnViewport        = document.getElementById("vn-viewport");
+
+// Render roles on their original side:
+// left slot (char-patient) => patient, right slot (char-doctor) => doctor.
+const doctorSlot = charDoctor;
+const patientSlot = charPatient;
+
+function getSelectedDoctorSprite() {
+  const savedGender = (sessionStorage.getItem(HUB_GENDER_KEY) || "").toLowerCase();
+  return DOCTOR_SPRITES[savedGender] || DOCTOR_SPRITES.homme;
+}
+
+function renderPatientCharacter({ dim = false, active = false } = {}) {
+  patientSlot.classList.remove("hidden");
+  patientSlot.classList.toggle("dim", dim);
+  patientSlot.classList.toggle("active", active);
+  patientSlot.innerHTML = `<img src="${PATIENT_SPRITE}" alt="Patiente"/>`;
+}
+
+function renderDoctorCharacter({ dim = false, active = false } = {}) {
+  doctorSlot.classList.remove("hidden");
+  doctorSlot.classList.toggle("dim", dim);
+  doctorSlot.classList.toggle("active", active);
+  doctorSlot.innerHTML = `<img class="doctor-sprite is-mirrored" src="${getSelectedDoctorSprite()}" alt="Docteur"/>`;
+}
 
 // ======================================================
 // SCENARIO EMBEDDED — fallback when fetch is unavailable
@@ -283,13 +203,8 @@ function renderStep() {
 // ======================================================
 
 function renderNarration(step) {
-  // Dim both characters
-  charPatient.classList.remove("hidden");
-  charDoctor.classList.remove("hidden");
-  charPatient.innerHTML = SVG_CHARACTERS.patient;
-  charDoctor.innerHTML  = SVG_CHARACTERS.doctor;
-  charPatient.classList.add("dim");
-  charDoctor.classList.add("dim");
+  renderPatientCharacter({ dim: true, active: false });
+  renderDoctorCharacter({ dim: true, active: false });
 
   narrationText.textContent = step.text;
   vnNarration.classList.remove("hidden");
@@ -300,17 +215,9 @@ function renderNarration(step) {
 // ======================================================
 
 function renderDialogue(step) {
-  charPatient.classList.remove("hidden");
-  charDoctor.classList.remove("hidden");
-  charPatient.innerHTML = SVG_CHARACTERS.patient;
-  charDoctor.innerHTML  = SVG_CHARACTERS.doctor;
-
   const isPatient = step.speaker === "patient";
-
-  charPatient.classList.toggle("dim",    !isPatient);
-  charPatient.classList.toggle("active",  isPatient);
-  charDoctor.classList.toggle("dim",      isPatient);
-  charDoctor.classList.toggle("active",  !isPatient);
+  renderPatientCharacter({ dim: !isPatient, active: isPatient });
+  renderDoctorCharacter({ dim: isPatient, active: !isPatient });
 
   dialogSpeaker.textContent = step.name || step.speaker;
   dialogSpeaker.className   = `dialog-speaker speaker-${step.speaker}`;
@@ -325,18 +232,14 @@ function renderDialogue(step) {
 function renderQuestion(step) {
   pendingAnswer = null;
 
-  charPatient.classList.remove("hidden");
-  charDoctor.classList.remove("hidden");
-  charPatient.innerHTML = SVG_CHARACTERS.patient;
-  charDoctor.innerHTML  = SVG_CHARACTERS.doctor;
-  charPatient.classList.add("dim");
-  charDoctor.classList.add("dim");
+  renderPatientCharacter({ dim: true, active: false });
+  renderDoctorCharacter({ dim: true, active: false });
 
   // Thought bubble for internal questions
   if (step.internal) {
     vnThought.classList.remove("hidden");
-    charDoctor.classList.remove("dim");
-    charDoctor.classList.add("active");
+    doctorSlot.classList.remove("dim");
+    doctorSlot.classList.add("active");
   } else {
     vnThought.classList.add("hidden");
   }
