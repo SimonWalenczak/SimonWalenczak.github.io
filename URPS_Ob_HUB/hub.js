@@ -3,6 +3,7 @@ const HUB_PROGRESS_BLOC_A_COMPLETED = "blocA_completed";
 const HUB_PROGRESS_BLOC_B_COMPLETED = "blocB_completed";
 const HUB_RESULTS_KEY = "urps_ob_bloc_b_results";
 const HUB_RESULTS_SAVED_KEY = "urps_ob_bloc_b_results_saved";
+const HUB_WELCOME_SEEN_KEY = "urps_ob_hub_welcome_seen";
 
 const SPECIALTIES = [
   "Médecin généraliste",
@@ -43,9 +44,13 @@ const categoryCloseButton = document.getElementById("hub-category-close");
 const categoryTitle = document.getElementById("hub-category-title");
 const categoryContent = document.getElementById("hub-category-content");
 const logoObesiteLink = document.getElementById("logo-obesite-link");
+const hubWelcomeOverlay = document.getElementById("hub-welcome-overlay");
+const hubWelcomePointer = document.getElementById("hub-welcome-pointer");
 let statusTimer = null;
 let hubResultsChart = null;
 let hubResultsPayload = null;
+let hasPassedWelcomeDialog = false;
+let isDoorPhaseDisabled = false;
 let activeDoor = {
   label: "En travaux",
   url: "../URPS_Ob_blocA/index.html",
@@ -74,6 +79,7 @@ function completeIntro() {
   sessionStorage.setItem("urps_ob_specialty", selectedSpecialty);
   sessionStorage.setItem("urps_ob_gender", selectedGender);
   introPanel.classList.add("is-hidden");
+  showWelcomeDialog();
   showStatus(`Specialite : ${selectedSpecialty}`);
 }
 
@@ -96,11 +102,71 @@ function syncIntroFromSession() {
   });
 
   introPanel.classList.add("is-hidden");
+  showWelcomeDialog();
+}
+
+function updateWelcomePointerPosition() {
+  if (!hubWelcomeOverlay || !hubWelcomePointer || hubWelcomeOverlay.classList.contains("is-hidden")) {
+    return;
+  }
+
+  const doorRect = mainDoor.getBoundingClientRect();
+  const pointerWidth = hubWelcomePointer.offsetWidth || 94;
+  const pointerHeight = hubWelcomePointer.offsetHeight || 28;
+  const fallbackLeft = Math.max(16, doorRect.left - pointerWidth - 22);
+  const maxLeft = window.innerWidth - pointerWidth - 16;
+  const pointerLeft = Math.min(Math.max(16, fallbackLeft), maxLeft);
+  const pointerTop = Math.min(
+    Math.max(12, doorRect.top + (doorRect.height / 2) - (pointerHeight / 2)),
+    window.innerHeight - pointerHeight - 12
+  );
+
+  hubWelcomePointer.style.setProperty("--door-pointer-left", `${pointerLeft}px`);
+  hubWelcomePointer.style.setProperty("--door-pointer-top", `${pointerTop+25}px`);
+}
+
+function syncDoorLockState() {
+  const shouldLockForWelcome = !hasPassedWelcomeDialog;
+  const isDisabled = isDoorPhaseDisabled || shouldLockForWelcome;
+
+  mainDoor.disabled = isDisabled;
+  mainDoor.classList.toggle("is-disabled", isDisabled);
+  mainDoor.setAttribute("aria-disabled", String(isDisabled));
+}
+
+function dismissWelcomeDialog() {
+  if (!hubWelcomeOverlay || hasPassedWelcomeDialog) {
+    return;
+  }
+
+  hasPassedWelcomeDialog = true;
+  sessionStorage.setItem(HUB_WELCOME_SEEN_KEY, "true");
+  hubWelcomeOverlay.classList.add("is-hidden");
+  syncDoorLockState();
+}
+
+function shouldShowWelcomeDialog() {
+  return sessionStorage.getItem(HUB_WELCOME_SEEN_KEY) !== "true";
+}
+
+function initializeWelcomeState() {
+  hasPassedWelcomeDialog = !shouldShowWelcomeDialog();
+}
+
+function showWelcomeDialog() {
+  if (!hubWelcomeOverlay || hasPassedWelcomeDialog || !shouldShowWelcomeDialog()) {
+    return;
+  }
+
+  hubWelcomeOverlay.classList.remove("is-hidden");
+  updateWelcomePointerPosition();
+  syncDoorLockState();
 }
 
 function resolveDoorState() {
   const progress = sessionStorage.getItem(HUB_PROGRESS_KEY);
   const isBilanPhase = progress === HUB_PROGRESS_BLOC_B_COMPLETED;
+  isDoorPhaseDisabled = isBilanPhase;
 
   if (progress === HUB_PROGRESS_BLOC_A_COMPLETED || progress === HUB_PROGRESS_BLOC_B_COMPLETED) {
     activeDoor = {
@@ -116,9 +182,7 @@ function resolveDoorState() {
 
   doorLabel.textContent = activeDoor.label;
   mainDoor.setAttribute("aria-label", `Entrer dans ${activeDoor.label.toLowerCase()}`);
-  mainDoor.disabled = isBilanPhase;
-  mainDoor.classList.toggle("is-disabled", isBilanPhase);
-  mainDoor.setAttribute("aria-disabled", String(isBilanPhase));
+  syncDoorLockState();
 
   const hasSavedResults = Boolean(sessionStorage.getItem(HUB_RESULTS_SAVED_KEY));
   const shouldShowBlocBAssets = progress === HUB_PROGRESS_BLOC_B_COMPLETED;
@@ -145,6 +209,78 @@ function getCategoryPalette(index) {
   return HUB_BLUE_PALETTE[index % HUB_BLUE_PALETTE.length];
 }
 
+function getRadarLayoutPreset() {
+  const isLandscapePhone = window.matchMedia("(max-height: 520px) and (orientation: landscape)").matches;
+  const isPhone = window.matchMedia("(max-width: 760px)").matches;
+
+  if (isLandscapePhone) {
+    return {
+      padding: 34,
+      labelSize: 9,
+      labelPadding: 14,
+    };
+  }
+
+  if (isPhone) {
+    return {
+      padding: 32,
+      labelSize: 10,
+      labelPadding: 12,
+    };
+  }
+
+  return {
+    padding: 28,
+    labelSize: 12,
+    labelPadding: 10,
+  };
+}
+
+function formatRadarLabel(label) {
+  const normalized = label.replace(/\s+/g, " ").trim();
+  const isPhone = window.matchMedia("(max-width: 760px)").matches;
+  const maxLineLength = isPhone ? 11 : 14;
+  const tokens = normalized.split(/[\s-]+/).filter(Boolean);
+
+  if (tokens.length <= 1) {
+    return normalized;
+  }
+
+  const lines = [];
+  let currentLine = "";
+
+  tokens.forEach((token) => {
+    if (token.length > maxLineLength) {
+      if (currentLine) {
+        lines.push(currentLine);
+        currentLine = "";
+      }
+
+      for (let index = 0; index < token.length; index += maxLineLength) {
+        lines.push(token.slice(index, index + maxLineLength));
+      }
+      return;
+    }
+
+    const candidate = currentLine ? `${currentLine} ${token}` : token;
+    if (candidate.length <= maxLineLength) {
+      currentLine = candidate;
+      return;
+    }
+
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+    currentLine = token;
+  });
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  return lines.length > 1 ? lines : normalized;
+}
+
 function renderResultsRadar(scores) {
   if (!resultsRadarCanvas || typeof Chart === "undefined") {
     return;
@@ -158,7 +294,7 @@ function renderResultsRadar(scores) {
   hubResultsChart = new Chart(context, {
     type: "radar",
     data: {
-      labels: scores.map((item) => item.label),
+      labels: scores.map((item) => formatRadarLabel(item.label)),
       datasets: [{
         data: scores.map((item) => item.score),
         backgroundColor: "rgba(59, 130, 246, 0.14)",
@@ -174,6 +310,10 @@ function renderResultsRadar(scores) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      animation: false,
+      layout: {
+        padding: getRadarLayoutPreset().padding,
+      },
       scales: {
         r: {
           min: 0,
@@ -183,7 +323,8 @@ function renderResultsRadar(scores) {
           angleLines: { color: "rgba(96, 165, 250, 0.18)" },
           pointLabels: {
             color: "#dbeafe",
-            font: { size: 12, weight: "600" },
+            padding: getRadarLayoutPreset().labelPadding,
+            font: { size: getRadarLayoutPreset().labelSize, weight: "600" },
           },
         },
       },
@@ -193,6 +334,18 @@ function renderResultsRadar(scores) {
       },
     },
   });
+}
+
+function refreshResultsRadarLayout() {
+  if (!hubResultsPayload || !hubResultsChart) {
+    return;
+  }
+
+  const preset = getRadarLayoutPreset();
+  hubResultsChart.options.layout.padding = preset.padding;
+  hubResultsChart.options.scales.r.pointLabels.padding = preset.labelPadding;
+  hubResultsChart.options.scales.r.pointLabels.font.size = preset.labelSize;
+  hubResultsChart.update("none");
 }
 
 function renderCategoryDetails(categoryKey) {
@@ -307,6 +460,11 @@ function showStatus(message) {
 }
 
 function openDoor(button) {
+  if (!hasPassedWelcomeDialog) {
+    showStatus("Cliquez d'abord sur l'ecran pour fermer le message de bienvenue.");
+    return;
+  }
+
   if (button.disabled) {
     showStatus("Acces Bloc B desactive pendant la phase bilan.");
     return;
@@ -326,6 +484,7 @@ function openDoor(button) {
 }
 
 mainDoor.addEventListener("click", () => openDoor(mainDoor));
+hubWelcomeOverlay?.addEventListener("click", dismissWelcomeDialog);
 
 genderOptions.forEach((button) => {
   button.addEventListener("click", () => selectGender(button));
@@ -348,7 +507,11 @@ introForm.addEventListener("submit", (event) => {
 });
 
 populateSpecialties();
+initializeWelcomeState();
 syncIntroFromSession();
 resolveDoorState();
 maybeShowHubResults();
 categoryCloseButton.addEventListener("click", closeCategoryOverlay);
+window.addEventListener("resize", refreshResultsRadarLayout);
+window.addEventListener("resize", updateWelcomePointerPosition);
+syncDoorLockState();

@@ -149,6 +149,7 @@ const STEPS = [
         label: "Tabouret médical",
         desc: "Sans dossier ni accoudoirs",
         optimal: false,
+        sprite: "Tabouret.png",
         cost: 1,
         svg: SVG_TABOURET,
         feedback: "L'absence de dossier rend l'assise difficile et peu sécurisante pour les patients en situation d'obésité, qui ont besoin d'un support du dos.",
@@ -209,7 +210,7 @@ const STEPS = [
         svg: SVG_BRASSARD_XL,
         feedback: "Un brassard adapté à la circumférence du bras assure des mesures précises et évite toute gêne ou douleur liée à la compression, pour des données fiables.",
       },
-      {
+      /*{
         id: "brassard-poignet",
         label: "Brassard de poignet",
         desc: "Compact, mesure au poignet",
@@ -217,7 +218,7 @@ const STEPS = [
         cost: 2,
         svg: SVG_BRASSARD_POIGNET,
         feedback: "Le brassard de poignet est moins précis pour la mesure de la tension artérielle, notamment chez les patients en situation d'obésité. Il n'est pas recommandé en première intention.",
-      },
+      },*/
     ],
   },
   {
@@ -232,7 +233,7 @@ const STEPS = [
         desc: "Larg. 60 cm, charge max. 180 kg",
         optimal: false,
         sprite: "Table_Classique.png",
-        cost: 2,
+        cost: 1,
         svg: SVG_TABLE_STD,
         feedback: "Une table trop étroite et peu résistante peut être inconfortable, voire dangereuse. Elle peut aussi être source de honte et d'évitement des soins.",
       },

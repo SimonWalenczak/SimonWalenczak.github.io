@@ -40,6 +40,14 @@
     <div class="hub-stage" id="hub-stage">
       <img class="hub-bg" src="Accueil_Background_RemakeV2.png" alt="Accueil du centre medical"/>
 
+      <section class="hub-welcome-overlay is-hidden" id="hub-welcome-overlay" aria-live="polite">
+        <div class="hub-welcome-card">
+          <p class="hub-welcome-message">Bienvenue dans votre centre médical virtuel. Allez dans votre cabinet.</p>
+          <p class="hub-welcome-hint">Cliquez n'importe ou sur l'ecran pour continuer.</p>
+        </div>
+        <div class="hub-welcome-pointer" id="hub-welcome-pointer" aria-hidden="true"></div>
+      </section>
+
       <a
         class="poster-hotspot poster-ordre-medecins"
         href="https://www.conseil-national.medecin.fr/"
@@ -59,7 +67,7 @@
       <a
         class="scene-logo-link logo-obesite-link is-hidden"
         id="logo-obesite-link"
-        href="https://cnao.fr/annuaire/"
+        href="https://www.obesitefrance.fr/"
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Ouvrir l'annuaire CNAO"
