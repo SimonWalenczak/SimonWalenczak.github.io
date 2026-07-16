@@ -33,11 +33,20 @@ const HUB_PROGRESS_BLOC_B_COMPLETED = "blocB_completed";
 const HUB_RESULTS_KEY = "urps_ob_bloc_b_results";
 const HUB_GENDER_KEY = "urps_ob_gender";
 
-const DOCTOR_SPRITES = {
-  homme: "../URPS_Ob_HUB/CharacterDoctor.svg",
-  femme: "../URPS_Ob_HUB/CharacterDoctor_Female.svg",
+const DEFAULT_CHARACTER_STATUS = "Default";
+const CHARACTER_SPRITES = {
+  doctor: {
+    homme: {
+      Default: "../URPS_Ob_HUB/CharacterDoctor.svg",
+    },
+    femme: {
+      Default: "../URPS_Ob_HUB/CharacterDoctor_Female.svg",
+    },
+  },
+  patient: {
+    Default: "CharactersSprites/Patient_Femme.png",
+  },
 };
-const PATIENT_SPRITE = "CharactersSprites/Patient_Femme.png";
 
 // ======================================================
 // DOM REFS
@@ -86,23 +95,50 @@ const vnViewport        = document.getElementById("vn-viewport");
 const doctorSlot = charDoctor;
 const patientSlot = charPatient;
 
-function getSelectedDoctorSprite() {
+function getSelectedDoctorGender() {
   const savedGender = (sessionStorage.getItem(HUB_GENDER_KEY) || "").toLowerCase();
-  return DOCTOR_SPRITES[savedGender] || DOCTOR_SPRITES.homme;
+  return savedGender === "femme" ? "femme" : "homme";
 }
 
-function renderPatientCharacter({ dim = false, active = false } = {}) {
+function getStepStatus(step, characterKey) {
+  const rawStatus = step ? step.status : null;
+
+  if (typeof rawStatus === "string") {
+    if (step && step.speaker) {
+      return step.speaker === characterKey ? rawStatus : DEFAULT_CHARACTER_STATUS;
+    }
+    return rawStatus;
+  }
+
+  if (rawStatus && typeof rawStatus === "object") {
+    return rawStatus[characterKey] || DEFAULT_CHARACTER_STATUS;
+  }
+
+  return DEFAULT_CHARACTER_STATUS;
+}
+
+function getPatientSpriteByStatus(status = DEFAULT_CHARACTER_STATUS) {
+  return CHARACTER_SPRITES.patient[status] || CHARACTER_SPRITES.patient[DEFAULT_CHARACTER_STATUS];
+}
+
+function getDoctorSpriteByStatus(status = DEFAULT_CHARACTER_STATUS) {
+  const doctorGender = getSelectedDoctorGender();
+  const genderSprites = CHARACTER_SPRITES.doctor[doctorGender] || CHARACTER_SPRITES.doctor.homme;
+  return genderSprites[status] || genderSprites[DEFAULT_CHARACTER_STATUS];
+}
+
+function renderPatientCharacter({ dim = false, active = false, status = DEFAULT_CHARACTER_STATUS } = {}) {
   patientSlot.classList.remove("hidden");
   patientSlot.classList.toggle("dim", dim);
   patientSlot.classList.toggle("active", active);
-  patientSlot.innerHTML = `<img src="${PATIENT_SPRITE}" alt="Patiente"/>`;
+  patientSlot.innerHTML = `<img src="${getPatientSpriteByStatus(status)}" alt="Patiente"/>`;
 }
 
-function renderDoctorCharacter({ dim = false, active = false } = {}) {
+function renderDoctorCharacter({ dim = false, active = false, status = DEFAULT_CHARACTER_STATUS } = {}) {
   doctorSlot.classList.remove("hidden");
   doctorSlot.classList.toggle("dim", dim);
   doctorSlot.classList.toggle("active", active);
-  doctorSlot.innerHTML = `<img class="doctor-sprite is-mirrored" src="${getSelectedDoctorSprite()}" alt="Docteur"/>`;
+  doctorSlot.innerHTML = `<img class="doctor-sprite is-mirrored" src="${getDoctorSpriteByStatus(status)}" alt="Docteur"/>`;
 }
 
 // ======================================================
@@ -154,7 +190,9 @@ function answeredCount() {
 // ======================================================
 
 function showScreen(id) {
-  [screenTitle, screenGame, screenResults, menuOverlay].forEach((el) => el.classList.add("hidden"));
+  [screenTitle, screenGame, screenResults, menuOverlay]
+    .filter(Boolean)
+    .forEach((el) => el.classList.add("hidden"));
   document.getElementById(id).classList.remove("hidden");
 }
 
@@ -203,8 +241,16 @@ function renderStep() {
 // ======================================================
 
 function renderNarration(step) {
-  renderPatientCharacter({ dim: true, active: false });
-  renderDoctorCharacter({ dim: true, active: false });
+  renderPatientCharacter({
+    dim: true,
+    active: false,
+    status: getStepStatus(step, "patient"),
+  });
+  renderDoctorCharacter({
+    dim: true,
+    active: false,
+    status: getStepStatus(step, "doctor"),
+  });
 
   narrationText.textContent = step.text;
   vnNarration.classList.remove("hidden");
@@ -216,8 +262,16 @@ function renderNarration(step) {
 
 function renderDialogue(step) {
   const isPatient = step.speaker === "patient";
-  renderPatientCharacter({ dim: !isPatient, active: isPatient });
-  renderDoctorCharacter({ dim: isPatient, active: !isPatient });
+  renderPatientCharacter({
+    dim: !isPatient,
+    active: isPatient,
+    status: getStepStatus(step, "patient"),
+  });
+  renderDoctorCharacter({
+    dim: isPatient,
+    active: !isPatient,
+    status: getStepStatus(step, "doctor"),
+  });
 
   dialogSpeaker.textContent = step.name || step.speaker;
   dialogSpeaker.className   = `dialog-speaker speaker-${step.speaker}`;
@@ -232,8 +286,16 @@ function renderDialogue(step) {
 function renderQuestion(step) {
   pendingAnswer = null;
 
-  renderPatientCharacter({ dim: true, active: false });
-  renderDoctorCharacter({ dim: true, active: false });
+  renderPatientCharacter({
+    dim: true,
+    active: false,
+    status: getStepStatus(step, "patient"),
+  });
+  renderDoctorCharacter({
+    dim: true,
+    active: false,
+    status: getStepStatus(step, "doctor"),
+  });
 
   // Thought bubble for internal questions
   if (step.internal) {
@@ -358,12 +420,14 @@ function advanceOnViewportClick(event) {
 // EVENT LISTENERS
 // ======================================================
 
-btnTitleStart.addEventListener("click", async () => {
-  if (!scenario) await boot();  // boot() already called at load; this is a safety net
-  stepIndex = 0; answers = {}; openFeedback = {}; selectedCategory = null;
-  showScreen("screen-game");
-  renderStep();
-});
+if (btnTitleStart) {
+  btnTitleStart.addEventListener("click", async () => {
+    if (!scenario) await boot();  // boot() already called at load; this is a safety net
+    stepIndex = 0; answers = {}; openFeedback = {}; selectedCategory = null;
+    showScreen("screen-game");
+    renderStep();
+  });
+}
 
 dialogNext.addEventListener("click",    advance);
 narrationNext.addEventListener("click", advance);
@@ -380,13 +444,15 @@ btnMenu.addEventListener("click", () => menuOverlay.classList.remove("hidden"));
 menuResume.addEventListener("click", () => menuOverlay.classList.add("hidden"));
 menuRestart.addEventListener("click", () => {
   menuOverlay.classList.add("hidden");
-  stepIndex = 0; answers = {}; openFeedback = {};
-  showScreen("screen-title");
+  stepIndex = 0; answers = {}; openFeedback = {}; selectedCategory = null;
+  showScreen("screen-game");
+  renderStep();
 });
 
 btnRestart.addEventListener("click", () => {
-  stepIndex = 0; answers = {}; openFeedback = {};
-  showScreen("screen-title");
+  stepIndex = 0; answers = {}; openFeedback = {}; selectedCategory = null;
+  showScreen("screen-game");
+  renderStep();
 });
 
 // ======================================================
@@ -494,6 +560,16 @@ function buildCategoryDetails(categoryKey) {
 // INIT
 // ======================================================
 
-boot(); // load scenario.json (or fall back to SCENARIO_EMBEDDED)
+async function initGame() {
+  await boot(); // load scenario.json (or fall back to SCENARIO_EMBEDDED)
+  stepIndex = 0;
+  answers = {};
+  openFeedback = {};
+  selectedCategory = null;
+  showScreen("screen-game");
+  renderStep();
+}
+
+initGame();
 
 

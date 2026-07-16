@@ -2,6 +2,12 @@
   box-sizing: border-box;
 }
 
+:root {
+  --game-vpad: clamp(12px, 2.5vh, 36px);
+  --hub-ratio: 1.75;
+  --hub-safe-h: calc(100vh - (var(--game-vpad) * 2));
+}
+
 html,
 body {
   margin: 0;
@@ -9,7 +15,7 @@ body {
 
 body {
   overflow: hidden;
-  background: #f9faec;
+  background: #ffffff;
   color: #1f2933;
   font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
 }
@@ -22,6 +28,7 @@ body {
   position: relative;
   width: 100vw;
   height: 100vh;
+  padding: var(--game-vpad) 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -175,8 +182,8 @@ body {
 
 .hub-stage {
   position: relative;
-  width: min(100vw, calc(100vh * 1.75));
-  height: min(100vh, calc(100vw / 1.75));
+  width: min(100%, calc(var(--hub-safe-h) * var(--hub-ratio)));
+  height: min(var(--hub-safe-h), calc(100vw / var(--hub-ratio)));
   aspect-ratio: 504 / 288;
   overflow: hidden;
 }
@@ -862,8 +869,8 @@ body {
   }
 
   .hub-stage {
-    width: min(100vw, calc((100vh - 0.2rem) * 1.75));
-    height: min(100vh - 0.2rem, calc(100vw / 1.75));
+    width: min(100%, calc((var(--hub-safe-h) - 0.2rem) * var(--hub-ratio)));
+    height: min(calc(var(--hub-safe-h) - 0.2rem), calc(100vw / var(--hub-ratio)));
   }
 
   .door-label {

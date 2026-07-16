@@ -5,6 +5,10 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
+  --game-vpad: clamp(12px, 2.5vh, 36px);
+  --game-ratio-w: 16;
+  --game-ratio-h: 9;
+
   --c-bg:      #0f172a;
   --c-surface: #1e293b;
   --c-border:  #334155;
@@ -26,13 +30,20 @@
   --r-lg: 24px;
 }
 
-html, body { height: 100%; font-family: var(--font); background: var(--c-bg); color: var(--c-text); }
+html, body { height: 100%; font-family: var(--font); background: #ffffff; color: var(--c-text); }
 .vn-body { height: 100%; overflow: hidden; }
 
 /* =====================================================
    SCREENS — base
    ===================================================== */
-.screen { position: fixed; inset: 0; width: 100%; height: 100%; }
+.screen {
+  position: fixed;
+  left: 50%;
+  top: var(--game-vpad);
+  width: min(100vw, calc((100vh - (var(--game-vpad) * 2)) * var(--game-ratio-w) / var(--game-ratio-h)));
+  height: min(calc(100vh - (var(--game-vpad) * 2)), calc(100vw * var(--game-ratio-h) / var(--game-ratio-w)));
+  transform: translateX(-50%);
+}
 .hidden { display: none !important; }
 
 /* =====================================================
@@ -675,7 +686,7 @@ html, body { height: 100%; font-family: var(--font); background: var(--c-bg); co
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background: var(--slate-100);
+  background: #ffffff;
   color: var(--slate-900);
   min-height: 100vh;
   line-height: 1.5;
