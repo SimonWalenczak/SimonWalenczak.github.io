@@ -13,15 +13,10 @@
           "status": "Default"
         },
         {
-          "type": "narration",
-          "text": "Cette consultation va vous amener à réfléchir à votre posture professionnelle vis-à-vis des patients en situation d\u0027obésité.",
-          "status": "Default"
-        },
-        {
           "type": "dialogue",
           "speaker": "patient",
           "name": "Mme Martin",
-          "text": "Bonjour. J\u0027ai très mal à la cheville depuis quelques jours.",
+          "text": "Bonjour. J'ai très mal à la cheville depuis quelques jours.",
           "status": "Default"
         },
         {
@@ -29,38 +24,38 @@
           "id": "plainte-fonctionnelle",
           "category": "plainte",
           "internal": true,
-          "text": "Face à une plainte fonctionnelle, j\u0027évalue si la perte de poids est réellement pertinente pour améliorer la situation du patient.",
+          "text": "Face à une plainte fonctionnelle, j'évalue si la perte de poids est réellement pertinente pour améliorer la situation du patient.",
           "responseKind": "agreement5",
           "feedbackTitle": "Évaluer la pertinence médicale",
-          "feedback": "L\u0027objectif est de déterminer si le poids est réellement pertinent dans la situation clinique, sans présumer qu\u0027il explique automatiquement la plainte exprimée.",
+          "feedback": "L'objectif est de déterminer si le poids est réellement pertinent dans la situation clinique, sans présumer qu'il explique automatiquement la plainte exprimée.",
           "options": [
             {
               "value": 1,
-              "label": "Pas du tout d\u0027accord",
+              "label": "Pas du tout d'accord",
               "score": 1,
               "max": 5
             },
             {
               "value": 2,
-              "label": "Plutôt pas d\u0027accord",
+              "label": "Plutôt pas d'accord",
               "score": 2,
               "max": 5
             },
             {
               "value": 3,
-              "label": "Ni d\u0027accord ni pas d\u0027accord",
+              "label": "Ni d'accord ni pas d'accord",
               "score": 3,
               "max": 5
             },
             {
               "value": 4,
-              "label": "Plutôt d\u0027accord",
+              "label": "Plutôt d'accord",
               "score": 4,
               "max": 5
             },
             {
               "value": 5,
-              "label": "Tout à fait d\u0027accord",
+              "label": "Tout à fait d'accord",
               "score": 5,
               "max": 5
             }
@@ -73,38 +68,38 @@
           "category": "plainte",
           "internal": true,
           "reverseScore": true,
-          "text": "Face à une plainte fonctionnelle, j\u0027en profite pour aborder la problématique pondérale.",
+          "text": "Face à une plainte fonctionnelle, j'en profite pour aborder la problématique pondérale.",
           "responseKind": "agreement5",
           "feedbackTitle": "Choisir le bon moment",
-          "feedback": "Le poids ne devrait pas être abordé automatiquement dès qu\u0027une plainte fonctionnelle est exprimée. Un accord fort peut signaler un point d\u0027attention.",
+          "feedback": "Le poids ne devrait pas être abordé automatiquement dès qu'une plainte fonctionnelle est exprimée. Un accord fort peut signaler un point d'attention.",
           "options": [
             {
               "value": 1,
-              "label": "Pas du tout d\u0027accord",
+              "label": "Pas du tout d'accord",
               "score": 1,
               "max": 5
             },
             {
               "value": 2,
-              "label": "Plutôt pas d\u0027accord",
+              "label": "Plutôt pas d'accord",
               "score": 2,
               "max": 5
             },
             {
               "value": 3,
-              "label": "Ni d\u0027accord ni pas d\u0027accord",
+              "label": "Ni d'accord ni pas d'accord",
               "score": 3,
               "max": 5
             },
             {
               "value": 4,
-              "label": "Plutôt d\u0027accord",
+              "label": "Plutôt d'accord",
               "score": 4,
               "max": 5
             },
             {
               "value": 5,
-              "label": "Tout à fait d\u0027accord",
+              "label": "Tout à fait d'accord",
               "score": 5,
               "max": 5
             }
@@ -115,7 +110,7 @@
           "type": "dialogue",
           "speaker": "doctor",
           "name": "Vous",
-          "text": "J\u0027ai besoin de connaître votre poids afin d\u0027évaluer certains facteurs pouvant influencer votre prise en charge.",
+          "text": "J'ai besoin de connaître votre poids afin d'évaluer certains facteurs pouvant influencer votre prise en charge.",
           "status": "Default"
         },
         {
@@ -126,7 +121,7 @@
           "text": "Lorsque la mesure du poids est nécessaire médicalement, je demande systématiquement le consentement du patient avant de procéder.",
           "responseKind": "urpsFrequency",
           "feedbackTitle": "Consentement à la mesure du poids",
-          "feedback": "Demander le consentement avant de mesurer le poids respecte l\u0027autonomie du patient et peut limiter le vécu négatif associé à cette mesure.",
+          "feedback": "Demander le consentement avant de mesurer le poids respecte l'autonomie du patient et peut limiter le vécu négatif associé à cette mesure.",
           "options": [
             {
               "value": "oui_toujours",
@@ -142,69 +137,7 @@
             },
             {
               "value": "non_envisage",
-              "label": "Non mais je pourrais l\u0027envisager",
-              "score": 1,
-              "max": 5
-            }
-          ],
-          "status": "Default"
-        },
-        {
-          "type": "question",
-          "id": "mesure-poids-explication",
-          "category": "mesure",
-          "internal": false,
-          "text": "Lorsque la mesure du poids est nécessaire, je lui explique clairement les raisons médicales.",
-          "responseKind": "urpsFrequency",
-          "feedbackTitle": "Expliciter l\u0027objectif médical",
-          "feedback": "Expliquer l\u0027objectif médical aide à clarifier la démarche et à éviter que le patient ait le sentiment que son poids est mesuré sans raison explicite.",
-          "options": [
-            {
-              "value": "oui_toujours",
-              "label": "Oui, toujours",
-              "score": 5,
-              "max": 5
-            },
-            {
-              "value": "oui_parfois",
-              "label": "Oui, parfois",
-              "score": 3,
-              "max": 5
-            },
-            {
-              "value": "non_envisage",
-              "label": "Non mais je pourrais l\u0027envisager",
-              "score": 1,
-              "max": 5
-            }
-          ],
-          "status": "Default"
-        },
-        {
-          "type": "question",
-          "id": "se-peser-soi-meme",
-          "category": "mesure",
-          "internal": false,
-          "text": "Lorsque cela est compatible avec l\u0027objectif médical, je propose au patient de se peser lui-même.",
-          "responseKind": "urpsFrequency",
-          "feedbackTitle": "Autonomie lors de la mesure",
-          "feedback": "Proposer au patient de se peser lui-même ou de communiquer un poids récent peut préserver le confort et le sentiment de contrôle.",
-          "options": [
-            {
-              "value": "oui_toujours",
-              "label": "Oui, toujours",
-              "score": 5,
-              "max": 5
-            },
-            {
-              "value": "oui_parfois",
-              "label": "Oui, parfois",
-              "score": 3,
-              "max": 5
-            },
-            {
-              "value": "non_envisage",
-              "label": "Non mais je pourrais l\u0027envisager",
+              "label": "Non mais je pourrais l'envisager",
               "score": 1,
               "max": 5
             }
@@ -219,228 +152,14 @@
       "steps": [
         {
           "type": "narration",
-          "text": "La consultation se poursuit. Vous décidez d\u0027aborder le sujet du poids avec Mme Martin.",
+          "text": "La consultation se poursuit. Vous décidez d'aborder le sujet du poids avec Mme Martin.",
           "status": "Default"
         },
         {
           "type": "dialogue",
           "speaker": "doctor",
           "name": "Vous",
-          "text": "J\u0027aimerais que nous parlions un peu de votre poids, car celui-ci peut avoir un impact sur la guérison de votre entorse.",
-          "status": "Default"
-        },
-        {
-          "type": "question",
-          "id": "raisons-medicales",
-          "category": "communication",
-          "internal": false,
-          "text": "Lorsque j\u0027évoque le poids avec un patient, je précise que c\u0027est pour des raisons médicales.",
-          "responseKind": "agreement5",
-          "feedbackTitle": "Clarifier l\u0027intention",
-          "feedback": "Préciser que le sujet est abordé pour des raisons médicales aide à distinguer la démarche de soin d\u0027un jugement sur l\u0027apparence.",
-          "options": [
-            {
-              "value": 1,
-              "label": "Pas du tout d\u0027accord",
-              "score": 1,
-              "max": 5
-            },
-            {
-              "value": 2,
-              "label": "Plutôt pas d\u0027accord",
-              "score": 2,
-              "max": 5
-            },
-            {
-              "value": 3,
-              "label": "Ni d\u0027accord ni pas d\u0027accord",
-              "score": 3,
-              "max": 5
-            },
-            {
-              "value": 4,
-              "label": "Plutôt d\u0027accord",
-              "score": 4,
-              "max": 5
-            },
-            {
-              "value": 5,
-              "label": "Tout à fait d\u0027accord",
-              "score": 5,
-              "max": 5
-            }
-          ],
-          "status": "Default"
-        },
-        {
-          "type": "dialogue",
-          "speaker": "patient",
-          "name": "Mme Martin",
-          "text": "D\u0027accord, parlons-en.",
-          "status": "Default"
-        },
-        {
-          "type": "dialogue",
-          "speaker": "doctor",
-          "name": "Vous",
-          "text": "Comment vivez-vous votre surpoids au quotidien ?",
-          "status": "Default"
-        },
-        {
-          "type": "question",
-          "id": "rapport-au-poids",
-          "category": "accompagnement",
-          "internal": false,
-          "text": "Je questionne mon patient sur son rapport à son poids avant de proposer un accompagnement ou une orientation.",
-          "responseKind": "agreement5",
-          "feedbackTitle": "Explorer le vécu avant d\u0027orienter",
-          "feedback": "Questionner le rapport au poids permet de mieux comprendre les attentes, les expériences antérieures et les freins éventuels avant de proposer une orientation.",
-          "options": [
-            {
-              "value": 1,
-              "label": "Pas du tout d\u0027accord",
-              "score": 1,
-              "max": 5
-            },
-            {
-              "value": 2,
-              "label": "Plutôt pas d\u0027accord",
-              "score": 2,
-              "max": 5
-            },
-            {
-              "value": 3,
-              "label": "Ni d\u0027accord ni pas d\u0027accord",
-              "score": 3,
-              "max": 5
-            },
-            {
-              "value": 4,
-              "label": "Plutôt d\u0027accord",
-              "score": 4,
-              "max": 5
-            },
-            {
-              "value": 5,
-              "label": "Tout à fait d\u0027accord",
-              "score": 5,
-              "max": 5
-            }
-          ],
-          "status": "Default"
-        },
-        {
-          "type": "dialogue",
-          "speaker": "patient",
-          "name": "Mme Martin",
-          "text": "Je me sens plutôt bien, mais ce n\u0027est pas toujours facile tous les jours.",
-          "status": "Default"
-        },
-        {
-          "type": "question",
-          "id": "vocabulaire",
-          "category": "communication",
-          "internal": true,
-          "text": "Lorsque le sujet du poids est abordé, j\u0027adapte mon vocabulaire en fonction de la perception et du vécu de mon patient.",
-          "responseKind": "agreement5",
-          "feedbackTitle": "Adapter le vocabulaire",
-          "feedback": "Le vocabulaire médical peut être vécu différemment selon les patients. L\u0027adaptation du langage facilite l\u0027échange.",
-          "options": [
-            {
-              "value": 1,
-              "label": "Pas du tout d\u0027accord",
-              "score": 1,
-              "max": 5
-            },
-            {
-              "value": 2,
-              "label": "Plutôt pas d\u0027accord",
-              "score": 2,
-              "max": 5
-            },
-            {
-              "value": 3,
-              "label": "Ni d\u0027accord ni pas d\u0027accord",
-              "score": 3,
-              "max": 5
-            },
-            {
-              "value": 4,
-              "label": "Plutôt d\u0027accord",
-              "score": 4,
-              "max": 5
-            },
-            {
-              "value": 5,
-              "label": "Tout à fait d\u0027accord",
-              "score": 5,
-              "max": 5
-            }
-          ],
-          "status": "Default"
-        },
-        {
-          "type": "question",
-          "id": "recommandations-systematiques",
-          "category": "accompagnement",
-          "internal": true,
-          "reverseScore": true,
-          "text": "Je propose systématiquement des recommandations liées au poids à tous mes patients en situation d\u0027obésité.",
-          "responseKind": "agreement5",
-          "feedbackTitle": "Éviter l\u0027automatisme",
-          "feedback": "Certains patients n\u0027ont pas de demande ou ne sont pas disponibles pour aborder ce sujet à ce moment-là.",
-          "options": [
-            {
-              "value": 1,
-              "label": "Pas du tout d\u0027accord",
-              "score": 1,
-              "max": 5
-            },
-            {
-              "value": 2,
-              "label": "Plutôt pas d\u0027accord",
-              "score": 2,
-              "max": 5
-            },
-            {
-              "value": 3,
-              "label": "Ni d\u0027accord ni pas d\u0027accord",
-              "score": 3,
-              "max": 5
-            },
-            {
-              "value": 4,
-              "label": "Plutôt d\u0027accord",
-              "score": 4,
-              "max": 5
-            },
-            {
-              "value": 5,
-              "label": "Tout à fait d\u0027accord",
-              "score": 5,
-              "max": 5
-            }
-          ],
-          "status": "Default"
-        }
-      ]
-    },
-    {
-      "id": "anamnese",
-      "background": "cabinet",
-      "steps": [
-        {
-          "type": "dialogue",
-          "speaker": "doctor",
-          "name": "Vous",
-          "text": "Selon vous, comment en êtes-vous arrivée à cette situation ?",
-          "status": "Default"
-        },
-        {
-          "type": "dialogue",
-          "speaker": "patient",
-          "name": "Mme Martin",
-          "text": "Plusieurs personnes de ma famille sont en situation d\u0027obésité.",
+          "text": "J'aimerais que nous parlions un peu de votre poids, car celui-ci peut avoir un impact sur la guérison de votre entorse.",
           "status": "Default"
         },
         {
@@ -448,10 +167,10 @@
           "id": "origines-obesite",
           "category": "accompagnement",
           "internal": false,
-          "text": "J\u0027interroge mon patient sur les origines qu\u0027il associe à son obésité. (échelle de 1 à 5)",
+          "text": "J'interroge mon patient sur les origines qu'il associe à son obésité. (échelle de 1 à 5)",
           "responseKind": "scale10",
           "feedbackTitle": "Comprendre les explications du patient",
-          "feedback": "Explorer les origines perçues par le patient peut aider à comprendre son histoire, ses représentations et les leviers d\u0027accompagnement possibles.",
+          "feedback": "Explorer les origines perçues par le patient peut aider à comprendre son histoire, ses représentations et les leviers d'accompagnement possibles.",
           "options": [
             {
               "value": 1,
@@ -485,292 +204,6 @@
             }
           ],
           "status": "Default"
-        },
-        {
-          "type": "dialogue",
-          "speaker": "doctor",
-          "name": "Vous",
-          "text": "Je vais vous expliquer les différents facteurs pouvant intervenir, pour vous comme pour votre entourage.",
-          "status": "Default"
-        },
-        {
-          "type": "question",
-          "id": "entourage",
-          "category": "accompagnement",
-          "internal": false,
-          "text": "Dans le cadre de la prise en soins, si le patient le souhaite, je prends un temps avec son entourage pour expliquer l\u0027obésité.",
-          "responseKind": "agreement5",
-          "feedbackTitle": "Impliquer l\u0027entourage avec accord",
-          "feedback": "L\u0027entourage peut soutenir ou compliquer le parcours. Un temps d\u0027explication peut être utile s\u0027il est souhaité par le patient.",
-          "options": [
-            {
-              "value": 1,
-              "label": "Pas du tout d\u0027accord",
-              "score": 1,
-              "max": 5
-            },
-            {
-              "value": 2,
-              "label": "Plutôt pas d\u0027accord",
-              "score": 2,
-              "max": 5
-            },
-            {
-              "value": 3,
-              "label": "Ni d\u0027accord ni pas d\u0027accord",
-              "score": 3,
-              "max": 5
-            },
-            {
-              "value": 4,
-              "label": "Plutôt d\u0027accord",
-              "score": 4,
-              "max": 5
-            },
-            {
-              "value": 5,
-              "label": "Tout à fait d\u0027accord",
-              "score": 5,
-              "max": 5
-            }
-          ],
-          "status": "Default"
-        },
-        {
-          "type": "dialogue",
-          "speaker": "patient",
-          "name": "Mme Martin",
-          "text": "Pouvez-vous m\u0027expliquer comment mieux gérer mon alimentation ?",
-          "status": "Default"
-        },
-        {
-          "type": "dialogue",
-          "speaker": "doctor",
-          "name": "Vous",
-          "text": "L\u0027alimentation est importante, mais l\u0027obésité ne se résume pas uniquement à cela. Il s\u0027agit d\u0027une maladie multifactorielle, dans laquelle la génétique peut également jouer un rôle important.",
-          "status": "Default"
-        },
-        {
-          "type": "question",
-          "id": "approche-calorique",
-          "category": "accompagnement",
-          "internal": true,
-          "text": "Je veille à ne pas réduire la prise en soins de mes patients obèses à une approche calorique.",
-          "responseKind": "agreement5",
-          "feedbackTitle": "Approche globale",
-          "feedback": "L\u0027obésité est multifactorielle. Une approche exclusivement calorique peut être limitée et ne pas tenir compte de l\u0027ensemble des facteurs impliqués.",
-          "options": [
-            {
-              "value": 1,
-              "label": "Pas du tout d\u0027accord",
-              "score": 1,
-              "max": 5
-            },
-            {
-              "value": 2,
-              "label": "Plutôt pas d\u0027accord",
-              "score": 2,
-              "max": 5
-            },
-            {
-              "value": 3,
-              "label": "Ni d\u0027accord ni pas d\u0027accord",
-              "score": 3,
-              "max": 5
-            },
-            {
-              "value": 4,
-              "label": "Plutôt d\u0027accord",
-              "score": 4,
-              "max": 5
-            },
-            {
-              "value": 5,
-              "label": "Tout à fait d\u0027accord",
-              "score": 5,
-              "max": 5
-            }
-          ],
-          "status": "Default"
-        },
-        {
-          "type": "question",
-          "id": "regimes-hypocaloriques",
-          "category": "accompagnement",
-          "internal": true,
-          "text": "Je prends le temps de sensibiliser mes patients aux conséquences possibles des régimes hypocaloriques pour leur santé.",
-          "responseKind": "agreement5",
-          "feedbackTitle": "Informer sur les effets des restrictions",
-          "feedback": "Informer sur les effets possibles des régimes restrictifs permet d\u0027aborder le parcours alimentaire avec nuance.",
-          "options": [
-            {
-              "value": 1,
-              "label": "Pas du tout d\u0027accord",
-              "score": 1,
-              "max": 5
-            },
-            {
-              "value": 2,
-              "label": "Plutôt pas d\u0027accord",
-              "score": 2,
-              "max": 5
-            },
-            {
-              "value": 3,
-              "label": "Ni d\u0027accord ni pas d\u0027accord",
-              "score": 3,
-              "max": 5
-            },
-            {
-              "value": 4,
-              "label": "Plutôt d\u0027accord",
-              "score": 4,
-              "max": 5
-            },
-            {
-              "value": 5,
-              "label": "Tout à fait d\u0027accord",
-              "score": 5,
-              "max": 5
-            }
-          ],
-          "status": "Default"
-        },
-        {
-          "type": "dialogue",
-          "speaker": "doctor",
-          "name": "Vous",
-          "text": "Parvenez-vous à bien distinguer les sensations de faim et de satiété ?",
-          "status": "Default"
-        },
-        {
-          "type": "question",
-          "id": "faim-satiete",
-          "category": "accompagnement",
-          "internal": false,
-          "text": "Dans le suivi de mes patients, j\u0027accompagne leur compréhension et la reconnaissance de leurs sensations de faim et de satiété.",
-          "responseKind": "agreement5",
-          "feedbackTitle": "Accompagner les sensations alimentaires",
-          "feedback": "La reconnaissance de la faim et de la satiété peut être perturbée par différents facteurs. L\u0027accompagnement aide à mieux comprendre ces sensations.",
-          "options": [
-            {
-              "value": 1,
-              "label": "Pas du tout d\u0027accord",
-              "score": 1,
-              "max": 5
-            },
-            {
-              "value": 2,
-              "label": "Plutôt pas d\u0027accord",
-              "score": 2,
-              "max": 5
-            },
-            {
-              "value": 3,
-              "label": "Ni d\u0027accord ni pas d\u0027accord",
-              "score": 3,
-              "max": 5
-            },
-            {
-              "value": 4,
-              "label": "Plutôt d\u0027accord",
-              "score": 4,
-              "max": 5
-            },
-            {
-              "value": 5,
-              "label": "Tout à fait d\u0027accord",
-              "score": 5,
-              "max": 5
-            }
-          ],
-          "status": "Default"
-        },
-        {
-          "type": "question",
-          "id": "estime-soi",
-          "category": "accompagnement",
-          "internal": true,
-          "text": "L\u0027estime de soi est un élément important dans la prise en soins et l\u0027accompagnement de mes patients en situation d\u0027obésité.",
-          "responseKind": "agreement5",
-          "feedbackTitle": "Prendre en compte l\u0027estime de soi",
-          "feedback": "L\u0027estime de soi peut influencer l\u0027engagement dans le soin, la capacité à demander de l\u0027aide et la continuité du parcours.",
-          "options": [
-            {
-              "value": 1,
-              "label": "Pas du tout d\u0027accord",
-              "score": 1,
-              "max": 5
-            },
-            {
-              "value": 2,
-              "label": "Plutôt pas d\u0027accord",
-              "score": 2,
-              "max": 5
-            },
-            {
-              "value": 3,
-              "label": "Ni d\u0027accord ni pas d\u0027accord",
-              "score": 3,
-              "max": 5
-            },
-            {
-              "value": 4,
-              "label": "Plutôt d\u0027accord",
-              "score": 4,
-              "max": 5
-            },
-            {
-              "value": 5,
-              "label": "Tout à fait d\u0027accord",
-              "score": 5,
-              "max": 5
-            }
-          ],
-          "status": "Default"
-        },
-        {
-          "type": "question",
-          "id": "motivation",
-          "category": "accompagnement",
-          "internal": true,
-          "text": "Je prends en compte les motivations de mes patients obèses pour les guider et les soutenir tout au long de leur parcours de soins.",
-          "responseKind": "agreement5",
-          "feedbackTitle": "Soutenir la motivation",
-          "feedback": "Prendre en compte les motivations du patient permet de construire des objectifs plus réalistes et plus adaptés à sa situation.",
-          "options": [
-            {
-              "value": 1,
-              "label": "Pas du tout d\u0027accord",
-              "score": 1,
-              "max": 5
-            },
-            {
-              "value": 2,
-              "label": "Plutôt pas d\u0027accord",
-              "score": 2,
-              "max": 5
-            },
-            {
-              "value": 3,
-              "label": "Ni d\u0027accord ni pas d\u0027accord",
-              "score": 3,
-              "max": 5
-            },
-            {
-              "value": 4,
-              "label": "Plutôt d\u0027accord",
-              "score": 4,
-              "max": 5
-            },
-            {
-              "value": 5,
-              "label": "Tout à fait d\u0027accord",
-              "score": 5,
-              "max": 5
-            }
-          ],
-          "status": "Default"
         }
       ]
     },
@@ -782,7 +215,7 @@
           "type": "dialogue",
           "speaker": "doctor",
           "name": "Vous",
-          "text": "Je peux vous aider à mieux comprendre les signaux de votre corps. Nous disposons également d\u0027une équipe compétente et d\u0027un réseau de professionnels spécialisés pouvant vous accompagner.",
+          "text": "Je peux vous aider à mieux comprendre les signaux de votre corps. Nous disposons également d'une équipe compétente et d'un réseau de professionnels spécialisés pouvant vous accompagner.",
           "status": "Default"
         },
         {
@@ -790,10 +223,10 @@
           "id": "genre-equite",
           "category": "stigmatisation",
           "internal": true,
-          "text": "J\u0027accompagne mes patient·es, hommes et femmes, de manière équitable en matière de perte de poids.",
+          "text": "J'accompagne mes patient·es, hommes et femmes, de manière équitable en matière de perte de poids.",
           "responseKind": "genderEquity",
-          "feedbackTitle": "Veiller à l\u0027équité",
-          "feedback": "L\u0027équité suppose d\u0027être attentif aux besoins individuels sans appliquer automatiquement les mêmes attentes selon le genre.",
+          "feedbackTitle": "Veiller à l'équité",
+          "feedback": "L'équité suppose d'être attentif aux besoins individuels sans appliquer automatiquement les mêmes attentes selon le genre.",
           "options": [
             {
               "value": "non",
@@ -820,226 +253,7 @@
           "type": "dialogue",
           "speaker": "patient",
           "name": "Mme Martin",
-          "text": "J\u0027apprécie votre bienveillance concernant mon poids. J\u0027ai déjà vécu des échanges beaucoup plus difficiles à ce sujet.",
-          "status": "Default"
-        },
-        {
-          "type": "question",
-          "id": "stigmatisations",
-          "category": "stigmatisation",
-          "internal": false,
-          "text": "Mes patients m\u0027ont déjà fait remonter des stigmatisations qu\u0027ils avaient vécues.",
-          "responseKind": "agreement5",
-          "feedbackTitle": "Accueillir le vécu de stigmatisation",
-          "feedback": "Les situations de stigmatisation peuvent influencer la confiance envers les soins et la tendance à consulter ou non.",
-          "options": [
-            {
-              "value": 1,
-              "label": "Pas du tout d\u0027accord",
-              "score": 1,
-              "max": 5
-            },
-            {
-              "value": 2,
-              "label": "Plutôt pas d\u0027accord",
-              "score": 2,
-              "max": 5
-            },
-            {
-              "value": 3,
-              "label": "Ni d\u0027accord ni pas d\u0027accord",
-              "score": 3,
-              "max": 5
-            },
-            {
-              "value": 4,
-              "label": "Plutôt d\u0027accord",
-              "score": 4,
-              "max": 5
-            },
-            {
-              "value": 5,
-              "label": "Tout à fait d\u0027accord",
-              "score": 5,
-              "max": 5
-            }
-          ],
-          "status": "Default"
-        },
-        {
-          "type": "dialogue",
-          "speaker": "doctor",
-          "name": "Vous",
-          "text": "Nous veillons à ne jamais stigmatiser nos patients en raison de leur poids.",
-          "status": "Default"
-        },
-        {
-          "type": "question",
-          "id": "equipe",
-          "category": "stigmatisation",
-          "internal": true,
-          "text": "Je porte une attention à ce que les professionnels de mon équipe soient conscients de l\u0027importance de leur posture vis-à-vis des personnes en obésité.",
-          "responseKind": "teamOptions",
-          "feedbackTitle": "Sensibiliser l\u0027équipe",
-          "feedback": "La posture de l\u0027ensemble de l\u0027équipe peut influencer l\u0027expérience du patient. Une sensibilisation collective limite les maladresses.",
-          "options": [
-            {
-              "value": "oui",
-              "label": "Oui",
-              "score": 5,
-              "max": 5
-            },
-            {
-              "value": "non_envisage",
-              "label": "Non mais je pourrais l\u0027envisager",
-              "score": 3,
-              "max": 5
-            },
-            {
-              "value": "non_complique",
-              "label": "Non et cela me semble compliqué",
-              "score": 1,
-              "max": 5
-            },
-            {
-              "value": "ne_sais_pas",
-              "label": "Je ne sais pas",
-              "score": 2,
-              "max": 5
-            }
-          ],
-          "status": "Default"
-        },
-        {
-          "type": "dialogue",
-          "speaker": "patient",
-          "name": "Mme Martin",
-          "text": "C\u0027est rassurant. Quand pourrons-nous prendre rendez-vous pour approfondir tout cela ?",
-          "status": "Default"
-        },
-        {
-          "type": "question",
-          "id": "orientation-proximite",
-          "category": "parcours",
-          "internal": true,
-          "text": "Je connais les professionnels de proximité vers lesquels orienter mes patients pour qu\u0027ils bénéficient de conditions adaptées.",
-          "responseKind": "agreement5",
-          "feedbackTitle": "Identifier les ressources locales",
-          "feedback": "Connaître les ressources de proximité permet d\u0027orienter le patient dans des conditions d\u0027accueil adaptées et d\u0027éviter des ruptures dans le parcours.",
-          "options": [
-            {
-              "value": 1,
-              "label": "Pas du tout d\u0027accord",
-              "score": 1,
-              "max": 5
-            },
-            {
-              "value": 2,
-              "label": "Plutôt pas d\u0027accord",
-              "score": 2,
-              "max": 5
-            },
-            {
-              "value": 3,
-              "label": "Ni d\u0027accord ni pas d\u0027accord",
-              "score": 3,
-              "max": 5
-            },
-            {
-              "value": 4,
-              "label": "Plutôt d\u0027accord",
-              "score": 4,
-              "max": 5
-            },
-            {
-              "value": 5,
-              "label": "Tout à fait d\u0027accord",
-              "score": 5,
-              "max": 5
-            }
-          ],
-          "status": "Default"
-        },
-        {
-          "type": "question",
-          "id": "transport-bariatrique",
-          "category": "parcours",
-          "internal": true,
-          "text": "Pour les patients de plus de 150 kg, je connais les modalités du transport sanitaire bariatrique.",
-          "responseKind": "transportOptions",
-          "feedbackTitle": "Connaître les modalités de transport",
-          "feedback": "Le transport sanitaire adapté peut être un point critique du parcours. Connaître les modalités mobilisables peut éviter un renoncement aux soins.",
-          "options": [
-            {
-              "value": "oui",
-              "label": "Oui",
-              "score": 5,
-              "max": 5
-            },
-            {
-              "value": "non",
-              "label": "Non",
-              "score": 1,
-              "max": 5
-            }
-          ],
-          "status": "Default"
-        },
-        {
-          "type": "question",
-          "id": "cso",
-          "category": "parcours",
-          "internal": true,
-          "text": "Je connais les missions du Centre Spécialisé de l\u0027Obésité de mon territoire.",
-          "responseKind": "agreement5",
-          "feedbackTitle": "Mobiliser les ressources spécialisées",
-          "feedback": "Le CSO peut constituer une ressource pour l\u0027avis, l\u0027orientation, la coordination ou l\u0027appui au parcours selon les besoins du patient et du territoire.",
-          "options": [
-            {
-              "value": 1,
-              "label": "Pas du tout d\u0027accord",
-              "score": 1,
-              "max": 5
-            },
-            {
-              "value": 2,
-              "label": "Plutôt pas d\u0027accord",
-              "score": 2,
-              "max": 5
-            },
-            {
-              "value": 3,
-              "label": "Ni d\u0027accord ni pas d\u0027accord",
-              "score": 3,
-              "max": 5
-            },
-            {
-              "value": 4,
-              "label": "Plutôt d\u0027accord",
-              "score": 4,
-              "max": 5
-            },
-            {
-              "value": 5,
-              "label": "Tout à fait d\u0027accord",
-              "score": 5,
-              "max": 5
-            }
-          ],
-          "status": "Default"
-        },
-        {
-          "type": "dialogue",
-          "speaker": "doctor",
-          "name": "Vous",
-          "text": "Je vous invite à prendre rendez-vous avec ma secrétaire. Je vous souhaite une excellente journée.",
-          "status": "Default"
-        },
-        {
-          "type": "dialogue",
-          "speaker": "patient",
-          "name": "Mme Martin",
-          "text": "Merci beaucoup, docteur. À bientôt.",
+          "text": "J'apprécie votre bienveillance concernant mon poids. J'ai déjà vécu des échanges beaucoup plus difficiles à ce sujet.",
           "status": "Default"
         }
       ]
@@ -1064,7 +278,7 @@
     },
     "stigmatisation": {
       "label": "Stigmatisation",
-      "description": "Équité, vécu de stigmatisation et posture de l\u0027équipe."
+      "description": "Équité, vécu de stigmatisation et posture de l'équipe."
     },
     "parcours": {
       "label": "Parcours de soins",
