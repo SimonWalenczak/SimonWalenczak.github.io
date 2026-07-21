@@ -3,14 +3,14 @@
 }
 
 :root {
-  --game-vpad: clamp(12px, 2.5vh, 36px);
-  --hub-ratio: 1.75;
-  --hub-safe-h: calc(100vh - (var(--game-vpad) * 2));
+  --content-ratio: 16 / 9;
 }
 
 html,
 body {
   margin: 0;
+  width: 100%;
+  height: 100%;
 }
 
 body {
@@ -28,15 +28,106 @@ body {
   position: relative;
   width: 100vw;
   height: 100vh;
-  padding: var(--game-vpad) 0;
   display: flex;
   align-items: center;
   justify-content: center;
   background: #f9faec;
 }
 
-.intro-panel {
+.content {
+  position: relative;
+  width: min(100vw, calc(100vh * 16 / 9));
+  height: min(100vh, calc(100vw * 9 / 16));
+  aspect-ratio: var(--content-ratio);
+  overflow: hidden;
+}
+
+.hub-stage {
+  background: #edf2dc;
+}
+
+.launch-overlay {
   position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(12, 22, 16, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.launch-card {
+  width: min(560px, 100%);
+  background: #ffffff;
+  border: 1px solid rgba(47, 56, 71, 0.22);
+  border-radius: 12px;
+  box-shadow: 0 24px 54px rgba(15, 23, 42, 0.32);
+  padding: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.launch-kicker {
+  margin: 0;
+  color: #5c9157;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.launch-title {
+  margin: 0;
+  color: #2f3847;
+  font-size: 1.45rem;
+  line-height: 1.2;
+}
+
+.launch-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.launch-btn {
+  border: 0;
+  border-radius: 8px;
+  min-height: 42px;
+  padding: 0.55rem 0.95rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.launch-btn-primary {
+  background: #5c9157;
+  color: #ffffff;
+}
+
+.launch-btn-primary:hover,
+.launch-btn-primary:focus-visible {
+  background: #457a41;
+  outline: none;
+}
+
+.launch-btn-secondary {
+  background: #e7edf7;
+  color: #2f3847;
+}
+
+.launch-btn-secondary:hover,
+.launch-btn-secondary:focus-visible {
+  background: #d8e0ee;
+  outline: none;
+}
+
+.intro-panel {
+  position: absolute;
   inset: 0;
   z-index: 10;
   display: flex;
@@ -180,16 +271,8 @@ body {
   transform: translateY(-1px);
 }
 
-.hub-stage {
-  position: relative;
-  width: min(100%, calc(var(--hub-safe-h) * var(--hub-ratio)));
-  height: min(var(--hub-safe-h), calc(100vw / var(--hub-ratio)));
-  aspect-ratio: 504 / 288;
-  overflow: hidden;
-}
-
 .hub-welcome-overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 14;
   display: flex;
@@ -202,8 +285,8 @@ body {
 
 .hub-welcome-card {
   margin-top: clamp(0.8rem, 4vh, 2.6rem);
-  width: min(760px, calc(100vw - 1.4rem));
-  max-height: calc(100vh - 2.2rem);
+  width: min(76%, 760px);
+  max-height: 88%;
   overflow-y: auto;
   border: 1px solid rgba(191, 219, 254, 0.8);
   border-radius: 12px;
@@ -229,7 +312,7 @@ body {
 }
 
 .hub-welcome-pointer {
-  position: fixed;
+  position: absolute;
   z-index: 15;
   left: var(--door-pointer-left, 72%);
   top: var(--door-pointer-top, 44%);
@@ -440,9 +523,9 @@ body {
 }
 
 .hub-status {
-  position: fixed;
+  position: absolute;
   left: 50%;
-  bottom: 1rem;
+  bottom: 2%;
   transform: translateX(-50%);
   margin: 0;
   min-height: 1.35rem;
@@ -571,7 +654,7 @@ body {
 }
 
 .hub-category-overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 24;
   display: flex;
@@ -680,8 +763,8 @@ body {
   }
 
   .hub-welcome-card {
-    width: calc(100vw - 1rem);
-    max-height: calc(100vh - 1.2rem);
+    width: 94%;
+    max-height: 92%;
     margin-top: 0.45rem;
     padding: 0.85rem;
     border-radius: 10px;
@@ -866,11 +949,6 @@ body {
     min-height: 36px;
     margin-top: 0.2rem;
     font-size: 0.8rem;
-  }
-
-  .hub-stage {
-    width: min(100%, calc((var(--hub-safe-h) - 0.2rem) * var(--hub-ratio)));
-    height: min(calc(var(--hub-safe-h) - 0.2rem), calc(100vw / var(--hub-ratio)));
   }
 
   .door-label {

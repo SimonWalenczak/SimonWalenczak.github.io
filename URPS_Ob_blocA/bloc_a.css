@@ -6,9 +6,8 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --game-vpad:   clamp(12px, 2.5vh, 34px);
   --scene-ratio: 16 / 9;
-  --scene-max-w: 1920px;
+  --scene-max-w: 100%;
   --scene-pad:   0.5rem;
   --c-bg:       #0f172a;
   --c-surface:  #1e293b;
@@ -20,7 +19,7 @@
   --c-ok:       #4ade80;
   --c-warn:     #f59e0b;
   --radius:     10px;
-  --topbar-h:   54px;
+  --topbar-h:   10%;
 }
 
 html, body {
@@ -31,22 +30,30 @@ html, body {
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .hidden { display: none !important; }
 
 /* ===== APP SHELL ===== */
 #app {
+  position: relative;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - (var(--game-vpad) * 2));
-  margin: var(--game-vpad) 0;
+  width: min(100vw, calc(100vh * 16 / 9));
+  height: min(100vh, calc(100vw * 9 / 16));
+  aspect-ratio: var(--scene-ratio);
+  overflow: hidden;
 }
 
 /* ===== TOPBAR ===== */
 .topbar {
   flex-shrink: 0;
   height: var(--topbar-h);
-  width: min(100%, var(--scene-max-w), calc((100vh - (var(--game-vpad) * 2) - var(--topbar-h) - (var(--scene-pad) * 2)) * var(--scene-ratio)));
-  margin: 0 auto;
+  width: 100%;
   background: var(--c-surface);
   border-bottom: 1px solid var(--c-border);
   display: flex;
@@ -98,10 +105,9 @@ html, body {
 
 /* ===== MAIN AREA ===== */
 .main-area {
-  flex: 1;
+  height: calc(100% - var(--topbar-h));
   min-height: 0;
-  width: min(100%, var(--scene-max-w), calc((100vh - (var(--game-vpad) * 2) - var(--topbar-h) - (var(--scene-pad) * 2)) * var(--scene-ratio)));
-  margin: 0 auto;
+  width: 100%;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -109,8 +115,8 @@ html, body {
 
 /* ===== GENERIC CENTER OVERLAY ===== */
 .center-overlay {
-  position: fixed;
-  inset: var(--game-vpad) 0;
+  position: absolute;
+  inset: 0;
   z-index: 120;
   display: flex;
   align-items: center;
@@ -259,8 +265,8 @@ html, body {
 
 /* ===== MODAL BACKDROP ===== */
 .modal-backdrop {
-  position: fixed;
-  inset: calc(var(--topbar-h) + var(--game-vpad)) 0 var(--game-vpad) 0;
+  position: absolute;
+  inset: var(--topbar-h) 0 0 0;
   z-index: 50;
   display: flex;
   align-items: center;
@@ -292,7 +298,7 @@ html, body {
   z-index: 1;
   width: fit-content;
   min-width: 340px;
-  max-width: calc(100vw - 3rem);
+  max-width: 92%;
   background: var(--c-surface);
   border: 1px solid var(--c-border);
   border-radius: 18px;
@@ -515,8 +521,8 @@ html, body {
 
 /* ===== RESULTS SCREEN ===== */
 .screen-results {
-  position: fixed;
-  inset: var(--game-vpad) 0;
+  position: absolute;
+  inset: 0;
   background: var(--c-bg);
   overflow-y: auto;
   z-index: 100;
@@ -694,8 +700,8 @@ html, body {
 
 /* ===== RECAP OVERLAY ===== */
 .recap-overlay {
-  position: fixed;
-  inset: calc(var(--topbar-h) + var(--game-vpad)) 0 var(--game-vpad) 0;
+  position: absolute;
+  inset: var(--topbar-h) 0 0 0;
   z-index: 60;
   display: flex;
   align-items: center;
@@ -711,7 +717,7 @@ html, body {
   pointer-events: all;
   width: fit-content;
   min-width: 380px;
-  max-width: calc(100vw - 3rem);
+  max-width: 92%;
   background: var(--c-surface);
   border: 1px solid var(--c-border);
   border-radius: 18px;

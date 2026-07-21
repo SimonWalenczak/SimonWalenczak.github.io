@@ -152,163 +152,18 @@ const SCENARIO_EMBEDDED = {"title":"Bloc B — Consultation contextualisée","su
 // BOOT — load scenario.json (with embedded fallback)
 // ======================================================
 
-const USE_EMBEDDED_SCENARIO_FALLBACK = false;
-
-function getScenarioFetchUrl() {
-  // Cache-bust to avoid stale JSON when scenario is frequently edited.
-  return `scenario.json?v=${Date.now()}`;
-}
-
-function parseScenarioJson(text) {
-  const parsed = JSON.parse(text);
-  const hasScenes = parsed && Array.isArray(parsed.scenes);
-  const hasCategories = parsed && parsed.categories && typeof parsed.categories === "object";
-
-  if (!hasScenes || !hasCategories) {
-    throw new Error("Le JSON ne contient pas les champs attendus (scenes/categories).");
-  }
-
-  return parsed;
-}
-
-async function loadScenarioFromLocalFilePicker() {
-  return new Promise((resolve) => {
-    const overlay = document.createElement("div");
-    overlay.style.cssText = [
-      "position:fixed",
-      "inset:0",
-      "z-index:9999",
-      "display:flex",
-      "align-items:center",
-      "justify-content:center",
-      "background:rgba(15,23,42,0.75)",
-      "padding:24px",
-      "box-sizing:border-box",
-    ].join(";");
-
-    const panel = document.createElement("div");
-    panel.style.cssText = [
-      "max-width:560px",
-      "width:100%",
-      "background:#ffffff",
-      "border-radius:14px",
-      "padding:20px",
-      "box-shadow:0 24px 60px rgba(2,6,23,0.35)",
-      "font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif",
-      "color:#0f172a",
-    ].join(";");
-
-    const title = document.createElement("h3");
-    title.textContent = "Charger le scenario local";
-    title.style.margin = "0 0 8px 0";
-
-    const desc = document.createElement("p");
-    desc.textContent = "Mode sans serveur detecte. Selectionnez votre fichier scenario.json pour demarrer l'application.";
-    desc.style.cssText = "margin:0 0 16px 0;line-height:1.45;color:#334155;";
-
-    const error = document.createElement("p");
-    error.style.cssText = "display:none;margin:0 0 12px 0;color:#b91c1c;font-weight:600;";
-
-    const actions = document.createElement("div");
-    actions.style.cssText = "display:flex;gap:10px;flex-wrap:wrap;";
-
-    const chooseBtn = document.createElement("button");
-    chooseBtn.type = "button";
-    chooseBtn.textContent = "Choisir scenario.json";
-    chooseBtn.style.cssText = "border:0;border-radius:10px;padding:10px 14px;background:#0ea5e9;color:#fff;font-weight:700;cursor:pointer;";
-
-    const embeddedBtn = document.createElement("button");
-    embeddedBtn.type = "button";
-    embeddedBtn.textContent = "Utiliser le scenario embarque";
-    embeddedBtn.style.cssText = "border:1px solid #94a3b8;border-radius:10px;padding:10px 14px;background:#fff;color:#0f172a;font-weight:600;cursor:pointer;";
-
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".json,application/json";
-    input.style.display = "none";
-
-    const cleanup = () => {
-      overlay.remove();
-    };
-
-    chooseBtn.addEventListener("click", () => {
-      input.value = "";
-      input.click();
-    });
-
-    input.addEventListener("change", async () => {
-      const file = input.files && input.files[0];
-      if (!file) return;
-
-      try {
-        const text = await file.text();
-        const parsed = parseScenarioJson(text);
-        cleanup();
-        resolve(parsed);
-      } catch (err) {
-        error.style.display = "block";
-        error.textContent = `Fichier invalide: ${err && err.message ? err.message : "erreur de lecture"}`;
-      }
-    });
-
-    embeddedBtn.addEventListener("click", () => {
-      cleanup();
-      resolve(null);
-    });
-
-    actions.appendChild(chooseBtn);
-    actions.appendChild(embeddedBtn);
-    panel.appendChild(title);
-    panel.appendChild(desc);
-    panel.appendChild(error);
-    panel.appendChild(actions);
-    panel.appendChild(input);
-    overlay.appendChild(panel);
-    document.body.appendChild(overlay);
-  });
-}
-
 async function boot() {
-  let fetchError = null;
-
   try {
-    const res = await fetch(getScenarioFetchUrl(), { cache: "no-store" });
+    const res = await fetch("scenario.json");
     if (res.ok) {
       scenario = await res.json();
       buildFlatSteps();
       return;
     }
-    fetchError = new Error(`HTTP ${res.status}`);
   } catch (e) {
-    fetchError = e;
-  }
-
-  if (window.location.protocol === "file:") {
-    const localScenario = await loadScenarioFromLocalFilePicker();
-    if (localScenario) {
-      scenario = localScenario;
-      buildFlatSteps();
-      return;
-    }
-  }
-
-  if (USE_EMBEDDED_SCENARIO_FALLBACK) {
     // fetch unavailable (e.g. file:// protocol) — use embedded data
-    scenario = SCENARIO_EMBEDDED;
-    buildFlatSteps();
-    return;
   }
-
-  const isFileProtocol = window.location.protocol === "file:";
-  const hint = isFileProtocol
-    ? "L'application est ouverte en file://. Lancez-la via un serveur local (ex: VS Code Live Server) pour charger scenario.json."
-    : "Vérifiez que scenario.json est accessible et valide.";
-  const errorMessage = `Impossible de charger scenario.json. ${hint}`;
-
-  console.error(errorMessage, fetchError);
-  alert(errorMessage);
-
-  scenario = { title: "", subtitle: "", scenes: [], categories: {} };
+  scenario = SCENARIO_EMBEDDED;
   buildFlatSteps();
 }
 
@@ -716,5 +571,3 @@ async function initGame() {
 }
 
 initGame();
-
-

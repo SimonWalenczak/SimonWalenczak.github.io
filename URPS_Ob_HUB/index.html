@@ -9,36 +9,47 @@
 </head>
 <body>
   <main class="hub" aria-label="Accueil du centre medical">
-    <section class="intro-panel" id="intro-panel" aria-labelledby="intro-title">
-      <form class="intro-card" id="intro-form">
-        <p class="intro-kicker">Avant de commencer</p>
-        <h1 class="intro-title" id="intro-title">Quelle est votre specialite ?</h1>
-
-        <label class="intro-label" for="specialty-select">Specialite medicale</label>
-        <select class="intro-select" id="specialty-select" name="specialty" required>
-          <option value="">Choisissez une specialite</option>
-        </select>
-
-        <fieldset class="gender-field">
-          <legend class="intro-label">Etes-vous un homme ou une femme ?</legend>
-          <div class="gender-options" id="gender-options">
-            <button class="gender-option" type="button" data-gender="homme" aria-pressed="false">
-              <img src="CharacterDoctor.svg" alt="" aria-hidden="true"/>
-              <span>Homme</span>
-            </button>
-            <button class="gender-option" type="button" data-gender="femme" aria-pressed="false">
-              <img src="CharacterDoctor_Female.svg" alt="" aria-hidden="true"/>
-              <span>Femme</span>
-            </button>
-          </div>
-        </fieldset>
-
-        <button class="intro-submit" type="submit">Entrer dans le centre</button>
-      </form>
+    <section class="launch-overlay" id="launch-overlay" aria-labelledby="launch-title">
+      <div class="launch-card">
+        <p class="launch-kicker">Demarrage du jeu</p>
+        <h1 class="launch-title" id="launch-title">Comment souhaitez-vous lancer la simulation ?</h1>
+        <div class="launch-actions">
+          <button class="launch-btn launch-btn-primary" id="btn-launch-fullscreen" type="button">Lancer en plein ecran</button>
+          <button class="launch-btn launch-btn-secondary" id="btn-launch-windowed" type="button">Continuer sans plein ecran</button>
+        </div>
+      </div>
     </section>
 
-    <div class="hub-stage" id="hub-stage">
+    <div class="content hub-stage" id="hub-stage">
       <img class="hub-bg" src="Accueil_Background_RemakeV2.png" alt="Accueil du centre medical"/>
+
+      <section class="intro-panel" id="intro-panel" aria-labelledby="intro-title">
+        <form class="intro-card" id="intro-form">
+          <p class="intro-kicker">Avant de commencer</p>
+          <h1 class="intro-title" id="intro-title">Quelle est votre specialite ?</h1>
+
+          <label class="intro-label" for="specialty-select">Specialite medicale</label>
+          <select class="intro-select" id="specialty-select" name="specialty" required>
+            <option value="">Choisissez une specialite</option>
+          </select>
+
+          <fieldset class="gender-field">
+            <legend class="intro-label">Etes-vous un homme ou une femme ?</legend>
+            <div class="gender-options" id="gender-options">
+              <button class="gender-option" type="button" data-gender="homme" aria-pressed="false">
+                <img src="CharacterDoctor.svg" alt="" aria-hidden="true"/>
+                <span>Homme</span>
+              </button>
+              <button class="gender-option" type="button" data-gender="femme" aria-pressed="false">
+                <img src="CharacterDoctor_Female.svg" alt="" aria-hidden="true"/>
+                <span>Femme</span>
+              </button>
+            </div>
+          </fieldset>
+
+          <button class="intro-submit" type="submit">Entrer dans le centre</button>
+        </form>
+      </section>
 
       <section class="hub-welcome-overlay is-hidden" id="hub-welcome-overlay" aria-live="polite">
         <div class="hub-welcome-card">
@@ -85,19 +96,19 @@
         </div>
         <div class="hub-wall-categories-scroll" id="hub-wall-categories-scroll" aria-label="Categories du bilan"></div>
       </section>
+
+      <p class="hub-status" id="hub-status" aria-live="polite"></p>
+
+      <section class="hub-category-overlay is-hidden" id="hub-category-overlay" aria-labelledby="hub-category-title">
+        <div class="hub-category-card">
+          <header class="hub-category-header">
+            <h2 class="hub-category-title" id="hub-category-title">Detail categorie</h2>
+            <button class="hub-category-close" id="hub-category-close" type="button" aria-label="Fermer le detail">Fermer</button>
+          </header>
+          <div class="hub-category-content" id="hub-category-content"></div>
+        </div>
+      </section>
     </div>
-
-    <p class="hub-status" id="hub-status" aria-live="polite"></p>
-
-    <section class="hub-category-overlay is-hidden" id="hub-category-overlay" aria-labelledby="hub-category-title">
-      <div class="hub-category-card">
-        <header class="hub-category-header">
-          <h2 class="hub-category-title" id="hub-category-title">Detail categorie</h2>
-          <button class="hub-category-close" id="hub-category-close" type="button" aria-label="Fermer le detail">Fermer</button>
-        </header>
-        <div class="hub-category-content" id="hub-category-content"></div>
-      </div>
-    </section>
   </main>
 
   <script src="hub.js"></script>

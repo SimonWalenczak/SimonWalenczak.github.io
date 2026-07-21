@@ -29,6 +29,9 @@ let selectedSpecialty = "";
 let selectedGender = "";
 
 const introPanel = document.getElementById("intro-panel");
+const launchOverlay = document.getElementById("launch-overlay");
+const btnLaunchFullscreen = document.getElementById("btn-launch-fullscreen");
+const btnLaunchWindowed = document.getElementById("btn-launch-windowed");
 const introForm = document.getElementById("intro-form");
 const specialtySelect = document.getElementById("specialty-select");
 const genderOptions = document.querySelectorAll(".gender-option");
@@ -46,6 +49,7 @@ const categoryContent = document.getElementById("hub-category-content");
 const logoObesiteLink = document.getElementById("logo-obesite-link");
 const hubWelcomeOverlay = document.getElementById("hub-welcome-overlay");
 const hubWelcomePointer = document.getElementById("hub-welcome-pointer");
+const hubStage = document.getElementById("hub-stage");
 let statusTimer = null;
 let hubResultsChart = null;
 let hubResultsPayload = null;
@@ -106,23 +110,50 @@ function syncIntroFromSession() {
 }
 
 function updateWelcomePointerPosition() {
-  if (!hubWelcomeOverlay || !hubWelcomePointer || hubWelcomeOverlay.classList.contains("is-hidden")) {
+  if (!hubWelcomeOverlay || !hubWelcomePointer || !hubStage || hubWelcomeOverlay.classList.contains("is-hidden")) {
     return;
   }
 
   const doorRect = mainDoor.getBoundingClientRect();
+  const stageRect = hubStage.getBoundingClientRect();
   const pointerWidth = hubWelcomePointer.offsetWidth || 94;
   const pointerHeight = hubWelcomePointer.offsetHeight || 28;
-  const fallbackLeft = Math.max(16, doorRect.left - pointerWidth - 22);
-  const maxLeft = window.innerWidth - pointerWidth - 16;
-  const pointerLeft = Math.min(Math.max(16, fallbackLeft), maxLeft);
+  const fallbackLeft = Math.max(8, (doorRect.left - stageRect.left) - pointerWidth - 22);
+  const maxLeft = stageRect.width - pointerWidth - 8;
+  const pointerLeft = Math.min(Math.max(8, fallbackLeft), maxLeft);
   const pointerTop = Math.min(
-    Math.max(12, doorRect.top + (doorRect.height / 2) - (pointerHeight / 2)),
-    window.innerHeight - pointerHeight - 12
+    Math.max(8, (doorRect.top - stageRect.top) + (doorRect.height / 2) - (pointerHeight / 2)),
+    stageRect.height - pointerHeight - 8
   );
 
   hubWelcomePointer.style.setProperty("--door-pointer-left", `${pointerLeft}px`);
-  hubWelcomePointer.style.setProperty("--door-pointer-top", `${pointerTop+25}px`);
+  hubWelcomePointer.style.setProperty("--door-pointer-top", `${pointerTop + 8}px`);
+}
+
+async function requestFullscreen() {
+  const root = document.documentElement;
+
+  if (document.fullscreenElement || !root?.requestFullscreen) {
+    return;
+  }
+
+  try {
+    await root.requestFullscreen();
+  } catch {
+    showStatus("Le mode plein ecran a ete refuse par le navigateur.");
+  }
+}
+
+async function launchGame({ fullscreen }) {
+  if (fullscreen) {
+    await requestFullscreen();
+  }
+
+  launchOverlay?.classList.add("is-hidden");
+  syncIntroFromSession();
+  resolveDoorState();
+  maybeShowHubResults();
+  syncDoorLockState();
 }
 
 function syncDoorLockState() {
@@ -508,10 +539,9 @@ introForm.addEventListener("submit", (event) => {
 
 populateSpecialties();
 initializeWelcomeState();
-syncIntroFromSession();
-resolveDoorState();
-maybeShowHubResults();
 categoryCloseButton.addEventListener("click", closeCategoryOverlay);
 window.addEventListener("resize", refreshResultsRadarLayout);
 window.addEventListener("resize", updateWelcomePointerPosition);
-syncDoorLockState();
+
+btnLaunchFullscreen?.addEventListener("click", () => launchGame({ fullscreen: true }));
+btnLaunchWindowed?.addEventListener("click", () => launchGame({ fullscreen: false }));
