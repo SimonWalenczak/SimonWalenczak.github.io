@@ -29,20 +29,17 @@
   --r-lg: 24px;
 }
 
-html, body { height: 100%; font-family: var(--font); background: #ffffff; color: var(--c-text); }
+html, body { height: 100%; font-family: var(--font); background: #0f172a; color: var(--c-text); }
 .vn-body {
   height: 100%;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
 }
 
 .content {
   position: relative;
-  width: min(100vw, calc(100vh * 16 / 9));
-  height: min(100vh, calc(100vw * 9 / 16));
-  aspect-ratio: calc(var(--game-ratio-w) / var(--game-ratio-h));
+  width: 100vw;
+  height: 100vh;
   overflow: hidden;
 }
 
