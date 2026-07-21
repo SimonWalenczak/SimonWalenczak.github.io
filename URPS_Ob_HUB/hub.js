@@ -29,9 +29,6 @@ let selectedSpecialty = "";
 let selectedGender = "";
 
 const introPanel = document.getElementById("intro-panel");
-const launchOverlay = document.getElementById("launch-overlay");
-const btnLaunchFullscreen = document.getElementById("btn-launch-fullscreen");
-const btnLaunchWindowed = document.getElementById("btn-launch-windowed");
 const introForm = document.getElementById("intro-form");
 const specialtySelect = document.getElementById("specialty-select");
 const genderOptions = document.querySelectorAll(".gender-option");
@@ -140,20 +137,42 @@ async function requestFullscreen() {
   try {
     await root.requestFullscreen();
   } catch {
-    showStatus("Le mode plein ecran a ete refuse par le navigateur.");
+    // Browsers may reject autoplay fullscreen until a user interaction.
   }
 }
 
-async function launchGame({ fullscreen }) {
-  if (fullscreen) {
-    await requestFullscreen();
-  }
+function setupAutomaticFullscreen() {
+  let hasRetriedWithGesture = false;
 
-  launchOverlay?.classList.add("is-hidden");
+  requestFullscreen();
+
+  const tryOnInteraction = async () => {
+    if (hasRetriedWithGesture || document.fullscreenElement) {
+      return;
+    }
+
+    hasRetriedWithGesture = true;
+    await requestFullscreen();
+    window.removeEventListener("pointerdown", tryOnInteraction);
+    window.removeEventListener("keydown", tryOnInteraction);
+    window.removeEventListener("touchstart", tryOnInteraction);
+  };
+
+  window.addEventListener("pointerdown", tryOnInteraction, { passive: true });
+  window.addEventListener("keydown", tryOnInteraction);
+  window.addEventListener("touchstart", tryOnInteraction, { passive: true });
+}
+
+function initializeHubScene() {
+  setupAutomaticFullscreen();
   syncIntroFromSession();
   resolveDoorState();
   maybeShowHubResults();
   syncDoorLockState();
+
+  if (!document.fullscreenEnabled) {
+    showStatus("Le plein ecran n'est pas disponible sur ce navigateur.");
+  }
 }
 
 function syncDoorLockState() {
@@ -542,6 +561,4 @@ initializeWelcomeState();
 categoryCloseButton.addEventListener("click", closeCategoryOverlay);
 window.addEventListener("resize", refreshResultsRadarLayout);
 window.addEventListener("resize", updateWelcomePointerPosition);
-
-btnLaunchFullscreen?.addEventListener("click", () => launchGame({ fullscreen: true }));
-btnLaunchWindowed?.addEventListener("click", () => launchGame({ fullscreen: false }));
+initializeHubScene();

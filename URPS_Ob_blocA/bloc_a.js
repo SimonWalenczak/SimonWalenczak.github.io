@@ -292,6 +292,38 @@ const btnSurveyClose  = document.getElementById("btn-survey-close");
 
 let recapPendingStart = false;
 
+function requestFullscreen() {
+  if (document.fullscreenElement || !document.documentElement.requestFullscreen) {
+    return;
+  }
+
+  document.documentElement.requestFullscreen().catch(() => {
+    // Some browsers require a user gesture before entering fullscreen.
+  });
+}
+
+function setupAutomaticFullscreen() {
+  let retriedOnGesture = false;
+
+  requestFullscreen();
+
+  const tryOnInteraction = () => {
+    if (retriedOnGesture || document.fullscreenElement) {
+      return;
+    }
+
+    retriedOnGesture = true;
+    requestFullscreen();
+    window.removeEventListener("pointerdown", tryOnInteraction);
+    window.removeEventListener("keydown", tryOnInteraction);
+    window.removeEventListener("touchstart", tryOnInteraction);
+  };
+
+  window.addEventListener("pointerdown", tryOnInteraction, { passive: true });
+  window.addEventListener("keydown", tryOnInteraction);
+  window.addEventListener("touchstart", tryOnInteraction, { passive: true });
+}
+
 // ======================================================
 // SPARKLE ENGINE
 // ======================================================
@@ -724,4 +756,5 @@ btnSurveyClose.addEventListener("click", closeSurveyOverlay);
 // INIT
 // ======================================================
 
+setupAutomaticFullscreen();
 renderStep();

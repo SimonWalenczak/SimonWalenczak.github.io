@@ -95,6 +95,38 @@ const vnViewport        = document.getElementById("vn-viewport");
 const doctorSlot = charDoctor;
 const patientSlot = charPatient;
 
+function requestFullscreen() {
+  if (document.fullscreenElement || !document.documentElement.requestFullscreen) {
+    return;
+  }
+
+  document.documentElement.requestFullscreen().catch(() => {
+    // Some browsers require a user gesture before entering fullscreen.
+  });
+}
+
+function setupAutomaticFullscreen() {
+  let retriedOnGesture = false;
+
+  requestFullscreen();
+
+  const tryOnInteraction = () => {
+    if (retriedOnGesture || document.fullscreenElement) {
+      return;
+    }
+
+    retriedOnGesture = true;
+    requestFullscreen();
+    window.removeEventListener("pointerdown", tryOnInteraction);
+    window.removeEventListener("keydown", tryOnInteraction);
+    window.removeEventListener("touchstart", tryOnInteraction);
+  };
+
+  window.addEventListener("pointerdown", tryOnInteraction, { passive: true });
+  window.addEventListener("keydown", tryOnInteraction);
+  window.addEventListener("touchstart", tryOnInteraction, { passive: true });
+}
+
 function getSelectedDoctorGender() {
   const savedGender = (sessionStorage.getItem(HUB_GENDER_KEY) || "").toLowerCase();
   return savedGender === "femme" ? "femme" : "homme";
@@ -561,6 +593,7 @@ function buildCategoryDetails(categoryKey) {
 // ======================================================
 
 async function initGame() {
+  setupAutomaticFullscreen();
   await boot(); // load scenario.json (or fall back to SCENARIO_EMBEDDED)
   stepIndex = 0;
   answers = {};
