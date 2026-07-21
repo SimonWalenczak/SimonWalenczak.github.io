@@ -7,8 +7,18 @@
 // SVG ASSETS — inline SVG for backgrounds and characters
 // ======================================================
 
+const SCENE_BASE_DIR = window.URPS_SCENE_BASE_DIR || "";
+
+function resolveSceneAssetPath(assetPath) {
+  if (!SCENE_BASE_DIR || /^(?:[a-z]+:)?\/\//i.test(assetPath) || assetPath.startsWith("/")) {
+    return assetPath;
+  }
+
+  return `${SCENE_BASE_DIR}/${assetPath}`;
+}
+
 const SVG_BACKGROUNDS = {
-  cabinet: `<img src="Cabinet_Medical.svg" style="width:100%;height:100%;object-fit:cover;display:block;" alt=""/>`
+  cabinet: `<img src="${resolveSceneAssetPath("Cabinet_Medical.svg")}" style="width:100%;height:100%;object-fit:cover;display:block;" alt=""/>`
 };
 
 // Character artwork is loaded from sprite files instead of inline generated SVG.
@@ -37,14 +47,14 @@ const DEFAULT_CHARACTER_STATUS = "Default";
 const CHARACTER_SPRITES = {
   doctor: {
     homme: {
-      Default: "../URPS_Ob_HUB/CharacterDoctor.svg",
+      Default: resolveSceneAssetPath("../URPS_Ob_HUB/CharacterDoctor.svg"),
     },
     femme: {
-      Default: "../URPS_Ob_HUB/CharacterDoctor_Female.svg",
+      Default: resolveSceneAssetPath("../URPS_Ob_HUB/CharacterDoctor_Female.svg"),
     },
   },
   patient: {
-    Default: "CharactersSprites/Patient_Femme.png",
+    Default: resolveSceneAssetPath("CharactersSprites/Patient_Femme.png"),
   },
 };
 
@@ -186,7 +196,7 @@ const SCENARIO_EMBEDDED = {"title":"Bloc B — Consultation contextualisée","su
 
 async function boot() {
   try {
-    const res = await fetch("scenario.json");
+    const res = await fetch(resolveSceneAssetPath("scenario.json"));
     if (res.ok) {
       scenario = await res.json();
       buildFlatSteps();

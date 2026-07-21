@@ -109,7 +109,17 @@ const SVG_TABLE_BARI = `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/s
 // STEPS DATA
 // ======================================================
 
-const MEDICAL_SPRITES_DIR = "MedicalSprites/Reel";
+const SCENE_BASE_DIR = window.URPS_SCENE_BASE_DIR || "";
+
+function resolveSceneAssetPath(assetPath) {
+  if (!SCENE_BASE_DIR || /^(?:[a-z]+:)?\/\//i.test(assetPath) || assetPath.startsWith("/")) {
+    return assetPath;
+  }
+
+  return `${SCENE_BASE_DIR}/${assetPath}`;
+}
+
+const MEDICAL_SPRITES_DIR = resolveSceneAssetPath("MedicalSprites/Reel");
 const SPRITE_EXTENSIONS = ["png", "webp", "jpg", "jpeg", "svg"];
 const DEFAULT_COST_LEVEL = 1;
 const HUB_PROGRESS_KEY = "urps_ob_hub_progress";

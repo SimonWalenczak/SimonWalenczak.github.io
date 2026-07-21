@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>URPS Obesite - One Page</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0f172a;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    }
+
+    #scene-root {
+      width: 100%;
+      height: 100%;
+    }
+
+    .boot-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #e2e8f0;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      background:
+        radial-gradient(circle at 18% 14%, rgba(56, 189, 248, 0.25), transparent 36%),
+        radial-gradient(circle at 78% 84%, rgba(74, 222, 128, 0.2), transparent 36%),
+        #0f172a;
+    }
+
+    .boot-overlay.hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="scene-root"></div>
+  <div class="boot-overlay" id="boot-overlay">Chargement...</div>
+
+  <template id="tpl-hub">
+    <main class="hub" aria-label="Accueil du centre medical">
+      <div class="content hub-stage" id="hub-stage">
+        <img class="hub-bg" src="Accueil_Background_RemakeV2.png" alt="Accueil du centre medical"/>
+
+        <section class="intro-panel" id="intro-panel" aria-labelledby="intro-title">
+          <form class="intro-card" id="intro-form">
+            <p class="intro-kicker">Avant de commencer</p>
+            <h1 class="intro-title" id="intro-title">Quelle est votre specialite ?</h1>
+
+            <label class="intro-label" for="specialty-select">Specialite medicale</label>
+            <select class="intro-select" id="specialty-select" name="specialty" required>
+              <option value="">Choisissez une specialite</option>
+            </select>
+
+            <fieldset class="gender-field">
+              <legend class="intro-label">Etes-vous un homme ou une femme ?</legend>
+              <div class="gender-options" id="gender-options">
+                <button class="gender-option" type="button" data-gender="homme" aria-pressed="false">
+                  <img src="CharacterDoctor.svg" alt="" aria-hidden="true"/>
+                  <span>Homme</span>
+                </button>
+                <button class="gender-option" type="button" data-gender="femme" aria-pressed="false">
+                  <img src="CharacterDoctor_Female.svg" alt="" aria-hidden="true"/>
+                  <span>Femme</span>
+                </button>
+              </div>
+            </fieldset>
+
+            <button class="intro-submit" type="submit">Entrer dans le centre</button>
+          </form>
+        </section>
+
+        <section class="hub-welcome-overlay is-hidden" id="hub-welcome-overlay" aria-live="polite">
+          <div class="hub-welcome-card">
+            <p class="hub-welcome-message">Bienvenue dans votre centre médical virtuel. Allez dans votre cabinet.</p>
+            <p class="hub-welcome-hint">Cliquez n'importe ou sur l'ecran pour continuer.</p>
+          </div>
+          <div class="hub-welcome-pointer" id="hub-welcome-pointer" aria-hidden="true"></div>
+        </section>
+
+        <a
+          class="poster-hotspot poster-ordre-medecins"
+          href="https://www.conseil-national.medecin.fr/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Ouvrir le site du Conseil national de l'Ordre des medecins"
+        ></a>
+
+        <a
+          class="poster-hotspot poster-urps"
+          href="https://www.urpsml-hdf.fr/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Ouvrir le site URPS ML Hauts-de-France"
+        ></a>
+
+        <a
+          class="scene-logo-link logo-obesite-link is-hidden"
+          id="logo-obesite-link"
+          href="https://www.obesitefrance.fr/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Ouvrir l'annuaire CNAO"
+        >
+          <img src="Logo_obesite.png" alt="Logo obesite"/>
+        </a>
+
+        <button class="door-hotspot door-main" type="button" data-door="main" aria-label="Entrer dans la salle">
+          <span class="door-label" id="door-label">En travaux</span>
+        </button>
+
+        <section class="hub-wall-results is-hidden" id="hub-wall-results" aria-label="Bilan consultation">
+          <div class="hub-wall-radar-wrap">
+            <canvas id="hub-wall-radar"></canvas>
+          </div>
+          <div class="hub-wall-categories-scroll" id="hub-wall-categories-scroll" aria-label="Categories du bilan"></div>
+        </section>
+
+        <p class="hub-status" id="hub-status" aria-live="polite"></p>
+
+        <section class="hub-category-overlay is-hidden" id="hub-category-overlay" aria-labelledby="hub-category-title">
+          <div class="hub-category-card">
+            <header class="hub-category-header">
+              <h2 class="hub-category-title" id="hub-category-title">Detail categorie</h2>
+              <button class="hub-category-close" id="hub-category-close" type="button" aria-label="Fermer le detail">Fermer</button>
+            </header>
+            <div class="hub-category-content" id="hub-category-content"></div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </template>
+
+  <template id="tpl-blocA">
+    <div id="app" class="content">
+      <header class="topbar">
+        <span class="topbar-title">Aménagement du cabinet</span>
+        <div class="topbar-progress">
+          <div class="progress-track">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+          <span class="progress-label" id="progress-label">0 / 4</span>
+        </div>
+      </header>
+
+      <main class="main-area">
+        <div class="scene-section">
+          <div class="scene-inner" id="scene-inner">
+            <img class="scene-bg"
+                 src="../Scene_Creator/Sprites/Background_Cabinet_Medical.svg"
+                 alt="Cabinet médical"/>
+            <div class="scene-dim hidden" id="scene-dim"></div>
+            <div class="placed-objects" id="placed-objects"></div>
+          </div>
+        </div>
+      </main>
+
+      <div class="center-overlay" id="welcome-overlay" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
+        <div class="center-overlay-card">
+          <h2 class="center-overlay-title" id="welcome-title">Bienvenue</h2>
+          <p class="center-overlay-text">Bienvenue dans votre cabinet virtuel, aménagez le comme le votre.</p>
+          <button class="center-overlay-btn" id="btn-welcome-close" type="button">Fermer</button>
+        </div>
+      </div>
+
+      <div class="center-overlay hidden" id="survey-overlay" role="dialog" aria-modal="true" aria-labelledby="survey-title">
+        <div class="center-overlay-card">
+          <h2 class="center-overlay-title" id="survey-title">Sondage</h2>
+          <p class="center-overlay-text">On va récupérer quelques informations.</p>
+          <button class="center-overlay-btn" id="btn-survey-close" type="button">Continuer</button>
+        </div>
+      </div>
+
+      <div class="modal-backdrop" id="modal-backdrop">
+        <canvas class="sparkle-canvas" id="sparkle-canvas"></canvas>
+
+        <div class="selection-panel" id="selection-panel">
+          <div class="step-header">
+            <span class="step-chip" id="step-chip">Étape 1</span>
+            <p class="step-question" id="step-question"></p>
+          </div>
+          <div class="options-row" id="options-row"></div>
+          <div class="panel-footer">
+            <button class="btn-choose" id="btn-choose" disabled>Je choisis</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="recap-overlay hidden" id="recap-overlay">
+        <div class="recap-panel" id="recap-panel">
+          <div class="recap-header">
+            <span class="recap-chip" id="recap-chip">Analyse 1 / 4</span>
+            <span class="recap-status-badge" id="recap-status-badge"></span>
+          </div>
+          <div class="recap-body" id="recap-body"></div>
+          <div class="recap-question-row">
+            <p class="recap-q-text">Disposez-vous de cet équipement dans votre cabinet ?</p>
+            <div class="recap-answer-btns">
+              <button class="btn-equip btn-equip-oui" id="btn-equip-oui">✓ Oui</button>
+              <button class="btn-equip btn-equip-non" id="btn-equip-non">✗ Non</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <template id="tpl-blocB">
+    <div class="content" id="content">
+      <div id="screen-title" class="screen screen-title hidden">
+        <div class="title-bg">
+          <svg id="title-bg-svg" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#dbeafe"/>
+                <stop offset="100%" stop-color="#eff6ff"/>
+              </linearGradient>
+            </defs>
+            <rect width="1200" height="675" fill="url(#skyGrad)"/>
+            <rect x="0" y="500" width="1200" height="175" fill="#e2e8f0"/>
+            <rect x="80" y="120" width="260" height="320" rx="8" fill="#bfdbfe" stroke="#93c5fd" stroke-width="3"/>
+            <line x1="210" y1="120" x2="210" y2="440" stroke="#93c5fd" stroke-width="2"/>
+            <line x1="80" y1="280" x2="340" y2="280" stroke="#93c5fd" stroke-width="2"/>
+            <rect x="300" y="400" width="600" height="20" rx="4" fill="#94a3b8"/>
+            <rect x="310" y="420" width="20" height="80" fill="#94a3b8"/>
+            <rect x="870" y="420" width="20" height="80" fill="#94a3b8"/>
+            <rect x="520" y="310" width="160" height="100" rx="6" fill="#1e293b"/>
+            <rect x="530" y="318" width="140" height="82" rx="3" fill="#0ea5e9" opacity="0.7"/>
+            <rect x="570" y="410" width="60" height="10" rx="2" fill="#334155"/>
+            <circle cx="460" cy="390" r="18" fill="none" stroke="#64748b" stroke-width="4"/>
+            <path d="M460 372 Q 460 340 490 330" fill="none" stroke="#64748b" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="494" cy="328" r="5" fill="#64748b"/>
+            <rect x="960" y="380" width="40" height="50" rx="4" fill="#6b7280"/>
+            <ellipse cx="980" cy="360" rx="40" ry="60" fill="#4ade80" opacity="0.7"/>
+            <ellipse cx="950" cy="340" rx="30" ry="45" fill="#22c55e" opacity="0.8"/>
+            <ellipse cx="1010" cy="345" rx="30" ry="45" fill="#16a34a" opacity="0.8"/>
+          </svg>
+        </div>
+        <div class="title-overlay"></div>
+        <div class="title-content">
+          <p class="title-eyebrow">Formation professionnelle · URPS</p>
+          <h1 class="title-heading">Bloc B</h1>
+          <h2 class="title-subheading">Consultation contextualisée</h2>
+          <p class="title-desc">Une simulation de consultation médicale pour explorer vos pratiques vis-à-vis des patients en situation d'obésité.</p>
+          <button id="btn-title-start" class="vn-btn vn-btn-primary vn-btn-large">Commencer</button>
+        </div>
+      </div>
+
+      <div id="screen-game" class="screen screen-game">
+        <div class="hud-top">
+          <div class="hud-left">
+            <span class="hud-scene-label" id="hud-scene-label">Consultation</span>
+          </div>
+          <div class="hud-center">
+            <div class="hud-progress-track">
+              <div class="hud-progress-fill" id="hud-progress-fill"></div>
+            </div>
+            <span class="hud-progress-text" id="hud-progress-text">0 / 0</span>
+          </div>
+          <div class="hud-right">
+            <button id="btn-menu" class="hud-btn" title="Menu">Menu</button>
+          </div>
+        </div>
+
+        <div class="vn-viewport" id="vn-viewport">
+          <div class="vn-bg" id="vn-bg"></div>
+          <div class="vn-characters" id="vn-characters">
+            <div class="vn-char vn-char-left hidden" id="char-patient"></div>
+            <div class="vn-char vn-char-right hidden" id="char-doctor"></div>
+          </div>
+
+          <div class="vn-thought hidden" id="vn-thought">
+            <div class="thought-bubble">
+              <span class="thought-icon">💭</span>
+              <p class="thought-label">Réflexion interne</p>
+            </div>
+          </div>
+
+          <div class="vn-dialog-wrapper" id="vn-dialog-wrapper">
+            <div class="vn-dialog hidden" id="vn-dialog">
+              <div class="dialog-speaker" id="dialog-speaker"></div>
+              <p class="dialog-text" id="dialog-text"></p>
+              <button class="dialog-next" id="dialog-next">Suivant</button>
+            </div>
+
+            <div class="vn-narration hidden" id="vn-narration">
+              <p class="narration-text" id="narration-text"></p>
+              <button class="dialog-next" id="narration-next">Suivant</button>
+            </div>
+          </div>
+
+          <div class="vn-question-overlay hidden" id="vn-question-overlay">
+            <div class="vn-question-panel">
+              <div class="vq-header">
+                <span class="vq-badge" id="vq-badge">Question</span>
+                <span class="vq-internal hidden" id="vq-internal">Réflexion interne</span>
+              </div>
+              <h3 class="vq-question" id="vq-question"></h3>
+              <div class="vq-options" id="vq-options"></div>
+              <div class="vq-scale-labels hidden" id="vq-scale-labels">
+                <span>Pas du tout d'accord</span><span>Tout à fait d'accord</span>
+              </div>
+              <button class="vn-btn vn-btn-primary vq-confirm hidden" id="vq-confirm">Confirmer</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="screen-results" class="screen screen-results hidden">
+        <div class="results-container">
+          <div class="results-header">
+            <p class="results-eyebrow">Fin de consultation</p>
+            <h2 class="results-title">Votre synthèse</h2>
+            <p class="results-sub">La toile d'araignée ci-dessous reflète vos réponses dans chaque axe de pratique.</p>
+          </div>
+
+          <div class="results-body">
+            <div class="results-radar-card">
+              <div class="radar-wrap">
+                <canvas id="radar-chart"></canvas>
+              </div>
+              <div id="lowest-cat-box" class="lowest-cat-box hidden">
+                <span class="lowest-icon">⚠</span>
+                <div>
+                  <p class="lowest-label">Axe à explorer en priorité</p>
+                  <p class="lowest-value" id="lowest-cat-text"></p>
+                </div>
+              </div>
+            </div>
+
+            <div class="results-cats">
+              <h3 class="results-cats-title">Détail par catégorie</h3>
+              <div class="results-cat-grid" id="results-cat-grid"></div>
+            </div>
+          </div>
+
+          <div class="results-feedback" id="results-feedback">
+            <div class="feedback-panel-header">
+              <h3 class="feedback-panel-title" id="fb-panel-title"></h3>
+              <p class="feedback-panel-desc" id="fb-panel-desc"></p>
+            </div>
+            <div class="feedback-score-row">
+              <div class="feedback-score-box">
+                <p class="fb-score-label">Score</p>
+                <p class="fb-score-value" id="fb-score-value"></p>
+              </div>
+              <p class="fb-score-comment" id="fb-score-comment"></p>
+            </div>
+            <div class="feedback-items" id="feedback-items"></div>
+          </div>
+
+          <div class="results-actions">
+            <button id="btn-restart" class="vn-btn vn-btn-outline">Recommencer</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="menu-overlay" class="menu-overlay hidden">
+        <div class="menu-panel">
+          <h2 class="menu-title">Menu</h2>
+          <button id="menu-resume" class="vn-btn vn-btn-primary">Reprendre</button>
+          <button id="menu-restart" class="vn-btn vn-btn-outline">Recommencer depuis le début</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="URPS_OnePage.merged.js"></script>
+
+  <script>
+    const SCENES = {
+      hub: {
+        templateId: "tpl-hub",
+        baseDir: "URPS_Ob_HUB",
+        styleFiles: ["hub.css"],
+        runnerKey: "hub",
+        bodyClass: "",
+      },
+      blocA: {
+        templateId: "tpl-blocA",
+        baseDir: "URPS_Ob_blocA",
+        styleFiles: ["bloc_a.css"],
+        runnerKey: "blocA",
+        bodyClass: "",
+      },
+      blocB: {
+        templateId: "tpl-blocB",
+        baseDir: "URPS_Ob_blocB",
+        styleFiles: ["style.css"],
+        runnerKey: "blocB",
+        bodyClass: "vn-body",
+      },
+    };
+
+    const sceneRoot = document.getElementById("scene-root");
+    const bootOverlay = document.getElementById("boot-overlay");
+
+    function isExternalUrl(url) {
+      return /^(?:[a-z]+:)?\/\//i.test(url) || /^(?:data:|mailto:|tel:|#)/i.test(url);
+    }
+
+    function resolveAssetUrl(baseDir, url) {
+      if (!url || isExternalUrl(url) || url.startsWith("/")) {
+        return url;
+      }
+      return `${baseDir}/${url}`;
+    }
+
+    function rewriteRelativeAssets(container, baseDir) {
+      container.querySelectorAll("[src]").forEach((element) => {
+        const source = element.getAttribute("src");
+        element.setAttribute("src", resolveAssetUrl(baseDir, source));
+      });
+
+      container.querySelectorAll("a[href]").forEach((anchor) => {
+        const href = anchor.getAttribute("href");
+        if (!isExternalUrl(href) && !href.startsWith("/")) {
+          anchor.setAttribute("href", resolveAssetUrl(baseDir, href));
+        }
+      });
+    }
+
+    function cleanupSceneResources() {
+      document.querySelectorAll("[data-urps-scene-resource='true']").forEach((node) => node.remove());
+    }
+
+    function currentSceneFromQuery() {
+      const params = new URLSearchParams(window.location.search);
+      const scene = params.get("scene") || "hub";
+      return SCENES[scene] ? scene : "hub";
+    }
+
+    function navigate(scene) {
+      const targetScene = SCENES[scene] ? scene : "hub";
+      const url = new URL(window.location.href);
+      url.searchParams.set("scene", targetScene);
+      window.location.href = url.toString();
+    }
+
+    function mountScene(sceneKey) {
+      const scene = SCENES[sceneKey] || SCENES.hub;
+      const template = document.getElementById(scene.templateId);
+      const fragment = template.content.cloneNode(true);
+
+      rewriteRelativeAssets(fragment, scene.baseDir);
+
+      cleanupSceneResources();
+      sceneRoot.innerHTML = "";
+      sceneRoot.appendChild(fragment);
+
+      document.body.className = scene.bodyClass || "";
+      window.URPS_SCENE_BASE_DIR = scene.baseDir;
+
+      scene.styleFiles.forEach((styleFile) => {
+        const link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = resolveAssetUrl(scene.baseDir, styleFile);
+        link.dataset.urpsSceneResource = "true";
+        document.head.appendChild(link);
+      });
+
+      const sceneRunner = window.URPS_SCENE_SCRIPTS?.[scene.runnerKey];
+      if (typeof sceneRunner !== "function") {
+        throw new Error(`Scene runner introuvable: ${scene.runnerKey}`);
+      }
+
+      sceneRunner();
+    }
+
+    window.URPS_ROUTER = {
+      isSinglePage: true,
+      navigate,
+      currentScene: currentSceneFromQuery,
+    };
+
+    sessionStorage.setItem("urps_ob_single_page", "true");
+
+    (async () => {
+      try {
+        mountScene(currentSceneFromQuery());
+        bootOverlay.classList.add("hidden");
+      } catch (error) {
+        console.error(error);
+        bootOverlay.textContent = "Erreur de chargement de la scene.";
+      }
+    })();
+  </script>
+</body>
+</html>
