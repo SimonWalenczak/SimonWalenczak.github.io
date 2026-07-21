@@ -25,13 +25,15 @@
 html, body {
   height: 100%;
   overflow: hidden;
-  background: #0f172a;
+  background: #ffffff;
   color: var(--c-text);
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
 body {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .hidden { display: none !important; }
@@ -41,8 +43,9 @@ body {
   position: relative;
   display: flex;
   flex-direction: column;
-  width: 100vw;
-  height: 100vh;
+  width: min(100vw, calc(100vh * 16 / 9));
+  height: min(100vh, calc(100vw * 9 / 16));
+  aspect-ratio: var(--scene-ratio);
   overflow: hidden;
 }
 
