@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>URPS Obesite - Jeu</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: #0f172a;
+    }
+
+    #scene-root {
+      width: 100%;
+      height: 100%;
+    }
+
+    .boot-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(circle at 22% 18%, rgba(56, 189, 248, 0.22), transparent 34%),
+        radial-gradient(circle at 78% 82%, rgba(74, 222, 128, 0.2), transparent 36%),
+        #0f172a;
+      color: #e2e8f0;
+      font-size: 0.96rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .boot-overlay.hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="scene-root"></div>
+  <div class="boot-overlay" id="boot-overlay">Chargement de la scene...</div>
+
+  <script>
+    const SCENES = {
+      hub: {
+        htmlPath: "./index.html",
+        baseDir: ".",
+      },
+      blocA: {
+        htmlPath: "../URPS_Ob_blocA/index.html",
+        baseDir: "../URPS_Ob_blocA",
+      },
+      blocB: {
+        htmlPath: "../URPS_Ob_blocB/index.html",
+        baseDir: "../URPS_Ob_blocB",
+      },
+    };
+
+    const root = document.getElementById("scene-root");
+    const bootOverlay = document.getElementById("boot-overlay");
+
+    function isExternalUrl(url) {
+      return /^(?:[a-z]+:)?\/\//i.test(url) || /^(?:data:|mailto:|tel:|#)/i.test(url);
+    }
+
+    function resolveAssetUrl(baseDir, url) {
+      if (!url || isExternalUrl(url) || url.startsWith("/")) {
+        return url;
+      }
+      return `${baseDir}/${url}`;
+    }
+
+    function rewriteRelativeAssets(container, baseDir) {
+      container.querySelectorAll("[src]").forEach((element) => {
+        const source = element.getAttribute("src");
+        element.setAttribute("src", resolveAssetUrl(baseDir, source));
+      });
+
+      container.querySelectorAll("[href]").forEach((element) => {
+        if (element.tagName.toLowerCase() !== "a") {
+          const href = element.getAttribute("href");
+          element.setAttribute("href", resolveAssetUrl(baseDir, href));
+        }
+      });
+    }
+
+    function cleanupSceneResources() {
+      document.querySelectorAll("[data-urps-scene-resource='true']").forEach((node) => node.remove());
+    }
+
+    function getSceneFromQuery() {
+      const params = new URLSearchParams(window.location.search);
+      const requested = params.get("scene");
+      return SCENES[requested] ? requested : "hub";
+    }
+
+    async function loadScriptSequentially(scriptUrls) {
+      for (const scriptUrl of scriptUrls) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = scriptUrl;
+          script.defer = false;
+          script.dataset.urpsSceneResource = "true";
+          script.addEventListener("load", resolve);
+          script.addEventListener("error", reject);
+          document.body.appendChild(script);
+        });
+      }
+    }
+
+    function setCurrentSceneQuery(scene) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("scene", scene);
+      window.history.replaceState({}, "", url);
+    }
+
+    function navigate(scene) {
+      const target = SCENES[scene] ? scene : "hub";
+      if (target === getSceneFromQuery()) {
+        return;
+      }
+
+      const url = new URL(window.location.href);
+      url.searchParams.set("scene", target);
+      window.location.href = url.toString();
+    }
+
+    window.URPS_ROUTER = {
+      navigate,
+      isSinglePage: true,
+      currentScene: () => getSceneFromQuery(),
+    };
+
+    sessionStorage.setItem("urps_ob_single_page", "true");
+
+    async function mountScene(scene) {
+      const config = SCENES[scene] || SCENES.hub;
+      const response = await fetch(config.htmlPath, { cache: "no-store" });
+
+      if (!response.ok) {
+        throw new Error(`Impossible de charger ${config.htmlPath}`);
+      }
+
+      const html = await response.text();
+      const parsed = new DOMParser().parseFromString(html, "text/html");
+
+      const styleLinks = Array.from(parsed.querySelectorAll("head link[rel='stylesheet']"))
+        .map((link) => resolveAssetUrl(config.baseDir, link.getAttribute("href")));
+
+      const scriptUrls = Array.from(parsed.querySelectorAll("script[src]"))
+        .map((script) => resolveAssetUrl(config.baseDir, script.getAttribute("src")));
+
+      const sceneContainer = document.createElement("div");
+      sceneContainer.innerHTML = parsed.body.innerHTML;
+
+      sceneContainer.querySelectorAll("script").forEach((script) => script.remove());
+      rewriteRelativeAssets(sceneContainer, config.baseDir);
+
+      cleanupSceneResources();
+
+      styleLinks.forEach((href) => {
+        const link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = href;
+        link.dataset.urpsSceneResource = "true";
+        document.head.appendChild(link);
+      });
+
+      root.innerHTML = "";
+      while (sceneContainer.firstChild) {
+        root.appendChild(sceneContainer.firstChild);
+      }
+
+      await loadScriptSequentially(scriptUrls);
+      setCurrentSceneQuery(scene);
+    }
+
+    async function boot() {
+      const scene = getSceneFromQuery();
+      try {
+        await mountScene(scene);
+      } catch (error) {
+        console.error(error);
+        bootOverlay.textContent = "Echec du chargement de la scene.";
+        return;
+      }
+
+      bootOverlay.classList.add("hidden");
+    }
+
+    boot();
+  </script>
+</body>
+</html>

@@ -509,6 +509,28 @@ function showStatus(message) {
   }, 2200);
 }
 
+function navigateToScene(scene) {
+  const router = window.URPS_ROUTER;
+  const isSinglePageMode = sessionStorage.getItem("urps_ob_single_page") === "true";
+  const routes = {
+    hub: "../URPS_Ob_HUB/index.html",
+    blocA: "../URPS_Ob_blocA/index.html",
+    blocB: "../URPS_Ob_blocB/index.html",
+  };
+
+  if (router && typeof router.navigate === "function") {
+    router.navigate(scene);
+    return;
+  }
+
+  if (isSinglePageMode && window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: "urps:navigate", scene }, window.location.origin);
+    return;
+  }
+
+  window.location.href = routes[scene] || routes.hub;
+}
+
 function openDoor(button) {
   if (!hasPassedWelcomeDialog) {
     showStatus("Cliquez d'abord sur l'ecran pour fermer le message de bienvenue.");
@@ -529,7 +551,8 @@ function openDoor(button) {
   showStatus(`Ouverture de ${activeDoor.label}...`);
 
   window.setTimeout(() => {
-    window.location.href = activeDoor.url;
+    const nextScene = activeDoor.url.includes("blocB") ? "blocB" : "blocA";
+    navigateToScene(nextScene);
   }, 220);
 }
 

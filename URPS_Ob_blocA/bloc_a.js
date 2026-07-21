@@ -738,6 +738,18 @@ function showFinalSummary() {
     el.classList.remove("highlighted", "dimmed");
   });
   sessionStorage.setItem(HUB_PROGRESS_KEY, HUB_PROGRESS_BLOC_A_COMPLETED);
+
+  if (window.URPS_ROUTER && typeof window.URPS_ROUTER.navigate === "function") {
+    window.URPS_ROUTER.navigate("hub");
+    return;
+  }
+
+  const isSinglePageMode = sessionStorage.getItem("urps_ob_single_page") === "true";
+  if (isSinglePageMode && window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: "urps:navigate", scene: "hub" }, window.location.origin);
+    return;
+  }
+
   window.location.href = "../URPS_Ob_HUB/index.html";
 }
 
