@@ -320,9 +320,11 @@ body {
 .step-header {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.75rem;
   flex-shrink: 0;
   animation: slideDown 0.25s ease-out;
+  text-align: center;
 }
 
 @keyframes slideDown {
@@ -350,6 +352,7 @@ body {
 /* Options row */
 .options-row {
   display: flex;
+  justify-content: center;
   gap: 1.25rem;
   min-height: 200px;
   overflow-x: visible;
@@ -488,6 +491,7 @@ body {
   flex-shrink: 0;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 1rem;
 }
 
