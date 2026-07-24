@@ -114,6 +114,16 @@ html, body { height: 100%; font-family: var(--font); background: #ffffff; color:
   font-size: .9375rem; color: var(--c-text-2); line-height: 1.6; max-width: 480px;
 }
 
+.title-duration {
+  font-size: .84rem;
+  color: #bae6fd;
+  font-weight: 700;
+  padding: .38rem .72rem;
+  border: 1px solid rgba(56,189,248,.32);
+  border-radius: 9999px;
+  background: rgba(15,23,42,.34);
+}
+
 /* =====================================================
    BUTTONS
    ===================================================== */
@@ -162,9 +172,21 @@ html, body { height: 100%; font-family: var(--font); background: #ffffff; color:
 .hud-left { display: flex; align-items: center; min-width: 12%; }
 .hud-scene-label { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--c-accent); }
 .hud-center { flex: 1; display: flex; align-items: center; gap: .75rem; }
-.hud-progress-track { flex: 1; height: 6px; background: var(--c-border); border-radius: 9999px; overflow: hidden; }
-.hud-progress-fill  { height: 100%; background: var(--c-accent); border-radius: 9999px; transition: width .4s ease; }
-.hud-progress-text  { font-size: .75rem; font-weight: 600; color: var(--c-muted); white-space: nowrap; }
+.hud-progress-track {
+  flex: 1;
+  height: 7px;
+  background: linear-gradient(90deg, rgba(71,85,105,.95), rgba(51,65,85,.95));
+  border-radius: 9999px;
+  overflow: hidden;
+  border: 1px solid rgba(148,163,184,.18);
+}
+.hud-progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 9999px;
+  background: #38bdf8;
+  transition: width .4s ease;
+}
 .hud-right { display: flex; align-items: center; justify-content: flex-end; min-width: 8%; }
 .hud-btn {
   background: none; border: 1px solid var(--c-border); border-radius: var(--r-sm);
@@ -1014,6 +1036,11 @@ body {
     max-width: 520px;
   }
 
+  .title-duration {
+    font-size: 0.72rem;
+    padding: 0.26rem 0.56rem;
+  }
+
   .vn-btn-large {
     padding: 0.52rem 1rem;
     font-size: 0.82rem;
@@ -1025,8 +1052,7 @@ body {
     gap: 0.55rem;
   }
 
-  .hud-scene-label,
-  .hud-progress-text {
+  .hud-scene-label {
     font-size: 0.66rem;
   }
 

@@ -37,7 +37,6 @@ const mainDoor = document.querySelector(".door-hotspot[data-door='main']");
 const posterHotspots = document.querySelectorAll(".poster-hotspot");
 const doorLabel = document.getElementById("door-label");
 const wallResults = document.getElementById("hub-wall-results");
-const wallCategoriesScroll = document.getElementById("hub-wall-categories-scroll");
 const resultsRadarCanvas = document.getElementById("hub-wall-radar");
 const categoryOverlay = document.getElementById("hub-category-overlay");
 const categoryCloseButton = document.getElementById("hub-category-close");
@@ -50,6 +49,7 @@ const hubStage = document.getElementById("hub-stage");
 let statusTimer = null;
 let hubResultsChart = null;
 let hubResultsPayload = null;
+let hubRadarLabelHitboxes = [];
 let hasPassedWelcomeDialog = false;
 let isDoorPhaseDisabled = false;
 let activeDoor = {
@@ -361,6 +361,20 @@ function renderResultsRadar(scores) {
       responsive: true,
       maintainAspectRatio: false,
       animation: false,
+      onClick: (event) => {
+        const categoryKey = getCategoryKeyFromRadarLabelClick(event);
+        if (categoryKey) {
+          renderCategoryDetails(categoryKey);
+        }
+      },
+      onHover: (event) => {
+        if (!resultsRadarCanvas) {
+          return;
+        }
+
+        const categoryKey = getCategoryKeyFromRadarLabelClick(event);
+        resultsRadarCanvas.style.cursor = categoryKey ? "pointer" : "default";
+      },
       layout: {
         padding: getRadarLayoutPreset().padding,
       },
@@ -384,6 +398,8 @@ function renderResultsRadar(scores) {
       },
     },
   });
+
+  refreshRadarLabelHitboxes();
 }
 
 function refreshResultsRadarLayout() {
@@ -396,6 +412,53 @@ function refreshResultsRadarLayout() {
   hubResultsChart.options.scales.r.pointLabels.padding = preset.labelPadding;
   hubResultsChart.options.scales.r.pointLabels.font.size = preset.labelSize;
   hubResultsChart.update("none");
+  refreshRadarLabelHitboxes();
+}
+
+function refreshRadarLabelHitboxes() {
+  hubRadarLabelHitboxes = [];
+
+  if (!hubResultsChart?.scales?.r) {
+    return;
+  }
+
+  const pointLabelItems = hubResultsChart.scales.r._pointLabelItems;
+  if (!Array.isArray(pointLabelItems)) {
+    return;
+  }
+
+  hubRadarLabelHitboxes = pointLabelItems
+    .map((item, index) => {
+      const width = item.width ?? 0;
+      const height = item.height ?? 0;
+      const left = item.left ?? ((item.x ?? 0) - (width / 2));
+      const right = item.right ?? ((item.x ?? 0) + (width / 2));
+      const top = item.top ?? ((item.y ?? 0) - (height / 2));
+      const bottom = item.bottom ?? ((item.y ?? 0) + (height / 2));
+
+      return { index, left, right, top, bottom };
+    })
+    .filter((box) => [box.left, box.right, box.top, box.bottom].every(Number.isFinite));
+}
+
+function getCategoryKeyFromRadarLabelClick(event) {
+  const nativeEvent = event?.native;
+  if (!nativeEvent || !hubResultsPayload?.scores?.length || !hubRadarLabelHitboxes.length) {
+    return null;
+  }
+
+  const x = nativeEvent.offsetX ?? nativeEvent.x;
+  const y = nativeEvent.offsetY ?? nativeEvent.y;
+  if (!Number.isFinite(x) || !Number.isFinite(y)) {
+    return null;
+  }
+
+  const hitbox = hubRadarLabelHitboxes.find((box) => x >= box.left && x <= box.right && y >= box.top && y <= box.bottom);
+  if (!hitbox) {
+    return null;
+  }
+
+  return hubResultsPayload.scores[hitbox.index]?.key || null;
 }
 
 function renderCategoryDetails(categoryKey) {
@@ -411,6 +474,7 @@ function renderCategoryDetails(categoryKey) {
 
   if (!details.length) {
     categoryContent.innerHTML = `<p class="hub-results-empty">Aucune réponse enregistrée pour cette catégorie.</p>`;
+    categoryOverlay?.classList.remove("is-hidden");
     return;
   }
 
@@ -421,35 +485,16 @@ function renderCategoryDetails(categoryKey) {
       <p class="hub-results-detail-feedback">${detail.feedback}</p>
     </article>
   `).join("");
+
+  categoryOverlay?.classList.remove("is-hidden");
 }
 
 function renderResultsCategories() {
-  if (!hubResultsPayload) {
-    return;
-  }
-
-  wallCategoriesScroll.innerHTML = "";
-
-  hubResultsPayload.scores.forEach((item) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "hub-wall-category-btn";
-    button.style.setProperty("--cat-color", item.palette.color);
-    button.style.setProperty("--cat-color-soft", item.palette.soft);
-    button.style.setProperty("--cat-bg", hexToRgba(item.palette.color, 0.16));
-    button.textContent = item.label;
-
-    button.addEventListener("click", () => {
-      renderCategoryDetails(item.key);
-      categoryOverlay.classList.remove("is-hidden");
-    });
-
-    wallCategoriesScroll.appendChild(button);
-  });
+  // Details are opened only via radar category label clicks.
 }
 
 function closeCategoryOverlay() {
-  categoryOverlay.classList.add("is-hidden");
+  categoryOverlay?.classList.add("is-hidden");
 }
 
 function maybeShowHubResults() {
@@ -571,7 +616,7 @@ introForm.addEventListener("submit", (event) => {
   }
 
   if (!selectedGender) {
-    showStatus("Selectionnez homme ou femme avant de continuer.");
+    showStatus("Selectionnez une option avant de continuer.");
     genderOptions[0].focus();
     return;
   }
@@ -581,7 +626,17 @@ introForm.addEventListener("submit", (event) => {
 
 populateSpecialties();
 initializeWelcomeState();
-categoryCloseButton.addEventListener("click", closeCategoryOverlay);
+categoryCloseButton?.addEventListener("click", closeCategoryOverlay);
+categoryOverlay?.addEventListener("click", (event) => {
+  if (event.target === categoryOverlay) {
+    closeCategoryOverlay();
+  }
+});
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && categoryOverlay && !categoryOverlay.classList.contains("is-hidden")) {
+    closeCategoryOverlay();
+  }
+});
 window.addEventListener("resize", refreshResultsRadarLayout);
 window.addEventListener("resize", updateWelcomePointerPosition);
 initializeHubScene();

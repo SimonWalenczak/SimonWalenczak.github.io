@@ -126,7 +126,7 @@ body {
 
 .gender-options {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 0.75rem;
   margin-top: 0.55rem;
 }
@@ -333,8 +333,8 @@ body {
 .scene-logo-link {
   position: absolute;
   z-index: 2;
-  left: 54%;
-  top: 10%;
+  left: 55.5%;
+  top: 55%;
   width: 8.2%;
   display: block;
   border-radius: 8px;
@@ -467,14 +467,28 @@ body {
   position: absolute;
   z-index: 3;
   left: 47%;
-  top: 24%;
+  top: 8%;
+  /*top: calc(24% - 40px);*/
   width: 25%;
   pointer-events: auto;
 }
 
+.hub-results-title {
+  margin: 0 0 0.45rem;
+  text-align: center;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  border-radius: 10px;
+  border: 1px solid rgba(147, 197, 253, 0.3);
+  background: rgba(15, 23, 42, 0.74);
+  padding: 0.35rem 0.5rem;
+}
+
 .hub-wall-radar-wrap {
   width: 100%;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 12 / 9;
   border-radius: 12px;
   border: 1px solid rgba(147, 197, 253, 0.3);
   background: rgba(15, 23, 42, 0.74);
@@ -485,6 +499,19 @@ body {
 .hub-wall-radar-wrap canvas {
   width: 100% !important;
   height: 100% !important;
+}
+
+.hub-results-click-hint {
+  margin: 0.5rem 0 0;
+  text-align: center;
+  color: #ffffff;
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.35;
+  border-radius: 10px;
+  border: 1px solid rgba(147, 197, 253, 0.3);
+  background: rgba(15, 23, 42, 0.74);
+  padding: 0.35rem 0.5rem;
 }
 
 .hub-wall-categories-scroll {
@@ -571,6 +598,20 @@ body {
   border-color: rgba(147, 197, 253, 0.65);
   transform: translateY(-1px);
   outline: none;
+}
+
+.hub-results-hint {
+  margin: 0;
+  color: #bfdbfe;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.hub-results-inline-title {
+  margin: 0;
+  color: #eff6ff;
+  font-size: 0.82rem;
+  font-weight: 800;
 }
 
 .hub-category-overlay {

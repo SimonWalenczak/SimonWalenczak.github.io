@@ -33,6 +33,10 @@
                 <img src="CharacterDoctor_Female.svg" alt="" aria-hidden="true"/>
                 <span>Femme</span>
               </button>
+              <button class="gender-option" type="button" data-gender="ne_se_prononce_pas" aria-pressed="false">
+                <img src="CharacterDoctor.svg" alt="" aria-hidden="true"/>
+                <span>Ne se prononce pas</span>
+              </button>
             </div>
           </fieldset>
 
@@ -80,10 +84,11 @@
       </button>
 
       <section class="hub-wall-results is-hidden" id="hub-wall-results" aria-label="Bilan consultation">
+        <p class="hub-results-title">Voici vos résultats</p>
         <div class="hub-wall-radar-wrap">
           <canvas id="hub-wall-radar"></canvas>
         </div>
-        <div class="hub-wall-categories-scroll" id="hub-wall-categories-scroll" aria-label="Categories du bilan"></div>
+        <p class="hub-results-click-hint">Cliquez sur les noms des categories de la toile pour voir les resultats.</p>
       </section>
 
       <p class="hub-status" id="hub-status" aria-live="polite"></p>

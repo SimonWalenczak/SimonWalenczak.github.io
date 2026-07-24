@@ -75,7 +75,6 @@ const menuRestart   = document.getElementById("menu-restart");
 
 const hudSceneLabel   = document.getElementById("hud-scene-label");
 const hudProgressFill = document.getElementById("hud-progress-fill");
-const hudProgressText = document.getElementById("hud-progress-text");
 
 const vnBg          = document.getElementById("vn-bg");
 const charPatient   = document.getElementById("char-patient");
@@ -257,7 +256,6 @@ function renderStep() {
   const done    = answeredCount();
   const pct     = total > 0 ? Math.round((done / total) * 100) : 0;
   hudProgressFill.style.width = `${pct}%`;
-  hudProgressText.textContent = `${done} / ${total}`;
 
   // Background
   const bgKey = step._sceneBg || "cabinet";
@@ -621,8 +619,7 @@ async function initGame() {
   answers = {};
   openFeedback = {};
   selectedCategory = null;
-  showScreen("screen-game");
-  renderStep();
+  showScreen("screen-title");
 }
 
 initGame();

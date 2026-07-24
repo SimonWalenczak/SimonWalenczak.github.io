@@ -72,6 +72,10 @@
                   <img src="CharacterDoctor_Female.svg" alt="" aria-hidden="true"/>
                   <span>Femme</span>
                 </button>
+                <button class="gender-option" type="button" data-gender="ne_se_prononce_pas" aria-pressed="false">
+                  <img src="CharacterDoctor.svg" alt="" aria-hidden="true"/>
+                  <span>Ne se prononce pas</span>
+                </button>
               </div>
             </fieldset>
 
@@ -119,10 +123,11 @@
         </button>
 
         <section class="hub-wall-results is-hidden" id="hub-wall-results" aria-label="Bilan consultation">
+          <p class="hub-results-title">Voici vos résultats</p>
           <div class="hub-wall-radar-wrap">
             <canvas id="hub-wall-radar"></canvas>
           </div>
-          <div class="hub-wall-categories-scroll" id="hub-wall-categories-scroll" aria-label="Categories du bilan"></div>
+          <p class="hub-results-click-hint">Cliquez sur les noms des categories de la toile pour voir les resultats.</p>
         </section>
 
         <p class="hub-status" id="hub-status" aria-live="polite"></p>
@@ -251,6 +256,7 @@
           <h1 class="title-heading">Bloc B</h1>
           <h2 class="title-subheading">Consultation contextualisée</h2>
           <p class="title-desc">Une simulation de consultation médicale pour explorer vos pratiques vis-à-vis des patients en situation d'obésité.</p>
+          <p class="title-duration">Durée estimée du questionnaire : 5 à 10 minutes.</p>
           <button id="btn-title-start" class="vn-btn vn-btn-primary vn-btn-large">Commencer</button>
         </div>
       </div>
@@ -264,7 +270,6 @@
             <div class="hud-progress-track">
               <div class="hud-progress-fill" id="hud-progress-fill"></div>
             </div>
-            <span class="hud-progress-text" id="hud-progress-text">0 / 0</span>
           </div>
           <div class="hud-right">
             <button id="btn-menu" class="hud-btn" title="Menu">Menu</button>
