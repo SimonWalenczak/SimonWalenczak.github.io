@@ -390,8 +390,6 @@ function renderResultsRadar(scores) {
           pointLabels: {
             color: "#dbeafe",
             padding: getRadarLayoutPreset().labelPadding,
-            backdropColor: "transparent",
-            backdropPadding: 0,
             font: { size: getRadarLayoutPreset().labelSize, weight: "600" },
           },
         },
@@ -1532,6 +1530,10 @@ const vqOptions         = document.getElementById("vq-options");
 const vqScaleLabels     = document.getElementById("vq-scale-labels");
 const vqConfirm         = document.getElementById("vq-confirm");
 const vnViewport        = document.getElementById("vn-viewport");
+const startInfoOverlay  = document.getElementById("start-info-overlay");
+const startInfoContinue = document.getElementById("start-info-continue");
+
+let isStartInfoOpen = false;
 
 // Render roles on their original side:
 // left slot (char-patient) => patient, right slot (char-doctor) => doctor.
@@ -1669,6 +1671,24 @@ function showScreen(id) {
     .filter(Boolean)
     .forEach((el) => el.classList.add("hidden"));
   document.getElementById(id).classList.remove("hidden");
+}
+
+function showStartInfoOverlay() {
+  if (!startInfoOverlay) {
+    return;
+  }
+
+  isStartInfoOpen = true;
+  startInfoOverlay.classList.remove("hidden");
+}
+
+function hideStartInfoOverlay() {
+  if (!startInfoOverlay) {
+    return;
+  }
+
+  isStartInfoOpen = false;
+  startInfoOverlay.classList.add("hidden");
 }
 
 // ======================================================
@@ -1875,6 +1895,10 @@ function advance() {
 }
 
 function advanceOnViewportClick(event) {
+  if (isStartInfoOpen) {
+    return;
+  }
+
   const clickedInteractive = event.target.closest("button, a, input, select, textarea, label");
   if (clickedInteractive) {
     return;
@@ -1900,7 +1924,12 @@ if (btnTitleStart) {
     stepIndex = 0; answers = {}; openFeedback = {}; selectedCategory = null;
     showScreen("screen-game");
     renderStep();
+    showStartInfoOverlay();
   });
+}
+
+if (startInfoContinue) {
+  startInfoContinue.addEventListener("click", hideStartInfoOverlay);
 }
 
 dialogNext.addEventListener("click",    advance);
@@ -2053,7 +2082,9 @@ async function initGame() {
   answers = {};
   openFeedback = {};
   selectedCategory = null;
-  showScreen("screen-title");
+  showScreen("screen-game");
+  renderStep();
+  showStartInfoOverlay();
 }
 
 initGame();

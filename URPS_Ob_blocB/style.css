@@ -159,6 +159,41 @@ html, body { height: 100%; font-family: var(--font); background: #ffffff; color:
   background: #000;
 }
 
+.start-info-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(2, 6, 23, 0.56);
+  backdrop-filter: blur(2px);
+}
+
+.start-info-card {
+  width: min(430px, 90%);
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  background: rgba(15, 23, 42, 0.95);
+  box-shadow: 0 14px 36px rgba(2, 6, 23, 0.44);
+  padding: 1rem 1.1rem;
+  text-align: center;
+}
+
+.start-info-title {
+  margin: 0;
+  color: #e2e8f0;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.start-info-text {
+  margin: 0.55rem 0 0.9rem;
+  color: #cbd5e1;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
 /* HUD top bar */
 .hud-top {
   flex-shrink: 0;
