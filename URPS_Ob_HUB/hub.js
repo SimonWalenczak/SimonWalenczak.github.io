@@ -4,6 +4,7 @@ const HUB_PROGRESS_BLOC_B_COMPLETED = "blocB_completed";
 const HUB_RESULTS_KEY = "urps_ob_bloc_b_results";
 const HUB_RESULTS_SAVED_KEY = "urps_ob_bloc_b_results_saved";
 const HUB_WELCOME_SEEN_KEY = "urps_ob_hub_welcome_seen";
+const HUB_BLOC_A_TRANSITION_SEEN_KEY = "urps_ob_hub_bloc_a_transition_seen";
 
 const SPECIALTIES = [
   "Médecin généraliste",
@@ -44,6 +45,8 @@ const categoryTitle = document.getElementById("hub-category-title");
 const categoryContent = document.getElementById("hub-category-content");
 const logoObesiteLink = document.getElementById("logo-obesite-link");
 const hubWelcomeOverlay = document.getElementById("hub-welcome-overlay");
+const hubWelcomeMessage = document.getElementById("hub-welcome-message");
+const hubWelcomeHint = document.getElementById("hub-welcome-hint");
 const hubWelcomePointer = document.getElementById("hub-welcome-pointer");
 const hubStage = document.getElementById("hub-stage");
 let statusTimer = null;
@@ -51,6 +54,7 @@ let hubResultsChart = null;
 let hubResultsPayload = null;
 let hubRadarLabelHitboxes = [];
 let hasPassedWelcomeDialog = false;
+let activeWelcomeDialog = null;
 let isDoorPhaseDisabled = false;
 let activeDoor = {
   label: "En travaux",
@@ -65,6 +69,45 @@ const HUB_BLUE_PALETTE = [
   { color: "#0284c7", soft: "#38bdf8" },
   { color: "#1e40af", soft: "#93c5fd" },
 ];
+
+const RADAR_LABEL_BACKGROUND_PADDING = 6;
+const radarLabelBackgroundPlugin = {
+  id: "radarLabelBackground",
+  beforeDraw(chart) {
+    const pointLabelItems = chart.scales?.r?._pointLabelItems;
+    if (!Array.isArray(pointLabelItems)) {
+      return;
+    }
+
+    const { ctx } = chart;
+    ctx.save();
+    ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
+    ctx.strokeStyle = "rgba(147, 197, 253, 0.68)";
+    ctx.lineWidth = 1;
+
+    pointLabelItems.forEach((item) => {
+      const left = item.left;
+      const top = item.top;
+      const width = item.right - item.left;
+      const height = item.bottom - item.top;
+      if (![left, top, width, height].every(Number.isFinite)) {
+        return;
+      }
+
+      const x = left - RADAR_LABEL_BACKGROUND_PADDING;
+      const y = top - RADAR_LABEL_BACKGROUND_PADDING;
+      const backgroundWidth = width + (RADAR_LABEL_BACKGROUND_PADDING * 2);
+      const backgroundHeight = height + (RADAR_LABEL_BACKGROUND_PADDING * 2);
+
+      ctx.beginPath();
+      ctx.roundRect(x, y, backgroundWidth, backgroundHeight, 4);
+      ctx.fill();
+      ctx.stroke();
+    });
+
+    ctx.restore();
+  },
+};
 
 function populateSpecialties() {
   SPECIALTIES.forEach((specialty) => {
@@ -107,7 +150,7 @@ function syncIntroFromSession() {
 }
 
 function updateWelcomePointerPosition() {
-  if (!hubWelcomeOverlay || !hubWelcomePointer || !hubStage || hubWelcomeOverlay.classList.contains("is-hidden")) {
+  if (!hubWelcomePointer || !hubStage || hubWelcomePointer.classList.contains("is-hidden")) {
     return;
   }
 
@@ -182,6 +225,22 @@ function syncDoorLockState() {
   mainDoor.disabled = isDisabled;
   mainDoor.classList.toggle("is-disabled", isDisabled);
   mainDoor.setAttribute("aria-disabled", String(isDisabled));
+  syncDoorPointer();
+}
+
+function syncDoorPointer() {
+  const shouldShowPointer = Boolean(
+    hubWelcomePointer
+    && selectedSpecialty
+    && hasPassedWelcomeDialog
+    && !isDoorPhaseDisabled
+    && !mainDoor.classList.contains("is-entering")
+  );
+
+  hubWelcomePointer.classList.toggle("is-hidden", !shouldShowPointer);
+  if (shouldShowPointer) {
+    updateWelcomePointerPosition();
+  }
 }
 
 function dismissWelcomeDialog() {
@@ -190,26 +249,52 @@ function dismissWelcomeDialog() {
   }
 
   hasPassedWelcomeDialog = true;
-  sessionStorage.setItem(HUB_WELCOME_SEEN_KEY, "true");
+  sessionStorage.setItem(
+    activeWelcomeDialog === "bloc-a-transition" ? HUB_BLOC_A_TRANSITION_SEEN_KEY : HUB_WELCOME_SEEN_KEY,
+    "true"
+  );
+  activeWelcomeDialog = null;
   hubWelcomeOverlay.classList.add("is-hidden");
   syncDoorLockState();
 }
 
-function shouldShowWelcomeDialog() {
-  return sessionStorage.getItem(HUB_WELCOME_SEEN_KEY) !== "true";
+function getWelcomeDialogType() {
+  const progress = sessionStorage.getItem(HUB_PROGRESS_KEY);
+  const shouldShowBlocATransition = progress === HUB_PROGRESS_BLOC_A_COMPLETED
+    && sessionStorage.getItem(HUB_BLOC_A_TRANSITION_SEEN_KEY) !== "true";
+
+  if (shouldShowBlocATransition) {
+    return "bloc-a-transition";
+  }
+
+  return sessionStorage.getItem(HUB_WELCOME_SEEN_KEY) !== "true" ? "initial" : null;
 }
 
-function initializeWelcomeState() {
-  hasPassedWelcomeDialog = !shouldShowWelcomeDialog();
-}
-
-function showWelcomeDialog() {
-  if (!hubWelcomeOverlay || hasPassedWelcomeDialog || !shouldShowWelcomeDialog()) {
+function updateWelcomeDialogContent(dialogType) {
+  if (dialogType === "bloc-a-transition") {
+    hubWelcomeMessage.textContent = "Félicitations, vous avez terminé l'aménagement de votre cabinet. Préparez-vous pour votre première consultation.";
+    hubWelcomeHint.textContent = "Cliquez n'importe où sur l'écran pour continuer.";
     return;
   }
 
+  hubWelcomeMessage.textContent = "Bienvenue dans votre centre médical virtuel. Allez dans votre cabinet.";
+  hubWelcomeHint.textContent = "Cliquez n'importe où sur l'écran pour continuer.";
+}
+
+function initializeWelcomeState() {
+  hasPassedWelcomeDialog = !getWelcomeDialogType();
+}
+
+function showWelcomeDialog() {
+  const dialogType = getWelcomeDialogType();
+  if (!hubWelcomeOverlay || hasPassedWelcomeDialog || !dialogType) {
+    return;
+  }
+
+  activeWelcomeDialog = dialogType;
+  updateWelcomeDialogContent(dialogType);
+  hubWelcomePointer.classList.add("is-hidden");
   hubWelcomeOverlay.classList.remove("is-hidden");
-  updateWelcomePointerPosition();
   syncDoorLockState();
 }
 
@@ -218,7 +303,12 @@ function resolveDoorState() {
   const isBilanPhase = progress === HUB_PROGRESS_BLOC_B_COMPLETED;
   isDoorPhaseDisabled = isBilanPhase;
 
-  if (progress === HUB_PROGRESS_BLOC_A_COMPLETED || progress === HUB_PROGRESS_BLOC_B_COMPLETED) {
+  if (progress === HUB_PROGRESS_BLOC_B_COMPLETED) {
+    activeDoor = {
+      label: "Pour plus de ressources",
+      url: "../URPS_Ob_blocB/index.html",
+    };
+  } else if (progress === HUB_PROGRESS_BLOC_A_COMPLETED) {
     activeDoor = {
       label: "Salle de consultation",
       url: "../URPS_Ob_blocB/index.html",
@@ -232,6 +322,7 @@ function resolveDoorState() {
 
   doorLabel.textContent = activeDoor.label;
   mainDoor.setAttribute("aria-label", `Entrer dans ${activeDoor.label.toLowerCase()}`);
+  mainDoor.classList.toggle("shows-resources-arrow", isBilanPhase);
   syncDoorLockState();
 
   const hasSavedResults = Boolean(sessionStorage.getItem(HUB_RESULTS_SAVED_KEY));
@@ -343,6 +434,7 @@ function renderResultsRadar(scores) {
 
   hubResultsChart = new Chart(context, {
     type: "radar",
+    plugins: [radarLabelBackgroundPlugin],
     data: {
       labels: scores.map((item) => formatRadarLabel(item.label)),
       datasets: [{
@@ -429,14 +521,15 @@ function refreshRadarLabelHitboxes() {
 
   hubRadarLabelHitboxes = pointLabelItems
     .map((item, index) => {
-      const width = item.width ?? 0;
-      const height = item.height ?? 0;
-      const left = item.left ?? ((item.x ?? 0) - (width / 2));
-      const right = item.right ?? ((item.x ?? 0) + (width / 2));
-      const top = item.top ?? ((item.y ?? 0) - (height / 2));
-      const bottom = item.bottom ?? ((item.y ?? 0) + (height / 2));
+      const { left, right, top, bottom } = item;
 
-      return { index, left, right, top, bottom };
+      return {
+        index,
+        left: left - RADAR_LABEL_BACKGROUND_PADDING,
+        right: right + RADAR_LABEL_BACKGROUND_PADDING,
+        top: top - RADAR_LABEL_BACKGROUND_PADDING,
+        bottom: bottom + RADAR_LABEL_BACKGROUND_PADDING,
+      };
     })
     .filter((box) => [box.left, box.right, box.top, box.bottom].every(Number.isFinite));
 }
@@ -593,6 +686,7 @@ function openDoor(button) {
   }
 
   button.classList.add("is-entering");
+  syncDoorPointer();
   showStatus(`Ouverture de ${activeDoor.label}...`);
 
   window.setTimeout(() => {

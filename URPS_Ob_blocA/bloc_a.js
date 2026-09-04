@@ -120,6 +120,7 @@ function resolveSceneAssetPath(assetPath) {
 }
 
 const MEDICAL_SPRITES_DIR = resolveSceneAssetPath("MedicalSprites/Reel");
+const MEDICAL_ILLUSTRATIONS_DIR = resolveSceneAssetPath("MedicalSprites/Illu");
 const SPRITE_EXTENSIONS = ["png", "webp", "jpg", "jpeg", "svg"];
 const DEFAULT_COST_LEVEL = 1;
 const HUB_PROGRESS_KEY = "urps_ob_hub_progress";
@@ -131,7 +132,7 @@ const STEPS = [
     badge: "Étape 1",
     question: "Quel siège choisissez-vous pour accueillir vos patients ?",
     // Position in scene (% from left / top of scene-inner)
-    placement: { left: "10%", top: "64%", size: "9%" },
+    placement: { left: "30%", top: "64%", size: "5%" },
     options: [
       {
         id: "chaise-standard",
@@ -139,9 +140,8 @@ const STEPS = [
         desc: "Accoudoirs fixes, largeur standard",
         optimal: false,
         sprite: "Chaise_Classique.png",
-        //scenesprite: "",
+        scenesprite: "Chair_01.png",
         cost: 1,
-        svg: SVG_CHAISE_STANDARD,
         feedback: "Les accoudoirs fixes peuvent être inconfortables, voire inaccessibles pour les patients en situation d'obésité, et peuvent nuire à leur dignité.",
       },
       {
@@ -150,11 +150,11 @@ const STEPS = [
         desc: "Siège large, renforcé, accoudoirs réglables",
         optimal: true,
         sprite: "Chaise_Adapte.png",
-        cost: 2,
-        svg: SVG_FAUTEUIL_BARI,
+        scenesprite: "Chair_02.png",
+        cost: 2,     
         feedback: "Ce fauteuil plus large et sans accoudoirs bloquants garantit un accueil confortable et digne pour tous les patients, quelle que soit leur morphologie.",
       },
-      {
+      /*{
         id: "tabouret",
         label: "Tabouret médical",
         desc: "Sans dossier ni accoudoirs",
@@ -163,7 +163,7 @@ const STEPS = [
         cost: 1,
         svg: SVG_TABOURET,
         feedback: "L'absence de dossier rend l'assise difficile et peu sécurisante pour les patients en situation d'obésité, qui ont besoin d'un support du dos.",
-      },
+      },*/
     ],
   },
   {
@@ -178,6 +178,7 @@ const STEPS = [
         desc: "Petit plateau, portée max. 150 kg",
         optimal: false,
         sprite: "Balance_Classique.png",
+        scenesprite: "Scale_01.png",
         cost: 1,
         svg: SVG_PESE_SDB,
         feedback: "Un pèse-personne standard peut être incapable de mesurer certains patients et est souvent perçu comme humiliant en raison de sa petite taille.",
@@ -188,6 +189,7 @@ const STEPS = [
         desc: "Grand plateau, portée max. 300 kg",
         optimal: true,
         sprite: "Balance_Adapte.png",
+        scenesprite: "Scale_02.png",
         cost: 2,
         svg: SVG_BALANCE_BARI,
         feedback: "La balance bariatrique permet de peser tous les patients dans des conditions dignes, avec un grand plateau stable et une portée adaptée à la réalité clinique.",
@@ -206,6 +208,7 @@ const STEPS = [
         desc: "Tour de bras jusqu'à 32 cm",
         optimal: false,
         sprite: "Brassard_Classique.png",
+        scenesprite: "Tensiometre_01.png",
         cost: 1,
         svg: SVG_BRASSARD_STD,
         feedback: "Un brassard standard peut comprimer le bras et générer des mesures tensionnelles inexactes chez les patients dont le bras dépasse les limites de l'embout.",
@@ -216,6 +219,7 @@ const STEPS = [
         desc: "Tour de bras jusqu'à 52 cm",
         optimal: true,
         sprite: "Brassard_Adapte.png",
+        scenesprite: "Tensiometre_02.png",
         cost: 2,
         svg: SVG_BRASSARD_XL,
         feedback: "Un brassard adapté à la circumférence du bras assure des mesures précises et évite toute gêne ou douleur liée à la compression, pour des données fiables.",
@@ -243,6 +247,7 @@ const STEPS = [
         desc: "Larg. 60 cm, charge max. 180 kg",
         optimal: false,
         sprite: "Table_Classique.png",
+        scenesprite: "MedicalBed_02.png",
         cost: 1,
         svg: SVG_TABLE_STD,
         feedback: "Une table trop étroite et peu résistante peut être inconfortable, voire dangereuse. Elle peut aussi être source de honte et d'évitement des soins.",
@@ -253,6 +258,7 @@ const STEPS = [
         desc: "Larg. 90 cm, réglable, charge max. 350 kg",
         optimal: true,
         sprite: "Table_Adapte.png",
+        scenesprite: "MedicalBed_01.png",
         cost: 2,
         svg: SVG_TABLE_BARI,
         feedback: "La table bariatrique offre l'espace, la robustesse et le confort nécessaires pour un examen sécurisé, et préserve la dignité du patient tout au long de la consultation.",
@@ -444,6 +450,15 @@ function renderOptionAsset(option) {
   `;
 }
 
+function renderSceneAsset(option) {
+  const source = `${MEDICAL_ILLUSTRATIONS_DIR}/${option.scenesprite}`;
+  return `
+    <img class="medical-sprite"
+         src="${source}"
+         alt="${option.label}"/>
+  `;
+}
+
 function attachSpriteFallbacks(root) {
   root.querySelectorAll(".medical-sprite").forEach((img) => {
     img.addEventListener("error", () => {
@@ -603,8 +618,7 @@ function placeObjectInScene(step, option) {
   obj.style.left   = step.placement.left;
   obj.style.top    = step.placement.top;
   obj.style.width  = step.placement.size;
-  obj.innerHTML    = renderOptionAsset(option);
-  attachSpriteFallbacks(obj);
+  obj.innerHTML    = renderSceneAsset(option);
   placedObjects.appendChild(obj);
 }
 

@@ -333,8 +333,8 @@ body {
 .scene-logo-link {
   position: absolute;
   z-index: 2;
-  left: 55.5%;
-  top: 55%;
+  left: 82%;
+  top: 35%;
   width: 8.2%;
   display: block;
   border-radius: 8px;
@@ -428,7 +428,7 @@ body {
 .door-label {
   position: absolute;
   left: 50%;
-  top: -3.15rem;
+  top: 7%;
   transform: translateX(-50%);
   min-width: 152px;
   padding: 0.5rem 0.9rem;
@@ -440,6 +440,20 @@ body {
   letter-spacing: 0.02em;
   text-align: center;
   pointer-events: none;
+}
+
+.door-hotspot.shows-resources-arrow .door-label::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -1rem;
+  width: 0;
+  height: 0;
+  transform: translateX(-50%);
+  border-left: 0.42rem solid transparent;
+  border-right: 0.42rem solid transparent;
+  border-top: 0.62rem solid #f59e0b;
+  filter: drop-shadow(0 1px 1px rgba(15, 23, 42, 0.5));
 }
 
 .hub-status {

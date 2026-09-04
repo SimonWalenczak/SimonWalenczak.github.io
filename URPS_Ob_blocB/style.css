@@ -270,6 +270,16 @@ html, body { height: 100%; font-family: var(--font); background: #ffffff; color:
 .vn-char-left  { align-self: flex-end; }
 .vn-char-right { align-self: flex-end; }
 
+#char-doctor {
+  width: 13%;
+  transform: translateX(-2%) translateY(-3%);
+}
+
+#char-patient {
+  width: 20%;
+  transform: translateX(2%) translateY(-3%);
+}
+
 /* Thought bubble (internal) */
 .vn-thought {
   position: absolute; top: 8%; right: 6%;
@@ -419,6 +429,7 @@ html, body { height: 100%; font-family: var(--font); background: #ffffff; color:
 .vq-options.two-col { grid-template-columns: 1fr 1fr; }
 .vq-options.scale-grid { grid-template-columns: repeat(5, 1fr); }
 .vq-options.scale-grid-five { grid-template-columns: repeat(5, 1fr); }
+.vq-options.scale5-vertical { grid-template-columns: 1fr; }
 @media (min-width: 600px) { .vq-options.scale-grid { grid-template-columns: repeat(10, 1fr); } }
 @media (min-width: 600px) { .vq-options.scale-grid-five { grid-template-columns: repeat(5, 1fr); } }
 
