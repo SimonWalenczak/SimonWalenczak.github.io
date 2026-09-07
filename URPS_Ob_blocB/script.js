@@ -133,26 +133,17 @@ function requestFullscreen() {
 }
 
 function setupAutomaticFullscreen() {
-  let retriedOnGesture = false;
-
-  requestFullscreen();
-
   const tryOnInteraction = () => {
     if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
       return;
     }
 
-    retriedOnGesture = true;
     requestFullscreen();
-    window.removeEventListener("pointerup", tryOnInteraction);
-    window.removeEventListener("touchend", tryOnInteraction);
-    window.removeEventListener("click", tryOnInteraction);
-    window.removeEventListener("keydown", tryOnInteraction);
   };
 
-  window.addEventListener("pointerup", tryOnInteraction, { passive: true });
-  window.addEventListener("touchend", tryOnInteraction, { passive: true });
   window.addEventListener("click", tryOnInteraction, { passive: true });
+  window.addEventListener("touchend", tryOnInteraction, { passive: true });
+  window.addEventListener("pointerup", tryOnInteraction, { passive: true });
   window.addEventListener("keydown", tryOnInteraction);
 }
 
