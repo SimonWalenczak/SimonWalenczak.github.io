@@ -238,12 +238,18 @@ function updateWelcomePointerPosition() {
 async function requestFullscreen() {
   const root = document.documentElement;
 
-  if (document.fullscreenElement || !root?.requestFullscreen) {
+  if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
     return;
   }
 
   try {
-    await root.requestFullscreen();
+    if (root.requestFullscreen) {
+      await root.requestFullscreen();
+    } else if (root.webkitRequestFullscreen) {
+      root.webkitRequestFullscreen();
+    } else if (root.msRequestFullscreen) {
+      root.msRequestFullscreen();
+    }
   } catch {
     // Browsers may reject autoplay fullscreen until a user interaction.
   }
@@ -255,20 +261,22 @@ function setupAutomaticFullscreen() {
   requestFullscreen();
 
   const tryOnInteraction = async () => {
-    if (hasRetriedWithGesture || document.fullscreenElement) {
+    if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
       return;
     }
 
     hasRetriedWithGesture = true;
     await requestFullscreen();
-    window.removeEventListener("pointerdown", tryOnInteraction);
+    window.removeEventListener("pointerup", tryOnInteraction);
+    window.removeEventListener("touchend", tryOnInteraction);
+    window.removeEventListener("click", tryOnInteraction);
     window.removeEventListener("keydown", tryOnInteraction);
-    window.removeEventListener("touchstart", tryOnInteraction);
   };
 
-  window.addEventListener("pointerdown", tryOnInteraction, { passive: true });
+  window.addEventListener("pointerup", tryOnInteraction, { passive: true });
+  window.addEventListener("touchend", tryOnInteraction, { passive: true });
+  window.addEventListener("click", tryOnInteraction, { passive: true });
   window.addEventListener("keydown", tryOnInteraction);
-  window.addEventListener("touchstart", tryOnInteraction, { passive: true });
 }
 
 function initializeHubScene() {

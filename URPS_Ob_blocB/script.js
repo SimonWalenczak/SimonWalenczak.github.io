@@ -114,13 +114,22 @@ const doctorSlot = charDoctor;
 const patientSlot = charPatient;
 
 function requestFullscreen() {
-  if (document.fullscreenElement || !document.documentElement.requestFullscreen) {
+  const root = document.documentElement;
+  if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
     return;
   }
 
-  document.documentElement.requestFullscreen().catch(() => {
-    // Some browsers require a user gesture before entering fullscreen.
-  });
+  try {
+    if (root.requestFullscreen) {
+      root.requestFullscreen().catch(() => {});
+    } else if (root.webkitRequestFullscreen) {
+      root.webkitRequestFullscreen();
+    } else if (root.msRequestFullscreen) {
+      root.msRequestFullscreen();
+    }
+  } catch {
+    // Browsers may reject fullscreen until a user interaction.
+  }
 }
 
 function setupAutomaticFullscreen() {
@@ -129,20 +138,22 @@ function setupAutomaticFullscreen() {
   requestFullscreen();
 
   const tryOnInteraction = () => {
-    if (retriedOnGesture || document.fullscreenElement) {
+    if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
       return;
     }
 
     retriedOnGesture = true;
     requestFullscreen();
-    window.removeEventListener("pointerdown", tryOnInteraction);
+    window.removeEventListener("pointerup", tryOnInteraction);
+    window.removeEventListener("touchend", tryOnInteraction);
+    window.removeEventListener("click", tryOnInteraction);
     window.removeEventListener("keydown", tryOnInteraction);
-    window.removeEventListener("touchstart", tryOnInteraction);
   };
 
-  window.addEventListener("pointerdown", tryOnInteraction, { passive: true });
+  window.addEventListener("pointerup", tryOnInteraction, { passive: true });
+  window.addEventListener("touchend", tryOnInteraction, { passive: true });
+  window.addEventListener("click", tryOnInteraction, { passive: true });
   window.addEventListener("keydown", tryOnInteraction);
-  window.addEventListener("touchstart", tryOnInteraction, { passive: true });
 }
 
 function getSelectedDoctorGender() {
