@@ -336,7 +336,9 @@ html, body { height: 100%; font-family: var(--font); background: #ffffff; color:
 }
 
 .dialog-next {
-  position: absolute; bottom: .75rem; right: .75rem;
+  position: absolute;
+  bottom: 8%;
+  right: 2%;
   background: var(--c-accent); color: #0f172a;
   border: none; border-radius: 9999px;
   width: 28px; height: 28px;
@@ -1093,9 +1095,9 @@ body {
   }
 
   .hud-top {
-    height: 36px;
-    padding: 0 0.55rem;
-    gap: 0.55rem;
+    height: 8%;
+    padding: 0 2%;
+    gap: 1.4%;
   }
 
   .hud-scene-label {
@@ -1107,13 +1109,13 @@ body {
   }
 
   .vn-char {
-    width: 150px;
+    width: 20%;
     max-height: 78%;
   }
 
   .vn-thought {
-    top: 42px;
-    right: 16px;
+    top: 8%;
+    right: 4%;
   }
 
   .thought-bubble {
@@ -1125,7 +1127,7 @@ body {
   }
 
   .vn-dialog-wrapper {
-    padding: 0 0.45rem 0.4rem;
+    padding: 0 2% 2%;
   }
 
   .vn-dialog,
@@ -1146,8 +1148,8 @@ body {
   }
 
   .dialog-next {
-    bottom: 0.35rem;
-    right: 0.35rem;
+    bottom: 8%;
+    right: 2%;
     width: 24px;
     height: 24px;
   }

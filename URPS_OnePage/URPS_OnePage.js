@@ -115,18 +115,25 @@ function updateWelcomePointerPosition() {
 
   const doorRect = mainDoor.getBoundingClientRect();
   const stageRect = hubStage.getBoundingClientRect();
-  const pointerWidth = hubWelcomePointer.offsetWidth || 94;
-  const pointerHeight = hubWelcomePointer.offsetHeight || 28;
-  const fallbackLeft = Math.max(8, (doorRect.left - stageRect.left) - pointerWidth - 22);
-  const maxLeft = stageRect.width - pointerWidth - 8;
-  const pointerLeft = Math.min(Math.max(8, fallbackLeft), maxLeft);
+  if (!stageRect.width || !stageRect.height) {
+    return;
+  }
+
+  const pointerWidth = hubWelcomePointer.offsetWidth || (stageRect.width * 0.075);
+  const pointerHeight = hubWelcomePointer.offsetHeight || (stageRect.height * 0.045);
+  const fallbackLeft = Math.max(0, (doorRect.left - stageRect.left) - pointerWidth - (stageRect.width * 0.02));
+  const maxLeft = stageRect.width - pointerWidth;
+  const pointerLeft = Math.min(Math.max(0, fallbackLeft), maxLeft);
   const pointerTop = Math.min(
-    Math.max(8, (doorRect.top - stageRect.top) + (doorRect.height / 2) - (pointerHeight / 2)),
-    stageRect.height - pointerHeight - 8
+    Math.max(0, (doorRect.top - stageRect.top) + (doorRect.height / 2) - (pointerHeight / 2)),
+    stageRect.height - pointerHeight
   );
 
-  hubWelcomePointer.style.setProperty("--door-pointer-left", `${pointerLeft}px`);
-  hubWelcomePointer.style.setProperty("--door-pointer-top", `${pointerTop + 8}px`);
+  const leftPct = ((pointerLeft / stageRect.width) * 100).toFixed(2);
+  const topPct = ((pointerTop / stageRect.height) * 100).toFixed(2);
+
+  hubWelcomePointer.style.setProperty("--door-pointer-left", `${leftPct}%`);
+  hubWelcomePointer.style.setProperty("--door-pointer-top", `${topPct}%`);
 }
 
 async function requestFullscreen() {
@@ -261,37 +268,31 @@ function getCategoryPalette(index) {
   return HUB_BLUE_PALETTE[index % HUB_BLUE_PALETTE.length];
 }
 
+function getRadarScaleFactor() {
+  const stageWidth = hubStage?.clientWidth || 1200;
+  return stageWidth / 1200;
+}
+
+function getRadarLabelBgPadding() {
+  const scale = getRadarScaleFactor();
+  return 5 * scale;
+}
+
 function getRadarLayoutPreset() {
-  const isLandscapePhone = window.matchMedia("(max-height: 520px) and (orientation: landscape)").matches;
-  const isPhone = window.matchMedia("(max-width: 760px)").matches;
-
-  if (isLandscapePhone) {
-    return {
-      padding: 34,
-      labelSize: 9,
-      labelPadding: 14,
-    };
-  }
-
-  if (isPhone) {
-    return {
-      padding: 32,
-      labelSize: 10,
-      labelPadding: 12,
-    };
-  }
+  const scale = getRadarScaleFactor();
 
   return {
-    padding: 28,
-    labelSize: 12,
-    labelPadding: 10,
+    padding: 20 * scale,
+    labelSize: 11 * scale,
+    labelPadding: 6 * scale,
+    pointRadius: 4.5 * scale,
+    borderWidth: 2 * scale,
   };
 }
 
 function formatRadarLabel(label) {
   const normalized = label.replace(/\s+/g, " ").trim();
-  const isPhone = window.matchMedia("(max-width: 760px)").matches;
-  const maxLineLength = isPhone ? 11 : 14;
+  const maxLineLength = 14;
   const tokens = normalized.split(/[\s-]+/).filter(Boolean);
 
   if (tokens.length <= 1) {
@@ -343,6 +344,8 @@ function renderResultsRadar(scores) {
     hubResultsChart.destroy();
   }
 
+  const preset = getRadarLayoutPreset();
+
   hubResultsChart = new Chart(context, {
     type: "radar",
     data: {
@@ -351,12 +354,12 @@ function renderResultsRadar(scores) {
         data: scores.map((item) => item.score),
         backgroundColor: "rgba(59, 130, 246, 0.14)",
         borderColor: "#60a5fa",
-        borderWidth: 2,
-        pointRadius: 5,
-        pointHoverRadius: 6,
+        borderWidth: preset.borderWidth,
+        pointRadius: preset.pointRadius,
+        pointHoverRadius: preset.pointRadius + 1,
         pointBackgroundColor: scores.map((item) => item.palette.color),
         pointBorderColor: scores.map((item) => item.palette.soft),
-        pointBorderWidth: 2,
+        pointBorderWidth: preset.borderWidth,
       }],
     },
     options: {
@@ -378,7 +381,7 @@ function renderResultsRadar(scores) {
         resultsRadarCanvas.style.cursor = categoryKey ? "pointer" : "default";
       },
       layout: {
-        padding: getRadarLayoutPreset().padding,
+        padding: preset.padding,
       },
       scales: {
         r: {
@@ -389,8 +392,8 @@ function renderResultsRadar(scores) {
           angleLines: { color: "rgba(96, 165, 250, 0.18)" },
           pointLabels: {
             color: "#dbeafe",
-            padding: getRadarLayoutPreset().labelPadding,
-            font: { size: getRadarLayoutPreset().labelSize, weight: "600" },
+            padding: preset.labelPadding,
+            font: { size: preset.labelSize, weight: "600" },
           },
         },
       },
@@ -413,6 +416,12 @@ function refreshResultsRadarLayout() {
   hubResultsChart.options.layout.padding = preset.padding;
   hubResultsChart.options.scales.r.pointLabels.padding = preset.labelPadding;
   hubResultsChart.options.scales.r.pointLabels.font.size = preset.labelSize;
+  if (hubResultsChart.data.datasets?.[0]) {
+    hubResultsChart.data.datasets[0].borderWidth = preset.borderWidth;
+    hubResultsChart.data.datasets[0].pointRadius = preset.pointRadius;
+    hubResultsChart.data.datasets[0].pointHoverRadius = preset.pointRadius + 1;
+    hubResultsChart.data.datasets[0].pointBorderWidth = preset.borderWidth;
+  }
   hubResultsChart.update("none");
   refreshRadarLabelHitboxes();
 }
@@ -429,6 +438,8 @@ function refreshRadarLabelHitboxes() {
     return;
   }
 
+  const labelBgPadding = getRadarLabelBgPadding();
+
   hubRadarLabelHitboxes = pointLabelItems
     .map((item, index) => {
       const width = item.width ?? 0;
@@ -438,7 +449,13 @@ function refreshRadarLabelHitboxes() {
       const top = item.top ?? ((item.y ?? 0) - (height / 2));
       const bottom = item.bottom ?? ((item.y ?? 0) + (height / 2));
 
-      return { index, left, right, top, bottom };
+      return {
+        index,
+        left: left - labelBgPadding,
+        right: right + labelBgPadding,
+        top: top - labelBgPadding,
+        bottom: bottom + labelBgPadding,
+      };
     })
     .filter((box) => [box.left, box.right, box.top, box.bottom].every(Number.isFinite));
 }
@@ -641,6 +658,15 @@ window.addEventListener("keydown", (event) => {
 });
 window.addEventListener("resize", refreshResultsRadarLayout);
 window.addEventListener("resize", updateWelcomePointerPosition);
+
+if (typeof ResizeObserver !== "undefined" && hubStage) {
+  const stageResizeObserver = new ResizeObserver(() => {
+    refreshResultsRadarLayout();
+    updateWelcomePointerPosition();
+  });
+  stageResizeObserver.observe(hubStage);
+}
+
 initializeHubScene();
 
   },
