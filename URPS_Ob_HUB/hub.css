@@ -533,7 +533,7 @@ body {
 
 .hub-radar-category-btn {
   position: absolute;
-  transform: translate(-50%, -50%);
+  transform: translate(calc(-50% + 0.5cqw), calc(-50% + 0.8cqw));
   width: max-content;
   height: max-content;
   max-width: 9cqw;
