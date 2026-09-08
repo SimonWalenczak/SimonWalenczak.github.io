@@ -584,7 +584,7 @@ function handleChoose() {
         setTimeout(() => {
           modalBackdrop.classList.remove("fading");
           renderStep();
-        }, 1200);
+        }, 2000);
       }
     }, 300);
   }, 350);

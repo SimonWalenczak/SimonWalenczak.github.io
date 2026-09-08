@@ -505,6 +505,7 @@ body {
 }
 
 .hub-wall-radar-wrap {
+  position: relative;
   flex: 1;
   width: 100%;
   min-height: 0;
@@ -522,6 +523,43 @@ body {
   width: 100% !important;
   height: 100% !important;
   display: block;
+}
+
+.hub-radar-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hub-radar-category-btn {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: max-content;
+  height: max-content;
+  max-width: 9cqw;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background-image: url("Postits_sprites/Postit_yellow.png");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: none;
+  padding: 0.45cqw 0.6cqw;
+  margin: 0;
+  color: #3b2f0b;
+  font-size: 0.72cqw;
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: normal;
+  cursor: pointer;
+  pointer-events: auto;
+  filter: drop-shadow(0 0.2cqw 0.3cqw rgba(2, 6, 23, 0.4));
+}
+
+.hub-radar-category-btn:hover,
+.hub-radar-category-btn:focus-visible {
+  filter: drop-shadow(0 0.2cqw 0.3cqw rgba(2, 6, 23, 0.4)) brightness(1.08);
 }
 
 .hub-results-click-hint {

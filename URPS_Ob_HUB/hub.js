@@ -52,7 +52,6 @@ const hubStage = document.getElementById("hub-stage");
 let statusTimer = null;
 let hubResultsChart = null;
 let hubResultsPayload = null;
-let hubRadarLabelHitboxes = [];
 let hasPassedWelcomeDialog = false;
 let activeWelcomeDialog = null;
 let isDoorPhaseDisabled = false;
@@ -61,95 +60,21 @@ let activeDoor = {
   url: "../URPS_Ob_blocA/index.html",
 };
 
-const HUB_BLUE_PALETTE = [
-  { color: "#2563eb", soft: "#60a5fa" },
-  { color: "#0ea5e9", soft: "#7dd3fc" },
-  { color: "#1d4ed8", soft: "#93c5fd" },
-  { color: "#3b82f6", soft: "#bfdbfe" },
-  { color: "#0284c7", soft: "#38bdf8" },
-  { color: "#1e40af", soft: "#93c5fd" },
-];
+const HUB_CATEGORY_PALETTE = {
+  plainte: { color: "#f199c9", soft: "#f9cfe4", sprite: "Postits_sprites/Postit_pink.png" },
+  mesure: { color: "#9edbd0", soft: "#d3f0ea", sprite: "Postits_sprites/Postit_blue.png" },
+  communication: { color: "#9deb99", soft: "#d6f7d4", sprite: "Postits_sprites/Postit_green.png" },
+  accompagnement: { color: "#c2a7d0", soft: "#e2d3e9", sprite: "Postits_sprites/Postit_purple.png" },
+  stigmatisation: { color: "#fbbd77", soft: "#fddcb3", sprite: "Postits_sprites/Postit_orange.png" },
+  parcours: { color: "#f2efa3", soft: "#f9f7d2", sprite: "Postits_sprites/Postit_yellow.png" },
+};
+
+const HUB_DEFAULT_CATEGORY_PALETTE = { color: "#2563eb", soft: "#60a5fa", sprite: "Postits_sprites/Postit_yellow.png" };
 
 function getRadarScaleFactor() {
   const stageWidth = hubStage?.clientWidth || 1200;
   return stageWidth / 1200;
 }
-
-function getRadarLabelBgPadding() {
-  const scale = getRadarScaleFactor();
-  return 5 * scale;
-}
-
-const radarLabelBackgroundPlugin = {
-  id: "radarLabelBackground",
-  beforeDraw(chart) {
-    const pointLabelItems = chart.scales?.r?._pointLabelItems;
-    if (!Array.isArray(pointLabelItems)) {
-      return;
-    }
-
-    const { ctx } = chart;
-    const labelBgPadding = getRadarLabelBgPadding();
-    const scale = getRadarScaleFactor();
-    ctx.save();
-    ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
-    ctx.strokeStyle = "rgba(147, 197, 253, 0.68)";
-    ctx.lineWidth = Math.max(1, Math.round(1 * scale));
-
-    pointLabelItems.forEach((item) => {
-      const left = item.left;
-      const top = item.top;
-      const width = item.right - item.left;
-      const height = item.bottom - item.top;
-      if (![left, top, width, height].every(Number.isFinite)) {
-        return;
-      }
-
-      const x = left - labelBgPadding;
-      const y = top - labelBgPadding;
-      const backgroundWidth = width + (labelBgPadding * 2);
-      const backgroundHeight = height + (labelBgPadding * 2);
-
-      ctx.beginPath();
-      ctx.roundRect(x, y, backgroundWidth, backgroundHeight, Math.max(2, Math.round(4 * scale)));
-      ctx.fill();
-      ctx.stroke();
-    });
-
-    ctx.restore();
-  },
-  afterDraw(chart) {
-    const pointLabelItems = chart.scales?.r?._pointLabelItems;
-    if (!Array.isArray(pointLabelItems)) {
-      return;
-    }
-
-    const { ctx } = chart;
-    const labelBgPadding = getRadarLabelBgPadding();
-    const scale = getRadarScaleFactor();
-
-    ctx.save();
-    ctx.setLineDash([4, 3]);
-    ctx.lineWidth = Math.max(2, Math.round(2 * scale));
-
-    pointLabelItems.forEach((item) => {
-      const left = item.left;
-      const top = item.top;
-      const width = item.right - item.left;
-      const height = item.bottom - item.top;
-      if (![left, top, width, height].every(Number.isFinite)) {
-        return;
-      }
-
-      const x = left - labelBgPadding;
-      const y = top - labelBgPadding;
-      const backgroundWidth = width + (labelBgPadding * 2);
-      const backgroundHeight = height + (labelBgPadding * 2);
-    });
-
-    ctx.restore();
-  },
-};
 
 function populateSpecialties() {
   SPECIALTIES.forEach((specialty) => {
@@ -394,8 +319,8 @@ function hexToRgba(hex, alpha) {
   return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
 
-function getCategoryPalette(index) {
-  return HUB_BLUE_PALETTE[index % HUB_BLUE_PALETTE.length];
+function getCategoryPalette(key) {
+  return HUB_CATEGORY_PALETTE[key] || HUB_DEFAULT_CATEGORY_PALETTE;
 }
 
 function getRadarLayoutPreset() {
@@ -468,7 +393,6 @@ function renderResultsRadar(scores) {
 
   hubResultsChart = new Chart(context, {
     type: "radar",
-    plugins: [radarLabelBackgroundPlugin],
     data: {
       labels: scores.map((item) => formatRadarLabel(item.label)),
       datasets: [{
@@ -487,20 +411,6 @@ function renderResultsRadar(scores) {
       responsive: true,
       maintainAspectRatio: false,
       animation: false,
-      onClick: (event) => {
-        const categoryKey = getCategoryKeyFromRadarLabelClick(event);
-        if (categoryKey) {
-          renderCategoryDetails(categoryKey);
-        }
-      },
-      onHover: (event) => {
-        if (!resultsRadarCanvas) {
-          return;
-        }
-
-        const categoryKey = getCategoryKeyFromRadarLabelClick(event);
-        resultsRadarCanvas.style.cursor = categoryKey ? "pointer" : "default";
-      },
       layout: {
         padding: preset.padding,
       },
@@ -512,7 +422,8 @@ function renderResultsRadar(scores) {
           grid: { color: "rgba(147, 197, 253, 0.5)", lineWidth: 2 },
           angleLines: { color: "rgba(96, 165, 250, 0.3)", lineWidth: 2 },
           pointLabels: {
-            color: "#dbeafe",
+            // Labels stay invisible; the postit buttons render the visible category titles.
+            color: "rgba(0, 0, 0, 0)",
             padding: preset.labelPadding,
             font: { size: preset.labelSize, weight: "600" },
           },
@@ -525,7 +436,55 @@ function renderResultsRadar(scores) {
     },
   });
 
-  refreshRadarLabelHitboxes();
+  renderRadarCategoryButtons(scores);
+  positionRadarCategoryButtons();
+}
+
+function renderRadarCategoryButtons(scores) {
+  const container = document.getElementById("hub-radar-labels");
+  if (!container) {
+    return;
+  }
+
+  container.innerHTML = "";
+  scores.forEach((item) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "hub-radar-category-btn";
+    button.textContent = item.label;
+    button.style.backgroundImage = `url("${item.palette.sprite}")`;
+    button.addEventListener("click", () => renderCategoryDetails(item.key));
+    container.appendChild(button);
+  });
+}
+
+function positionRadarCategoryButtons() {
+  const container = document.getElementById("hub-radar-labels");
+  if (!container || !hubResultsChart?.scales?.r) {
+    return;
+  }
+
+  const pointLabelItems = hubResultsChart.scales.r._pointLabelItems;
+  if (!Array.isArray(pointLabelItems)) {
+    return;
+  }
+
+  const buttons = container.querySelectorAll(".hub-radar-category-btn");
+  buttons.forEach((button, index) => {
+    const item = pointLabelItems[index];
+    if (!item) {
+      return;
+    }
+
+    const centerX = (item.left + item.right) / 2;
+    const centerY = (item.top + item.bottom) / 2;
+    if (!Number.isFinite(centerX) || !Number.isFinite(centerY)) {
+      return;
+    }
+
+    button.style.left = `${centerX}px`;
+    button.style.top = `${centerY}px`;
+  });
 }
 
 function refreshResultsRadarLayout() {
@@ -544,73 +503,7 @@ function refreshResultsRadarLayout() {
     hubResultsChart.data.datasets[0].pointBorderWidth = preset.borderWidth;
   }
   hubResultsChart.update("none");
-  refreshRadarLabelHitboxes();
-}
-
-function refreshRadarLabelHitboxes() {
-  hubRadarLabelHitboxes = [];
-
-  if (!hubResultsChart?.scales?.r) {
-    return;
-  }
-
-  const pointLabelItems = hubResultsChart.scales.r._pointLabelItems;
-  if (!Array.isArray(pointLabelItems)) {
-    return;
-  }
-
-  const labelBgPadding = getRadarLabelBgPadding();
-
-  hubRadarLabelHitboxes = pointLabelItems
-    .map((item, index) => {
-      const { left, right, top, bottom } = item;
-
-      return {
-        index,
-        left: left - labelBgPadding,
-        right: right + labelBgPadding,
-        top: top - labelBgPadding,
-        bottom: bottom + labelBgPadding,
-      };
-    })
-    .filter((box) => [box.left, box.right, box.top, box.bottom].every(Number.isFinite));
-}
-
-function getCategoryKeyFromRadarLabelClick(event) {
-  const nativeEvent = event?.native || event;
-  if (!nativeEvent || !hubResultsPayload?.scores?.length || !hubRadarLabelHitboxes.length) {
-    return null;
-  }
-
-  const canvas = resultsRadarCanvas;
-  if (!canvas) {
-    return null;
-  }
-
-  const rect = canvas.getBoundingClientRect();
-  const clientX = nativeEvent.clientX ?? (nativeEvent.touches?.[0]?.clientX);
-  const clientY = nativeEvent.clientY ?? (nativeEvent.touches?.[0]?.clientY);
-
-  // pointLabelItems (and thus the hitboxes) are expressed in CSS-pixel space, not device pixels.
-  let x, y;
-  if (clientX !== undefined && clientY !== undefined) {
-    x = clientX - rect.left;
-    y = clientY - rect.top;
-  } else {
-    x = nativeEvent.offsetX ?? nativeEvent.x;
-    y = nativeEvent.offsetY ?? nativeEvent.y;
-  }
-
-  if (!Number.isFinite(x) || !Number.isFinite(y)) {
-    return null;
-  }
-
-  const hitbox = hubRadarLabelHitboxes.find((box) => x >= box.left && x <= box.right && y >= box.top && y <= box.bottom);
-  if (!hitbox) {
-    return null;
-  }
-
-  return hubResultsPayload.scores[hitbox.index]?.key || null;
+  positionRadarCategoryButtons();
 }
 
 function renderCategoryDetails(categoryKey) {
@@ -620,7 +513,7 @@ function renderCategoryDetails(categoryKey) {
 
   const score = hubResultsPayload.scores.find((item) => item.key === categoryKey);
   const details = hubResultsPayload.details[categoryKey] || [];
-  const palette = score ? score.palette : getCategoryPalette(0);
+  const palette = score ? score.palette : getCategoryPalette(categoryKey);
 
   categoryTitle.textContent = score ? score.label : "Detail categorie";
 
@@ -666,9 +559,9 @@ function maybeShowHubResults() {
     }
 
     hubResultsPayload = {
-      scores: parsed.scores.map((item, index) => ({
+      scores: parsed.scores.map((item) => ({
         ...item,
-        palette: getCategoryPalette(index),
+        palette: getCategoryPalette(item.key),
       })),
       details: parsed.details || {},
     };
