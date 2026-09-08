@@ -282,7 +282,7 @@ function getRadarLayoutPreset() {
 
   return {
     padding: 20 * scale,
-    labelSize: 11 * scale,
+    labelSize: 14 * scale,
     labelPadding: 6 * scale,
     pointRadius: 4.5 * scale,
     borderWidth: 2 * scale,
@@ -441,12 +441,7 @@ function refreshRadarLabelHitboxes() {
 
   hubRadarLabelHitboxes = pointLabelItems
     .map((item, index) => {
-      const width = item.width ?? 0;
-      const height = item.height ?? 0;
-      const left = item.left ?? ((item.x ?? 0) - (width / 2));
-      const right = item.right ?? ((item.x ?? 0) + (width / 2));
-      const top = item.top ?? ((item.y ?? 0) - (height / 2));
-      const bottom = item.bottom ?? ((item.y ?? 0) + (height / 2));
+      const { left, right, top, bottom } = item;
 
       return {
         index,
@@ -460,13 +455,31 @@ function refreshRadarLabelHitboxes() {
 }
 
 function getCategoryKeyFromRadarLabelClick(event) {
-  const nativeEvent = event?.native;
+  const nativeEvent = event?.native || event;
   if (!nativeEvent || !hubResultsPayload?.scores?.length || !hubRadarLabelHitboxes.length) {
     return null;
   }
 
-  const x = nativeEvent.offsetX ?? nativeEvent.x;
-  const y = nativeEvent.offsetY ?? nativeEvent.y;
+  const canvas = resultsRadarCanvas;
+  if (!canvas) {
+    return null;
+  }
+
+  const rect = canvas.getBoundingClientRect();
+  const clientX = nativeEvent.clientX ?? (nativeEvent.touches?.[0]?.clientX);
+  const clientY = nativeEvent.clientY ?? (nativeEvent.touches?.[0]?.clientY);
+
+  let x, y;
+  if (clientX !== undefined && clientY !== undefined) {
+    x = (clientX - rect.left) * (canvas.width / rect.width);
+    y = (clientY - rect.top) * (canvas.height / rect.height);
+  } else {
+    const offsetX = nativeEvent.offsetX ?? nativeEvent.x;
+    const offsetY = nativeEvent.offsetY ?? nativeEvent.y;
+    x = offsetX * (canvas.width / (canvas.clientWidth || canvas.width));
+    y = offsetY * (canvas.height / (canvas.clientHeight || canvas.height));
+  }
+
   if (!Number.isFinite(x) || !Number.isFinite(y)) {
     return null;
   }

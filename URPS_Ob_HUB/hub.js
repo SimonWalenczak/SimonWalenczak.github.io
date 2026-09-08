@@ -145,22 +145,6 @@ const radarLabelBackgroundPlugin = {
       const y = top - labelBgPadding;
       const backgroundWidth = width + (labelBgPadding * 2);
       const backgroundHeight = height + (labelBgPadding * 2);
-
-      // Zone active de détection du clic (hitbox du bouton)
-      /*ctx.fillStyle = "rgba(250, 204, 21, 0.3)";
-      ctx.strokeStyle = "#facc15";
-      ctx.beginPath();
-      ctx.roundRect(x, y, backgroundWidth, backgroundHeight, Math.max(3, Math.round(5 * scale)));
-      ctx.fill();
-      ctx.stroke();
-
-      // Repères visuels aux 4 coins de la zone cliquable
-      ctx.fillStyle = "#facc15";
-      const cornerSize = Math.max(3, Math.round(4 * scale));
-      ctx.fillRect(x, y, cornerSize, cornerSize);
-      ctx.fillRect(x + backgroundWidth - cornerSize, y, cornerSize, cornerSize);
-      ctx.fillRect(x, y + backgroundHeight - cornerSize, cornerSize, cornerSize);
-      ctx.fillRect(x + backgroundWidth - cornerSize, y + backgroundHeight - cornerSize, cornerSize, cornerSize);*/
     });
 
     ctx.restore();
@@ -419,7 +403,7 @@ function getRadarLayoutPreset() {
 
   return {
     padding: 20 * scale,
-    labelSize: 11 * scale,
+    labelSize: 14 * scale,
     labelPadding: 6 * scale,
     pointRadius: 4.5 * scale,
     borderWidth: 2 * scale,
@@ -525,8 +509,8 @@ function renderResultsRadar(scores) {
           min: 0,
           max: 100,
           ticks: { display: false },
-          grid: { color: "rgba(147, 197, 253, 0.22)" },
-          angleLines: { color: "rgba(96, 165, 250, 0.18)" },
+          grid: { color: "rgba(147, 197, 253, 0.5)", lineWidth: 2 },
+          angleLines: { color: "rgba(96, 165, 250, 0.3)", lineWidth: 2 },
           pointLabels: {
             color: "#dbeafe",
             padding: preset.labelPadding,
@@ -593,13 +577,30 @@ function refreshRadarLabelHitboxes() {
 }
 
 function getCategoryKeyFromRadarLabelClick(event) {
-  const nativeEvent = event?.native;
+  const nativeEvent = event?.native || event;
   if (!nativeEvent || !hubResultsPayload?.scores?.length || !hubRadarLabelHitboxes.length) {
     return null;
   }
 
-  const x = nativeEvent.offsetX ?? nativeEvent.x;
-  const y = nativeEvent.offsetY ?? nativeEvent.y;
+  const canvas = resultsRadarCanvas;
+  if (!canvas) {
+    return null;
+  }
+
+  const rect = canvas.getBoundingClientRect();
+  const clientX = nativeEvent.clientX ?? (nativeEvent.touches?.[0]?.clientX);
+  const clientY = nativeEvent.clientY ?? (nativeEvent.touches?.[0]?.clientY);
+
+  // pointLabelItems (and thus the hitboxes) are expressed in CSS-pixel space, not device pixels.
+  let x, y;
+  if (clientX !== undefined && clientY !== undefined) {
+    x = clientX - rect.left;
+    y = clientY - rect.top;
+  } else {
+    x = nativeEvent.offsetX ?? nativeEvent.x;
+    y = nativeEvent.offsetY ?? nativeEvent.y;
+  }
+
   if (!Number.isFinite(x) || !Number.isFinite(y)) {
     return null;
   }

@@ -318,15 +318,15 @@ body {
 }
 
 .poster-ordre-medecins {
-  left: 3.65%;
-  top: 59.8%;
+  left: 2%;
+  top: 59%;
   width: 9.51%;
   height: 16.72%;
 }
 
 .poster-urps {
-  left: 14.4%;
-  top: 59.8%;
+  left: 13.1%;
+  top: 59%;
   width: 9.40%;
   height: 16.54%;
 }
@@ -335,7 +335,7 @@ body {
   position: absolute;
   z-index: 2;
   left: 82%;
-  top: 35%;
+  top: 38%;
   width: 8.2%;
   display: block;
   border-radius: 8px;
@@ -481,9 +481,9 @@ body {
 .hub-wall-results {
   position: absolute;
   z-index: 3;
-  left: 49%;
-  top: 8%;
-  width: 25%;
+  left: 47.1%;
+  top: 6%;
+  width: 30%;
   height: 43%;
   display: flex;
   flex-direction: column;
@@ -509,9 +509,9 @@ body {
   width: 100%;
   min-height: 0;
   border-radius: 1cqw;
-  border: 1px solid rgba(147, 197, 253, 0.3);
-  background: rgba(15, 23, 42, 0.74);
-  box-shadow: 0 0.8cqw 2cqw rgba(2, 6, 23, 0.24);
+  border: 1px solid rgba(147, 197, 253, 0);
+  background: rgba(15, 23, 42, 0);
+  box-shadow: 0 0.8cqw 2cqw rgba(2, 6, 23, 0);
   padding: 0.5cqw;
   display: flex;
   align-items: center;
@@ -525,11 +525,14 @@ body {
 }
 
 .hub-results-click-hint {
-  flex-shrink: 0;
-  margin: 2% 0 0;
+  position: absolute;
+  left: 50%;
+  bottom: -40%;
+  transform: translateX(-50%);
+  width: 90%;
   text-align: center;
   color: #ffffff;
-  font-size: 0.82cqw;
+  font-size: 1.2cqw;
   font-weight: 700;
   line-height: 1.35;
   border-radius: 0.8cqw;
