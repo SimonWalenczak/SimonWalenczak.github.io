@@ -8,17 +8,10 @@
 // ======================================================
 
 const SCENE_BASE_DIR = window.URPS_SCENE_BASE_DIR || "";
-
-function resolveSceneAssetPath(assetPath) {
-  if (!SCENE_BASE_DIR || /^(?:[a-z]+:)?\/\//i.test(assetPath) || assetPath.startsWith("/")) {
-    return assetPath;
-  }
-
-  return `${SCENE_BASE_DIR}/${assetPath}`;
-}
+const resolveSceneAssetPath = (assetPath) => window.URPS.resolveAssetPath(SCENE_BASE_DIR, assetPath);
 
 const SVG_BACKGROUNDS = {
-  cabinet: `<img src="${resolveSceneAssetPath("Cabinet_Medical.svg")}" style="width:100%;height:100%;object-fit:cover;display:block;" alt=""/>`
+  cabinet: `<img src="${resolveSceneAssetPath("Sprites/Cabinet_Medical.svg")}" style="width:100%;height:100%;object-fit:cover;display:block;" alt=""/>`
 };
 
 // Character artwork is loaded from sprite files instead of inline generated SVG.
@@ -31,13 +24,10 @@ const SVG_BACKGROUNDS = {
 // ======================================================
 
 let scenario = null;
-let flatSteps = []; // all steps in order
+let flatSteps = [];
 let stepIndex = 0;
 let answers   = {};
-let openFeedback = {};
-let selectedCategory = null;
-let radarChart = null;
-let pendingAnswer = null; // current selected option value
+let pendingAnswer = null;
 const HUB_PROGRESS_KEY = "urps_ob_hub_progress";
 const HUB_PROGRESS_BLOC_B_COMPLETED = "blocB_completed";
 const HUB_RESULTS_KEY = "urps_ob_bloc_b_results";
@@ -47,18 +37,18 @@ const DEFAULT_CHARACTER_STATUS = "Default";
 const CHARACTER_SPRITES = {
   doctor: {
     homme: {
-      Default: resolveSceneAssetPath("../URPS_Ob_HUB/Doctor_Male.svg"),
+      Default: resolveSceneAssetPath("../URPS_Ob_HUB/Sprites/Doctor_Male.svg"),
     },
     femme: {
-      Default: resolveSceneAssetPath("../URPS_Ob_HUB/Doctor_Female.svg"),
+      Default: resolveSceneAssetPath("../URPS_Ob_HUB/Sprites/Doctor_Female.svg"),
     },
   },
   patient: {
     homme: {
-      Default: resolveSceneAssetPath("../URPS_Ob_HUB/Obese_Person_Male.svg"),
+      Default: resolveSceneAssetPath("../URPS_Ob_HUB/Sprites/Obese_Person_Male.svg"),
     },
     femme: {
-      Default: resolveSceneAssetPath("../URPS_Ob_HUB/Obese_Person_Female.svg"),
+      Default: resolveSceneAssetPath("../URPS_Ob_HUB/Sprites/Obese_Person_Female.svg"),
     },
   },
 };
@@ -113,40 +103,6 @@ let isStartInfoOpen = false;
 const doctorSlot = charDoctor;
 const patientSlot = charPatient;
 
-function requestFullscreen() {
-  const root = document.documentElement;
-  if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
-    return;
-  }
-
-  try {
-    if (root.requestFullscreen) {
-      root.requestFullscreen().catch(() => {});
-    } else if (root.webkitRequestFullscreen) {
-      root.webkitRequestFullscreen();
-    } else if (root.msRequestFullscreen) {
-      root.msRequestFullscreen();
-    }
-  } catch {
-    // Browsers may reject fullscreen until a user interaction.
-  }
-}
-
-function setupAutomaticFullscreen() {
-  const tryOnInteraction = () => {
-    if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
-      return;
-    }
-
-    requestFullscreen();
-  };
-
-  window.addEventListener("click", tryOnInteraction, { passive: true });
-  window.addEventListener("touchend", tryOnInteraction, { passive: true });
-  window.addEventListener("pointerup", tryOnInteraction, { passive: true });
-  window.addEventListener("keydown", tryOnInteraction);
-}
-
 function getSelectedDoctorGender() {
   const savedGender = (sessionStorage.getItem(HUB_GENDER_KEY) || "").toLowerCase();
   return savedGender === "femme" ? "femme" : "homme";
@@ -155,6 +111,7 @@ function getSelectedDoctorGender() {
 // Chosen once per load so the patient sprite stays consistent throughout the scene.
 const PATIENT_GENDER = Math.random() < 0.5 ? "homme" : "femme";
 
+/** Returns the character status defined for the current scenario step. */
 function getStepStatus(step, characterKey) {
   const rawStatus = step ? step.status : null;
 
@@ -208,6 +165,7 @@ const SCENARIO_EMBEDDED = {"title":"Bloc B — Consultation contextualisée","su
 // BOOT — load scenario.json (with embedded fallback)
 // ======================================================
 
+/** Charge le scénario externe et conserve le scénario intégré comme secours. */
 async function boot() {
   try {
     const scenarioUrl = resolveSceneAssetPath("scenario.json");
@@ -224,6 +182,7 @@ async function boot() {
   buildFlatSteps();
 }
 
+/** Aplati les scènes en une séquence unique consommable par le moteur. */
 function buildFlatSteps() {
   flatSteps = [];
   scenario.scenes.forEach((scene) => {
@@ -246,6 +205,7 @@ function answeredCount() {
 // SHOW / HIDE screens
 // ======================================================
 
+/** Affiche un écran et masque les autres panneaux principaux. */
 function showScreen(id) {
   [screenTitle, screenGame, screenResults, menuOverlay]
     .filter(Boolean)
@@ -275,6 +235,7 @@ function hideStartInfoOverlay() {
 // RENDER current step
 // ======================================================
 
+/** Rend le type de séquence courant : narration, dialogue ou question. */
 function renderStep() {
   if (stepIndex >= flatSteps.length) {
     // All steps done → results
@@ -498,13 +459,28 @@ function advanceOnViewportClick(event) {
 // EVENT LISTENERS
 // ======================================================
 
+/** Réinitialise l'état de la consultation avant une nouvelle partie. */
+function resetGame() {
+  stepIndex = 0;
+  answers = {};
+  pendingAnswer = null;
+}
+
+/** Lance la consultation et affiche éventuellement son introduction. */
+function startGame({ showIntro = false } = {}) {
+  resetGame();
+  showScreen("screen-game");
+  renderStep();
+
+  if (showIntro) {
+    showStartInfoOverlay();
+  }
+}
+
 if (btnTitleStart) {
   btnTitleStart.addEventListener("click", async () => {
     if (!scenario) await boot();  // boot() already called at load; this is a safety net
-    stepIndex = 0; answers = {}; openFeedback = {}; selectedCategory = null;
-    showScreen("screen-game");
-    renderStep();
-    showStartInfoOverlay();
+    startGame({ showIntro: true });
   });
 }
 
@@ -527,15 +503,11 @@ btnMenu.addEventListener("click", () => menuOverlay.classList.remove("hidden"));
 menuResume.addEventListener("click", () => menuOverlay.classList.add("hidden"));
 menuRestart.addEventListener("click", () => {
   menuOverlay.classList.add("hidden");
-  stepIndex = 0; answers = {}; openFeedback = {}; selectedCategory = null;
-  showScreen("screen-game");
-  renderStep();
+  startGame();
 });
 
 btnRestart.addEventListener("click", () => {
-  stepIndex = 0; answers = {}; openFeedback = {}; selectedCategory = null;
-  showScreen("screen-game");
-  renderStep();
+  startGame();
 });
 
 // ======================================================
@@ -598,6 +570,7 @@ function buildCategoryDetailsData(categoryKey) {
     });
 }
 
+/** Enregistre le bilan du Bloc B et revient au Hub. */
 function persistResultsAndReturnToHub() {
   const scores = getCategoryScores();
   const payload = {
@@ -608,18 +581,11 @@ function persistResultsAndReturnToHub() {
   sessionStorage.setItem(HUB_RESULTS_KEY, JSON.stringify(payload));
   sessionStorage.setItem(HUB_PROGRESS_KEY, HUB_PROGRESS_BLOC_B_COMPLETED);
 
-  if (window.URPS_ROUTER && typeof window.URPS_ROUTER.navigate === "function") {
-    window.URPS_ROUTER.navigate("hub");
-    return;
-  }
-
-  const isSinglePageMode = sessionStorage.getItem("urps_ob_single_page") === "true";
-  if (isSinglePageMode && window.parent && window.parent !== window) {
-    window.parent.postMessage({ type: "urps:navigate", scene: "hub" }, window.location.origin);
-    return;
-  }
-
-  window.location.href = "../URPS_Ob_HUB/index.html";
+  window.URPS.navigate("hub", {
+    hub: "../URPS_Ob_HUB/index.html",
+    blocA: "../URPS_Ob_blocA/index.html",
+    blocB: "../URPS_Ob_blocB/index.html",
+  });
 }
 
 // ======================================================
@@ -656,15 +622,9 @@ function buildCategoryDetails(categoryKey) {
 // ======================================================
 
 async function initGame() {
-  setupAutomaticFullscreen();
+  window.URPS.setupAutomaticFullscreen();
   await boot(); // load scenario.json (or fall back to SCENARIO_EMBEDDED)
-  stepIndex = 0;
-  answers = {};
-  openFeedback = {};
-  selectedCategory = null;
-  showScreen("screen-game");
-  renderStep();
-  showStartInfoOverlay();
+  startGame({ showIntro: true });
 }
 
 initGame();

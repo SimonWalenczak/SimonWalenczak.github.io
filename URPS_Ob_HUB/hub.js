@@ -61,15 +61,15 @@ let activeDoor = {
 };
 
 const HUB_CATEGORY_PALETTE = {
-  plainte: { color: "#f199c9", soft: "#f9cfe4", sprite: "Postits_sprites/Postit_pink.png" },
-  mesure: { color: "#9edbd0", soft: "#d3f0ea", sprite: "Postits_sprites/Postit_blue.png" },
-  communication: { color: "#9deb99", soft: "#d6f7d4", sprite: "Postits_sprites/Postit_green.png" },
-  accompagnement: { color: "#c2a7d0", soft: "#e2d3e9", sprite: "Postits_sprites/Postit_purple.png" },
-  stigmatisation: { color: "#fbbd77", soft: "#fddcb3", sprite: "Postits_sprites/Postit_orange.png" },
-  parcours: { color: "#f2efa3", soft: "#f9f7d2", sprite: "Postits_sprites/Postit_yellow.png" },
+  plainte: { color: "#f199c9", soft: "#f9cfe4", sprite: "Sprites/Postits_sprites/Postit_pink.png" },
+  mesure: { color: "#9edbd0", soft: "#d3f0ea", sprite: "Sprites/Postits_sprites/Postit_blue.png" },
+  communication: { color: "#9deb99", soft: "#d6f7d4", sprite: "Sprites/Postits_sprites/Postit_green.png" },
+  accompagnement: { color: "#c2a7d0", soft: "#e2d3e9", sprite: "Sprites/Postits_sprites/Postit_purple.png" },
+  stigmatisation: { color: "#fbbd77", soft: "#fddcb3", sprite: "Sprites/Postits_sprites/Postit_orange.png" },
+  parcours: { color: "#f2efa3", soft: "#f9f7d2", sprite: "Sprites/Postits_sprites/Postit_yellow.png" },
 };
 
-const HUB_DEFAULT_CATEGORY_PALETTE = { color: "#2563eb", soft: "#60a5fa", sprite: "Postits_sprites/Postit_yellow.png" };
+const HUB_DEFAULT_CATEGORY_PALETTE = { color: "#2563eb", soft: "#60a5fa", sprite: "Sprites/Postits_sprites/Postit_yellow.png" };
 
 function getRadarScaleFactor() {
   const stageWidth = hubStage?.clientWidth || 1200;
@@ -85,6 +85,7 @@ function populateSpecialties() {
   });
 }
 
+/** Sauvegarde le profil du praticien et ouvre le message d'accueil. */
 function completeIntro() {
   selectedSpecialty = specialtySelect.value;
   sessionStorage.setItem("urps_ob_specialty", selectedSpecialty);
@@ -144,43 +145,8 @@ function updateWelcomePointerPosition() {
   hubWelcomePointer.style.setProperty("--door-pointer-top", `${topPct}%`);
 }
 
-async function requestFullscreen() {
-  const root = document.documentElement;
-
-  if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
-    return;
-  }
-
-  try {
-    if (root.requestFullscreen) {
-      await root.requestFullscreen();
-    } else if (root.webkitRequestFullscreen) {
-      root.webkitRequestFullscreen();
-    } else if (root.msRequestFullscreen) {
-      root.msRequestFullscreen();
-    }
-  } catch {
-    // Browsers may reject autoplay fullscreen until a user interaction.
-  }
-}
-
-function setupAutomaticFullscreen() {
-  const tryOnInteraction = () => {
-    if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
-      return;
-    }
-
-    requestFullscreen();
-  };
-
-  window.addEventListener("click", tryOnInteraction, { passive: true });
-  window.addEventListener("touchend", tryOnInteraction, { passive: true });
-  window.addEventListener("pointerup", tryOnInteraction, { passive: true });
-  window.addEventListener("keydown", tryOnInteraction);
-}
-
 function initializeHubScene() {
-  setupAutomaticFullscreen();
+  window.URPS.setupAutomaticFullscreen();
   syncIntroFromSession();
   resolveDoorState();
   maybeShowHubResults();
@@ -271,6 +237,7 @@ function showWelcomeDialog() {
   syncDoorLockState();
 }
 
+/** Détermine la destination de la porte selon la progression enregistrée. */
 function resolveDoorState() {
   const progress = sessionStorage.getItem(HUB_PROGRESS_KEY);
   const isBilanPhase = progress === HUB_PROGRESS_BLOC_B_COMPLETED;
@@ -306,17 +273,6 @@ function resolveDoorState() {
   });
   logoObesiteLink.classList.toggle("is-hidden", !shouldShowBlocBAssets);
   wallResults.classList.toggle("is-hidden", !shouldShowBlocBAssets || !hasSavedResults);
-}
-
-function hexToRgba(hex, alpha) {
-  const normalized = hex.replace("#", "");
-  const value = normalized.length === 3
-    ? normalized.split("").map((part) => part + part).join("")
-    : normalized;
-  const red = Number.parseInt(value.slice(0, 2), 16);
-  const green = Number.parseInt(value.slice(2, 4), 16);
-  const blue = Number.parseInt(value.slice(4, 6), 16);
-  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
 
 function getCategoryPalette(key) {
@@ -379,6 +335,7 @@ function formatRadarLabel(label) {
   return lines.length > 1 ? lines : normalized;
 }
 
+/** Rend le radar du bilan et synchronise ses étiquettes interactives. */
 function renderResultsRadar(scores) {
   if (!resultsRadarCanvas || typeof Chart === "undefined") {
     return;
@@ -506,6 +463,7 @@ function refreshResultsRadarLayout() {
   positionRadarCategoryButtons();
 }
 
+/** Ouvre le détail pédagogique d'une catégorie du bilan. */
 function renderCategoryDetails(categoryKey) {
   if (!hubResultsPayload) {
     return;
@@ -534,14 +492,11 @@ function renderCategoryDetails(categoryKey) {
   categoryOverlay?.classList.remove("is-hidden");
 }
 
-function renderResultsCategories() {
-  // Details are opened only via radar category label clicks.
-}
-
 function closeCategoryOverlay() {
   categoryOverlay?.classList.add("is-hidden");
 }
 
+/** Restaure le dernier bilan disponible depuis la session courante. */
 function maybeShowHubResults() {
   const raw = sessionStorage.getItem(HUB_RESULTS_KEY);
   const savedRaw = sessionStorage.getItem(HUB_RESULTS_SAVED_KEY);
@@ -572,7 +527,6 @@ function maybeShowHubResults() {
     }
     wallResults.classList.remove("is-hidden");
     renderResultsRadar(hubResultsPayload.scores);
-    renderResultsCategories();
   } catch {
     sessionStorage.removeItem(HUB_RESULTS_KEY);
     sessionStorage.removeItem(HUB_RESULTS_SAVED_KEY);
@@ -599,28 +553,18 @@ function showStatus(message) {
   }, 2200);
 }
 
+/** Navigue vers une scène en respectant le mode d'intégration actif. */
 function navigateToScene(scene) {
-  const router = window.URPS_ROUTER;
-  const isSinglePageMode = sessionStorage.getItem("urps_ob_single_page") === "true";
   const routes = {
     hub: "../URPS_Ob_HUB/index.html",
     blocA: "../URPS_Ob_blocA/index.html",
     blocB: "../URPS_Ob_blocB/index.html",
   };
 
-  if (router && typeof router.navigate === "function") {
-    router.navigate(scene);
-    return;
-  }
-
-  if (isSinglePageMode && window.parent && window.parent !== window) {
-    window.parent.postMessage({ type: "urps:navigate", scene }, window.location.origin);
-    return;
-  }
-
-  window.location.href = routes[scene] || routes.hub;
+  window.URPS.navigate(scene, routes);
 }
 
+/** Vérifie les prérequis puis lance la transition vers le bloc actif. */
 function openDoor(button) {
   if (!hasPassedWelcomeDialog) {
     showStatus("Cliquez d'abord sur l'ecran pour fermer le message de bienvenue.");
