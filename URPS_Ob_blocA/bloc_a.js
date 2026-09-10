@@ -110,7 +110,14 @@ const SVG_TABLE_BARI = `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/s
 // ======================================================
 
 const SCENE_BASE_DIR = window.URPS_SCENE_BASE_DIR || "";
-const resolveSceneAssetPath = (assetPath) => window.URPS.resolveAssetPath(SCENE_BASE_DIR, assetPath);
+
+function resolveSceneAssetPath(assetPath) {
+  if (!SCENE_BASE_DIR || /^(?:[a-z]+:)?\/\//i.test(assetPath) || assetPath.startsWith("/")) {
+    return assetPath;
+  }
+
+  return `${SCENE_BASE_DIR}/${assetPath}`;
+}
 
 const MEDICAL_SPRITES_DIR = resolveSceneAssetPath("MedicalSprites/Reel");
 const MEDICAL_ILLUSTRATIONS_DIR = resolveSceneAssetPath("MedicalSprites/Illu");
@@ -283,6 +290,7 @@ const placedObjects   = document.getElementById("placed-objects");
 const progressFill    = document.getElementById("progress-fill");
 const progressLabel   = document.getElementById("progress-label");
 const modalBackdrop   = document.getElementById("modal-backdrop");
+const selectionPanel  = document.getElementById("selection-panel");
 const sparkleCanvas   = document.getElementById("sparkle-canvas");
 const sceneDim        = document.getElementById("scene-dim");
 const recapOverlay    = document.getElementById("recap-overlay");
@@ -299,6 +307,40 @@ const surveyOverlay   = document.getElementById("survey-overlay");
 const btnSurveyClose  = document.getElementById("btn-survey-close");
 
 let recapPendingStart = false;
+
+function requestFullscreen() {
+  const root = document.documentElement;
+  if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
+    return;
+  }
+
+  try {
+    if (root.requestFullscreen) {
+      root.requestFullscreen().catch(() => {});
+    } else if (root.webkitRequestFullscreen) {
+      root.webkitRequestFullscreen();
+    } else if (root.msRequestFullscreen) {
+      root.msRequestFullscreen();
+    }
+  } catch {
+    // Browsers may reject fullscreen until a user interaction.
+  }
+}
+
+function setupAutomaticFullscreen() {
+  const tryOnInteraction = () => {
+    if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
+      return;
+    }
+
+    requestFullscreen();
+  };
+
+  window.addEventListener("click", tryOnInteraction, { passive: true });
+  window.addEventListener("touchend", tryOnInteraction, { passive: true });
+  window.addEventListener("pointerup", tryOnInteraction, { passive: true });
+  window.addEventListener("keydown", tryOnInteraction);
+}
 
 // ======================================================
 // SPARKLE ENGINE
@@ -443,7 +485,6 @@ function getCostSymbols(option) {
   return "$".repeat(Math.max(1, Math.min(2, level)));
 }
 
-/** Affiche la question courante et reconstruit ses cartes de choix. */
 function renderStep() {
   const step = STEPS[currentStep];
   selectedOptId = null;
@@ -486,7 +527,6 @@ function renderStep() {
 // SELECT OPTION
 // ======================================================
 
-/** Mémorise le choix de l'utilisateur et active l'animation de sélection. */
 function selectOption(optId) {
   selectedOptId = optId;
   document.querySelectorAll(".option-card").forEach((c) => {
@@ -503,7 +543,6 @@ function selectOption(optId) {
 // CONFIRM CHOICE
 // ======================================================
 
-/** Confirme le choix puis orchestre la pose de l'équipement dans la scène. */
 function handleChoose() {
   if (!selectedOptId) return;
 
@@ -589,7 +628,6 @@ function placeObjectInScene(step, option) {
 // PART 2 — RECAP WALKTHROUGH
 // ======================================================
 
-/** Démarre le bilan guidé des équipements sélectionnés. */
 function startRecap() {
   // Update progress to 100%
   progressFill.style.width  = "100%";
@@ -601,7 +639,6 @@ function startRecap() {
   showRecapStep(0);
 }
 
-/** Affiche une étape du bilan et met en évidence l'objet associé. */
 function showRecapStep(i) {
   const sel    = selections[i];
   const step   = sel.step;
@@ -676,7 +713,6 @@ function goToNextRecapStep() {
   }, 280);
 }
 
-/** Enregistre la réponse d'équipement et affiche le message pédagogique. */
 function advanceRecap(answer) {
   if (recapAwaitingNext) {
     goToNextRecapStep();
@@ -720,7 +756,6 @@ function advanceRecap(answer) {
 // FINAL SUMMARY
 // ======================================================
 
-/** Termine le Bloc A, enregistre la progression et retourne au Hub. */
 function showFinalSummary() {
   // Recap complete — save progression and go back to HUB
   recapOverlay.classList.add("hidden");
@@ -730,11 +765,18 @@ function showFinalSummary() {
   });
   sessionStorage.setItem(HUB_PROGRESS_KEY, HUB_PROGRESS_BLOC_A_COMPLETED);
 
-  window.URPS.navigate("hub", {
-    hub: "../URPS_Ob_HUB/index.html",
-    blocA: "../URPS_Ob_blocA/index.html",
-    blocB: "../URPS_Ob_blocB/index.html",
-  });
+  if (window.URPS_ROUTER && typeof window.URPS_ROUTER.navigate === "function") {
+    window.URPS_ROUTER.navigate("hub");
+    return;
+  }
+
+  const isSinglePageMode = sessionStorage.getItem("urps_ob_single_page") === "true";
+  if (isSinglePageMode && window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: "urps:navigate", scene: "hub" }, window.location.origin);
+    return;
+  }
+
+  window.location.href = "../URPS_Ob_HUB/index.html";
 }
 
 // ======================================================
@@ -752,5 +794,5 @@ btnSurveyClose.addEventListener("click", closeSurveyOverlay);
 // INIT
 // ======================================================
 
-window.URPS.setupAutomaticFullscreen();
+setupAutomaticFullscreen();
 renderStep();
