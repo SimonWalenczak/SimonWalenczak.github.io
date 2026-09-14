@@ -8,62 +8,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="../manifest.json" />
   <title>Bloc B — Consultation contextualisée</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="Bloc_B.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 </head>
 <body class="vn-body">
   <div class="content" id="content">
-
-  <!-- ===== TITLE SCREEN ===== -->
-  <div id="screen-title" class="screen screen-title hidden">
-    <div class="title-bg">
-      <svg id="title-bg-svg" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-        <!-- background gradient -->
-        <defs>
-          <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#dbeafe"/>
-            <stop offset="100%" stop-color="#eff6ff"/>
-          </linearGradient>
-        </defs>
-        <rect width="1200" height="675" fill="url(#skyGrad)"/>
-        <!-- Floor -->
-        <rect x="0" y="500" width="1200" height="175" fill="#e2e8f0"/>
-        <!-- Window -->
-        <rect x="80" y="120" width="260" height="320" rx="8" fill="#bfdbfe" stroke="#93c5fd" stroke-width="3"/>
-        <line x1="210" y1="120" x2="210" y2="440" stroke="#93c5fd" stroke-width="2"/>
-        <line x1="80" y1="280" x2="340" y2="280" stroke="#93c5fd" stroke-width="2"/>
-        <!-- Desk -->
-        <rect x="300" y="400" width="600" height="20" rx="4" fill="#94a3b8"/>
-        <rect x="310" y="420" width="20" height="80" fill="#94a3b8"/>
-        <rect x="870" y="420" width="20" height="80" fill="#94a3b8"/>
-        <!-- Computer -->
-        <rect x="520" y="310" width="160" height="100" rx="6" fill="#1e293b"/>
-        <rect x="530" y="318" width="140" height="82" rx="3" fill="#0ea5e9" opacity="0.7"/>
-        <rect x="570" y="410" width="60" height="10" rx="2" fill="#334155"/>
-        <!-- Stethoscope on desk -->
-        <circle cx="460" cy="390" r="18" fill="none" stroke="#64748b" stroke-width="4"/>
-        <path d="M460 372 Q 460 340 490 330" fill="none" stroke="#64748b" stroke-width="4" stroke-linecap="round"/>
-        <circle cx="494" cy="328" r="5" fill="#64748b"/>
-        <!-- Plant -->
-        <rect x="960" y="380" width="40" height="50" rx="4" fill="#6b7280"/>
-        <ellipse cx="980" cy="360" rx="40" ry="60" fill="#4ade80" opacity="0.7"/>
-        <ellipse cx="950" cy="340" rx="30" ry="45" fill="#22c55e" opacity="0.8"/>
-        <ellipse cx="1010" cy="345" rx="30" ry="45" fill="#16a34a" opacity="0.8"/>
-      </svg>
-    </div>
-    <div class="title-overlay"></div>
-    <div class="title-content">
-      <p class="title-eyebrow">Formation professionnelle · URPS</p>
-      <h1 class="title-heading">Bloc B</h1>
-      <h2 class="title-subheading">Consultation contextualisée</h2>
-      <p class="title-desc">Une simulation de consultation médicale pour explorer vos pratiques vis-à-vis des patients en situation d'obésité.</p>
-      <p class="title-duration">Durée estimée du questionnaire : 5 à 10 minutes.</p>
-      <button id="btn-title-start" class="vn-btn vn-btn-primary vn-btn-large">
-        Commencer
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-      </button>
-    </div>
-  </div>
 
   <!-- ===== GAME SCREEN ===== -->
   <div id="screen-game" class="screen screen-game">
@@ -229,6 +178,6 @@
   </div>
 
   </div>
-  <script src="script.js"></script>
+  <script src="Bloc_B.js"></script>
 </body>
 </html>

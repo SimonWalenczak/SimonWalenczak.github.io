@@ -26,12 +26,40 @@ const SPECIALTIES = [
   "Angiologue"
 ];
 
+const DEPARTMENTS = [
+  ["01", "Ain"], ["02", "Aisne"], ["03", "Allier"], ["04", "Alpes-de-Haute-Provence"], ["05", "Hautes-Alpes"],
+  ["06", "Alpes-Maritimes"], ["07", "Ardèche"], ["08", "Ardennes"], ["09", "Ariège"], ["10", "Aube"],
+  ["11", "Aude"], ["12", "Aveyron"], ["13", "Bouches-du-Rhône"], ["14", "Calvados"], ["15", "Cantal"],
+  ["16", "Charente"], ["17", "Charente-Maritime"], ["18", "Cher"], ["19", "Corrèze"], ["2A", "Corse-du-Sud"],
+  ["2B", "Haute-Corse"], ["21", "Côte-d'Or"], ["22", "Côtes-d'Armor"], ["23", "Creuse"], ["24", "Dordogne"],
+  ["25", "Doubs"], ["26", "Drôme"], ["27", "Eure"], ["28", "Eure-et-Loir"], ["29", "Finistère"],
+  ["30", "Gard"], ["31", "Haute-Garonne"], ["32", "Gers"], ["33", "Gironde"], ["34", "Hérault"],
+  ["35", "Ille-et-Vilaine"], ["36", "Indre"], ["37", "Indre-et-Loire"], ["38", "Isère"], ["39", "Jura"],
+  ["40", "Landes"], ["41", "Loir-et-Cher"], ["42", "Loire"], ["43", "Haute-Loire"], ["44", "Loire-Atlantique"],
+  ["45", "Loiret"], ["46", "Lot"], ["47", "Lot-et-Garonne"], ["48", "Lozère"], ["49", "Maine-et-Loire"],
+  ["50", "Manche"], ["51", "Marne"], ["52", "Haute-Marne"], ["53", "Mayenne"], ["54", "Meurthe-et-Moselle"],
+  ["55", "Meuse"], ["56", "Morbihan"], ["57", "Moselle"], ["58", "Nièvre"], ["59", "Nord"],
+  ["60", "Oise"], ["61", "Orne"], ["62", "Pas-de-Calais"], ["63", "Puy-de-Dôme"], ["64", "Pyrénées-Atlantiques"],
+  ["65", "Hautes-Pyrénées"], ["66", "Pyrénées-Orientales"], ["67", "Bas-Rhin"], ["68", "Haut-Rhin"], ["69", "Rhône"],
+  ["70", "Haute-Saône"], ["71", "Saône-et-Loire"], ["72", "Sarthe"], ["73", "Savoie"], ["74", "Haute-Savoie"],
+  ["75", "Paris"], ["76", "Seine-Maritime"], ["77", "Seine-et-Marne"], ["78", "Yvelines"], ["79", "Deux-Sèvres"],
+  ["80", "Somme"], ["81", "Tarn"], ["82", "Tarn-et-Garonne"], ["83", "Var"], ["84", "Vaucluse"],
+  ["85", "Vendée"], ["86", "Vienne"], ["87", "Haute-Vienne"], ["88", "Vosges"], ["89", "Yonne"],
+  ["90", "Territoire de Belfort"], ["91", "Essonne"], ["92", "Hauts-de-Seine"], ["93", "Seine-Saint-Denis"], ["94", "Val-de-Marne"],
+  ["95", "Val-d'Oise"], ["971", "Guadeloupe"], ["972", "Martinique"], ["973", "Guyane"], ["974", "La Réunion"],
+  ["976", "Mayotte"]
+];
+
 let selectedSpecialty = "";
 let selectedGender = "";
 
 const introPanel = document.getElementById("intro-panel");
 const introForm = document.getElementById("intro-form");
 const specialtySelect = document.getElementById("specialty-select");
+const ageInput = document.getElementById("age-input");
+const departmentSelect = document.getElementById("department-select");
+const environmentSelect = document.getElementById("environment-select");
+const practiceTypeSelect = document.getElementById("practice-type-select");
 const genderOptions = document.querySelectorAll(".gender-option");
 const statusEl = document.getElementById("hub-status");
 const mainDoor = document.querySelector(".door-hotspot[data-door='main']");
@@ -39,6 +67,7 @@ const posterHotspots = document.querySelectorAll(".poster-hotspot");
 const doorLabel = document.getElementById("door-label");
 const wallResults = document.getElementById("hub-wall-results");
 const resultsRadarCanvas = document.getElementById("hub-wall-radar");
+const resultsDownloadButton = document.getElementById("hub-results-download");
 const categoryOverlay = document.getElementById("hub-category-overlay");
 const categoryCloseButton = document.getElementById("hub-category-close");
 const categoryTitle = document.getElementById("hub-category-title");
@@ -85,10 +114,23 @@ function populateSpecialties() {
   });
 }
 
+function populateDepartments() {
+  DEPARTMENTS.forEach(([number, name]) => {
+    const option = document.createElement("option");
+    option.value = number;
+    option.textContent = `${number} - ${name}`;
+    departmentSelect.appendChild(option);
+  });
+}
+
 function completeIntro() {
   selectedSpecialty = specialtySelect.value;
   sessionStorage.setItem("urps_ob_specialty", selectedSpecialty);
   sessionStorage.setItem("urps_ob_gender", selectedGender);
+  sessionStorage.setItem("urps_ob_age", ageInput.value);
+  sessionStorage.setItem("urps_ob_department", departmentSelect.value);
+  sessionStorage.setItem("urps_ob_environment", environmentSelect.value);
+  sessionStorage.setItem("urps_ob_practice_type", practiceTypeSelect.value);
   introPanel.classList.add("is-hidden");
   showWelcomeDialog();
   showStatus(`Specialite : ${selectedSpecialty}`);
@@ -97,14 +139,22 @@ function completeIntro() {
 function syncIntroFromSession() {
   const savedSpecialty = sessionStorage.getItem("urps_ob_specialty") || "";
   const savedGender = sessionStorage.getItem("urps_ob_gender") || "";
+  const savedAge = sessionStorage.getItem("urps_ob_age") || "";
+  const savedDepartment = sessionStorage.getItem("urps_ob_department") || "";
+  const savedEnvironment = sessionStorage.getItem("urps_ob_environment") || "";
+  const savedPracticeType = sessionStorage.getItem("urps_ob_practice_type") || "";
 
-  if (!savedSpecialty || !savedGender) {
+  if (!savedSpecialty || !savedGender || !savedAge || !savedDepartment || !savedEnvironment || !savedPracticeType) {
     return;
   }
 
   selectedSpecialty = savedSpecialty;
   selectedGender = savedGender;
   specialtySelect.value = savedSpecialty;
+  ageInput.value = savedAge;
+  departmentSelect.value = savedDepartment;
+  environmentSelect.value = savedEnvironment;
+  practiceTypeSelect.value = savedPracticeType;
 
   genderOptions.forEach((option) => {
     const isSelected = option.dataset.gender === savedGender;
@@ -538,6 +588,92 @@ function renderResultsCategories() {
   // Details are opened only via radar category label clicks.
 }
 
+function escapeCsvValue(value) {
+  const normalized = String(value ?? "");
+  return /[;"\r\n]/.test(normalized)
+    ? `"${normalized.replace(/"/g, '""')}"`
+    : normalized;
+}
+
+function getSessionProfileValue(key) {
+  return sessionStorage.getItem(key) || "";
+}
+
+function getSessionSelectLabel(elementId, fallbackKey) {
+  const element = document.getElementById(elementId);
+  const selectedOption = element?.selectedOptions?.[0];
+  return selectedOption?.value ? selectedOption.textContent : getSessionProfileValue(fallbackKey);
+}
+
+function getSessionGenderLabel() {
+  const gender = getSessionProfileValue("urps_ob_gender");
+  const selectedButton = [...genderOptions].find((button) => button.dataset.gender === gender);
+  return selectedButton?.querySelector("span")?.textContent || gender;
+}
+
+function convertScoreToFivePointScale(score) {
+  if (!Number.isFinite(score) || score <= 0) {
+    return "";
+  }
+
+  return Number((score / 20).toFixed(2));
+}
+
+function buildResultsCsv() {
+  const headers = [
+    "Profil",
+    "",
+    "Plainte et poid",
+    "Mesure du poid",
+    "Communication",
+    "Accompagnement",
+    "Stigmatisation",
+    "Parcours de soins",
+  ];
+  const scoresByKey = Object.fromEntries(
+    (hubResultsPayload?.scores || []).map((item) => [item.key, item.score])
+  );
+  const rows = [
+    ["Spécialité", getSessionProfileValue("urps_ob_specialty")],
+    ["Age", getSessionProfileValue("urps_ob_age")],
+    ["Département", getSessionSelectLabel("department-select", "urps_ob_department")],
+    ["Enviro. Rural", getSessionSelectLabel("environment-select", "urps_ob_environment")],
+    ["Type exercice", getSessionSelectLabel("practice-type-select", "urps_ob_practice_type")],
+    ["Sexe", getSessionGenderLabel()],
+  ];
+  const categoryKeys = ["plainte", "mesure", "communication", "accompagnement", "stigmatisation", "parcours"];
+
+  return [
+    headers,
+    ...rows.map(([label, profileValue]) => [
+      label,
+      profileValue,
+      ...categoryKeys.map(() => ""),
+    ]),
+    ["Note moyenne", "", ...categoryKeys.map((key) => convertScoreToFivePointScale(scoresByKey[key]))],
+  ]
+    .map((row) => row.map(escapeCsvValue).join(";"))
+    .join("\r\n");
+}
+
+function downloadResultsCsv() {
+  if (!hubResultsPayload?.scores?.length) {
+    showStatus("Aucun résultat à télécharger.");
+    return;
+  }
+
+  const csvWithBom = `\uFEFF${buildResultsCsv()}`;
+  const blob = new Blob([csvWithBom], { type: "text/csv;charset=utf-8" });
+  const downloadUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = downloadUrl;
+  link.download = "resultats_urps_obesite.csv";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(downloadUrl);
+}
+
 function closeCategoryOverlay() {
   categoryOverlay?.classList.add("is-hidden");
 }
@@ -649,6 +785,7 @@ function openDoor(button) {
 
 mainDoor.addEventListener("click", () => openDoor(mainDoor));
 hubWelcomeOverlay?.addEventListener("click", dismissWelcomeDialog);
+resultsDownloadButton?.addEventListener("click", downloadResultsCsv);
 
 genderOptions.forEach((button) => {
   button.addEventListener("click", () => selectGender(button));
@@ -671,6 +808,7 @@ introForm.addEventListener("submit", (event) => {
 });
 
 populateSpecialties();
+populateDepartments();
 initializeWelcomeState();
 categoryCloseButton?.addEventListener("click", closeCategoryOverlay);
 categoryOverlay?.addEventListener("click", (event) => {

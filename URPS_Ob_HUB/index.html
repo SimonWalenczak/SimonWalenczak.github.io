@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <link rel="manifest" href="../manifest.json"/>
   <title>URPS Obesite - Hub</title>
-  <link rel="stylesheet" href="hub.css"/>
+  <link rel="stylesheet" href="Hub.css"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -24,6 +24,30 @@
           <label class="intro-label" for="specialty-select">Spécialité médicale</label>
           <select class="intro-select" id="specialty-select" name="specialty" required>
             <option value="">Choisissez une spécialité</option>
+          </select>
+
+          <label class="intro-label" for="age-input">Âge</label>
+          <input class="intro-input" id="age-input" name="age" type="number" min="18" max="120" step="1" placeholder="Votre âge" required/>
+
+          <label class="intro-label" for="department-select">Département</label>
+          <select class="intro-select" id="department-select" name="department" required>
+            <option value="">Choisissez un département</option>
+          </select>
+
+          <label class="intro-label" for="environment-select">Environnement rural</label>
+          <select class="intro-select" id="environment-select" name="environment" required>
+            <option value="">Choisissez un environnement</option>
+            <option value="campagne">Campagne</option>
+            <option value="ville">Ville</option>
+          </select>
+
+          <label class="intro-label" for="practice-type-select">Type d'exercice</label>
+          <select class="intro-select" id="practice-type-select" name="practiceType" required>
+            <option value="">Choisissez un type d'exercice</option>
+            <option value="cabinet_individuel">Cabinet individuel</option>
+            <option value="cabinet_groupe_monodisciplinaire">Cabinet de groupe monodisciplinaire</option>
+            <option value="cabinet_groupe_pluridisciplinaire">Cabinet de groupe pluridisciplinaire</option>
+            <option value="etablissement_sante">Établissement de santé</option>
           </select>
 
           <fieldset class="gender-field">
@@ -94,6 +118,9 @@
           <div class="hub-radar-labels" id="hub-radar-labels"></div>
         </div>
         <p class="hub-results-click-hint">Cliquez sur les noms des catégories.</p>
+        <button class="hub-results-download" id="hub-results-download" type="button">
+          Télécharger mes résultats
+        </button>
       </section>
 
       <p class="hub-status" id="hub-status" aria-live="polite"></p>
@@ -110,6 +137,6 @@
     </div>
   </main>
 
-  <script src="hub.js"></script>
+  <script src="Hub.js"></script>
 </body>
 </html>

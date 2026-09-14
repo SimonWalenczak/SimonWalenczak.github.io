@@ -220,6 +220,7 @@ body {
 
 /* ===== PLACED OBJECT STATES (recap) ===== */
 .placed-obj.highlighted {
+  opacity: 1; /* animation override below replaces the popIn animation, so opacity must be reasserted */
   filter: drop-shadow(0 0 8px #4ade80) drop-shadow(0 0 20px rgba(74,222,128,0.6));
   animation: highlightPulse 1.6s ease-in-out infinite;
   z-index: 3;
@@ -241,6 +242,7 @@ body {
   position: absolute;
   width: 9%;
   height: auto;
+  transform: translate(-50%, -100%);
   opacity: 0;
   animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   filter: drop-shadow(0 2px 6px rgba(0,0,0,0.55));
@@ -258,9 +260,9 @@ body {
 }
 
 @keyframes popIn {
-  from { transform: scale(0) rotate(-8deg); opacity: 0; }
-  60%  { transform: scale(1.15) rotate(2deg); }
-  to   { transform: scale(1) rotate(0); opacity: 1; }
+  from { transform: translate(-50%, -100%) scale(0) rotate(-8deg); opacity: 0; }
+  60%  { transform: translate(-50%, -100%) scale(1.15) rotate(2deg); }
+  to   { transform: translate(-50%, -100%) scale(1) rotate(0); opacity: 1; }
 }
 
 /* ===== MODAL BACKDROP ===== */
