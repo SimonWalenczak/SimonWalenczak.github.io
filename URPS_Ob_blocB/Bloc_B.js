@@ -18,7 +18,7 @@ function resolveSceneAssetPath(assetPath) {
 }
 
 const SVG_BACKGROUNDS = {
-  cabinet: `<img src="${resolveSceneAssetPath("Cabinet_Medical.svg")}" style="width:100%;height:100%;object-fit:cover;display:block;" alt=""/>`
+  cabinet: `<img src="${resolveSceneAssetPath("Sprites/Cabinet_Medical.svg")}" style="width:100%;height:100%;object-fit:cover;display:block;" alt=""/>`
 };
 
 // Character artwork is loaded from sprite files instead of inline generated SVG.

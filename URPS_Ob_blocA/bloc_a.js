@@ -127,14 +127,15 @@ const HUB_PROGRESS_KEY = "urps_ob_hub_progress";
 const HUB_PROGRESS_BLOC_A_COMPLETED = "blocA_completed";
 
 const STEPS = [
+
   {
     id: "siege",
     badge: "Étape 1",
     question: "Quel siège choisissez-vous pour accueillir vos patients ?",
-    // Position in scene (% from left / top of scene-inner)
-    placement: { left: "30%", top: "64%", size: "5%" },
+    // Position in scene (% from left / top of scene-inner) is now defined per option, above each option's id.
     options: [
       {
+        placement: { left: "81%", top: "65%", size: "5.3%" },
         id: "chaise-standard",
         label: "Chaise standard",
         desc: "Accoudoirs fixes, largeur standard",
@@ -145,34 +146,25 @@ const STEPS = [
         feedback: "Les accoudoirs fixes peuvent être inconfortables, voire inaccessibles pour les patients en situation d'obésité, et peuvent nuire à leur dignité.",
       },
       {
+        placement: { left: "81%", top: "65%", size: "5.3%" },
         id: "fauteuil-bari",
         label: "Fauteuil bariatrique",
         desc: "Siège large, renforcé, accoudoirs réglables",
         optimal: true,
         sprite: "Chaise_Adapte.png",
         scenesprite: "Chair_02.png",
-        cost: 2,     
+        cost: 2,
         feedback: "Ce fauteuil plus large et sans accoudoirs bloquants garantit un accueil confortable et digne pour tous les patients, quelle que soit leur morphologie.",
       },
-      /*{
-        id: "tabouret",
-        label: "Tabouret médical",
-        desc: "Sans dossier ni accoudoirs",
-        optimal: false,
-        sprite: "Tabouret.png",
-        cost: 1,
-        svg: SVG_TABOURET,
-        feedback: "L'absence de dossier rend l'assise difficile et peu sécurisante pour les patients en situation d'obésité, qui ont besoin d'un support du dos.",
-      },*/
     ],
   },
   {
     id: "balance",
     badge: "Étape 2",
     question: "Quelle balance installez-vous dans votre cabinet ?",
-    placement: { left: "82%", top: "63%", size: "10%" },
     options: [
       {
+        placement: { left: "72%", top: "66%", size: "4%" },
         id: "pese-sdb",
         label: "Pèse-personne classique",
         desc: "Petit plateau, portée max. 150 kg",
@@ -184,6 +176,7 @@ const STEPS = [
         feedback: "Un pèse-personne standard peut être incapable de mesurer certains patients et est souvent perçu comme humiliant en raison de sa petite taille.",
       },
       {
+        placement: { left: "72%", top: "66%", size: "4%" },
         id: "balance-bari",
         label: "Balance bariatrique",
         desc: "Grand plateau, portée max. 300 kg",
@@ -197,51 +190,12 @@ const STEPS = [
     ],
   },
   {
-    id: "brassard",
-    badge: "Étape 3",
-    question: "Quel brassard de tensiomètre choisissez-vous ?",
-    placement: { left: "52%", top: "46%", size: "8%" },
-    options: [
-      {
-        id: "brassard-standard",
-        label: "Brassard standard",
-        desc: "Tour de bras jusqu'à 32 cm",
-        optimal: false,
-        sprite: "Brassard_Classique.png",
-        scenesprite: "Tensiometre_01.png",
-        cost: 1,
-        svg: SVG_BRASSARD_STD,
-        feedback: "Un brassard standard peut comprimer le bras et générer des mesures tensionnelles inexactes chez les patients dont le bras dépasse les limites de l'embout.",
-      },
-      {
-        id: "brassard-xl",
-        label: "Brassard grande taille",
-        desc: "Tour de bras jusqu'à 52 cm",
-        optimal: true,
-        sprite: "Brassard_Adapte.png",
-        scenesprite: "Tensiometre_02.png",
-        cost: 2,
-        svg: SVG_BRASSARD_XL,
-        feedback: "Un brassard adapté à la circumférence du bras assure des mesures précises et évite toute gêne ou douleur liée à la compression, pour des données fiables.",
-      },
-      /*{
-        id: "brassard-poignet",
-        label: "Brassard de poignet",
-        desc: "Compact, mesure au poignet",
-        optimal: false,
-        cost: 2,
-        svg: SVG_BRASSARD_POIGNET,
-        feedback: "Le brassard de poignet est moins précis pour la mesure de la tension artérielle, notamment chez les patients en situation d'obésité. Il n'est pas recommandé en première intention.",
-      },*/
-    ],
-  },
-  {
     id: "table",
-    badge: "Étape 4",
+    badge: "Étape 3",
     question: "Quelle table d'examen installez-vous dans votre cabinet ?",
-    placement: { left: "58%", top: "60%", size: "14%" },
     options: [
       {
+        placement: { left: "55%", top: "69%", size: "17%" },
         id: "table-standard",
         label: "Table standard",
         desc: "Larg. 60 cm, charge max. 180 kg",
@@ -253,6 +207,7 @@ const STEPS = [
         feedback: "Une table trop étroite et peu résistante peut être inconfortable, voire dangereuse. Elle peut aussi être source de honte et d'évitement des soins.",
       },
       {
+        placement: { left: "55%", top: "69%", size: "17%" },
         id: "table-bari",
         label: "Table bariatrique",
         desc: "Larg. 90 cm, réglable, charge max. 350 kg",
@@ -265,16 +220,183 @@ const STEPS = [
       },
     ],
   },
+  {
+    id: "brassard",
+    badge: "Étape 4",
+    question: "Quel brassard de tensiomètre choisissez-vous ?",
+    options: [
+      {
+        placement: { left: "60%", top: "57.2%", size: "2%" },
+        id: "brassard-standard",
+        label: "Brassard standard",
+        desc: "Tour de bras jusqu'à 32 cm",
+        optimal: false,
+        sprite: "Brassard_Classique.png",
+        scenesprite: "Tensiometre_01.png",
+        cost: 1,
+        svg: SVG_BRASSARD_STD,
+        feedback: "Un brassard standard peut comprimer le bras et générer des mesures tensionnelles inexactes chez les patients dont le bras dépasse les limites de l'embout.",
+      },
+      {
+        placement: { left: "60%", top: "57.2%", size: "2%" },
+        id: "brassard-xl",
+        label: "Brassard grande taille",
+        desc: "Tour de bras jusqu'à 52 cm",
+        optimal: true,
+        sprite: "Brassard_Adapte.png",
+        scenesprite: "Tensiometre_02.png",
+        cost: 2,
+        svg: SVG_BRASSARD_XL,
+        feedback: "Un brassard adapté à la circonférence du bras assure des mesures précises et évite toute gêne ou douleur liée à la compression, pour des données fiables.",
+      },
+    ],
+  },
+  {
+    id: "marchePied",
+    badge: "Étape 5",
+    question: "Quel marche-pied choisissez-vous ?",
+    options: [
+      {
+        placement: { left: "67%", top: "70%", size: "4%" },
+        id: "marchePied-standard",
+        label: "Marche-pied standard",
+        desc: "Surface étroite",
+        optimal: false,
+        sprite: "Marche-pied_Classique_01.png",
+        scenesprite: "MarchePied_01.png",
+        cost: 1,
+        //svg: SVG_BRASSARD_STD,
+        feedback: "Un marche-pied standard peut être trop étroit et peu stable, ce qui peut entraîner des problèmes de sécurité et de confort pour le patient.",
+      },
+      {
+        placement: { left: "67%", top: "70%", size: "4%" },
+        id: "marchePied-standard-bis",
+        label: "Marche-pied standard bis",
+        desc: "Sans plateau antidérapant",
+        optimal: false,
+        sprite: "Marche-pied_Classique_02.png",
+        scenesprite: "MarchePied_02.png",
+        cost: 1,
+        //svg: SVG_BRASSARD_XL,
+        feedback: "Un marche-pied standard peut être trop étroit et peu stable, ce qui peut entraîner des problèmes de sécurité et de confort pour le patient.",
+      },
+      {
+        placement: { left: "67%", top: "70%", size: "4%" },
+        id: "marchePied-xl",
+        label: "Marche-pied Adapte",
+        desc: "Surface large et stable, barre de maintien",
+        optimal: true,
+        sprite: "Marche-pied_Adapte.png",
+        scenesprite: "MarchePied_03.png",
+        cost: 2,
+        //svg: SVG_BRASSARD_XL,
+        feedback: "Un marche-pied adapté offre une surface plus large et stable, garantissant la sécurité et le confort du patient lors de l'accès à la table d'examen.",
+      },
+    ],
+  },
+  {
+    id: "porteManteau",
+    badge: "Étape 6",
+    question: "Quel porte-manteau choisissez-vous ?",
+    options: [
+      {
+        placement: { left: "81%", top: "59%", size: "4%" },
+        id: "porteManteau-standard",
+        label: "Porte-manteau standard",
+        desc: "Pas de dispositif d'accrochage",
+        optimal: false,
+        sprite: "Chaise_Classique.png",
+        scenesprite: "",
+        cost: 1,
+        //svg: SVG_BRASSARD_STD,
+        feedback: "Un porte-manteau standard peut être difficile à atteindre pour certains patients et ne pas offrir de solution sécurisée pour suspendre les vêtements, ce qui peut nuire à la dignité et au confort.",
+      },
+      {
+        placement: { left: "43%", top: "65%", size: "4%" },
+        id: "porteManteau-adapte",
+        label: "Porte-manteau adapté",
+        desc: "Dispositif d'accrochage inclus",
+        optimal: true,
+        sprite: "Porte-Manteau_Adapte.png",
+        scenesprite: "PorteManteau.png",
+        cost: 2,
+        //svg: SVG_BRASSARD_XL,
+        feedback: "Un porte-manteau adapté offre un dispositif d'accrochage inclus, garantissant la sécurité et le confort du patient lors de l'utilisation.",
+      },
+    ],
+  },
+  {
+    id: "chaussePied",
+    badge: "Étape 7",
+    question: "Quel chausse-pied choisissez-vous ?",
+    options: [
+      {
+        placement: { left: "78.5%", top: "65.2%", size: "1%" },
+        id: "chaussePied-standard",
+        label: "Chausse-pied standard",
+        desc: "Courbure fixe, longueur standard",
+        optimal: false,
+        sprite: "Chausse_pied_Classique.png",
+        scenesprite: "ChaussePied_01.png",
+        cost: 1,
+        //svg: SVG_BRASSARD_STD,
+        feedback: "Un chausse-pied standard peut être trop court ou rigide, rendant difficile l'enfilage des chaussures pour certains patients, ce qui peut entraîner de l'inconfort et de la frustration.",
+      },
+      {
+        placement: { left: "45.5%", top: "65%", size: "1%" },
+        id: "chaussePied-adapte",
+        label: "Chausse-pied adapté",
+        desc: "Courbure ajustable, longueur personnalisée",
+        optimal: true,
+        sprite: "Chausse_pied_Adapte.png",
+        scenesprite: "ChaussePied_02.png",
+        cost: 2,
+        //svg: SVG_BRASSARD_XL,
+        feedback: "Un chausse-pied adapté offre une courbure ajustable et une longueur personnalisée, garantissant la sécurité et le confort du patient lors de l'utilisation.",
+      },
+    ],
+  },
+  {
+    id: "barreDAppui",
+    badge: "Étape 8",
+    question: "Quelle barre d'appui choisissez-vous ?",
+    options: [
+      {
+        placement: { left: "10%", top: "65%", size: "1%" },
+        id: "barreDAppui-standard",
+        label: "Barre d'appui standard",
+        desc: "Pas de dispositif d'appui",
+        optimal: false,
+        sprite: "Toilette_Classique.png",
+        scenesprite: "",
+        cost: 1,
+        //svg: SVG_BRASSARD_STD,
+        feedback: "",
+      },
+      {
+        placement: { left: "13.5%", top: "56%", size: "4%" },
+        id: "barreDAppui-adapte",
+        label: "Barre d'appui adapté",
+        desc: "Dispositif d'appui ajustable",
+        optimal: true,
+        sprite: "Toilette_Adapte.png",
+        scenesprite: "Toilet_Rampe.png",
+        cost: 2,
+        //svg: SVG_BRASSARD_XL,
+        feedback: "Une barre d'appui adaptée offre un dispositif d'appui ajustable, garantissant la sécurité et le confort du patient lors de l'utilisation.",
+      },
+    ],
+  },
 ];
 
 // ======================================================
 // STATE
 // ======================================================
 
-let currentStep     = 0;
-let selectedOptId   = null;
-let selections      = []; // { step, option }
-let recapIndex      = 0;
+let currentStep = 0;
+let selectedOptId = null;
+let selections = []; // { step, option }
+let recapIndex = 0;
 let equipmentAnswers = {}; // stepId -> "oui" | "non"
 let recapAwaitingNext = false;
 
@@ -282,29 +404,29 @@ let recapAwaitingNext = false;
 // DOM REFS
 // ======================================================
 
-const stepChip        = document.getElementById("step-chip");
-const stepQuestion    = document.getElementById("step-question");
-const optionsRow      = document.getElementById("options-row");
-const btnChoose       = document.getElementById("btn-choose");
-const placedObjects   = document.getElementById("placed-objects");
-const progressFill    = document.getElementById("progress-fill");
-const progressLabel   = document.getElementById("progress-label");
-const modalBackdrop   = document.getElementById("modal-backdrop");
-const selectionPanel  = document.getElementById("selection-panel");
-const sparkleCanvas   = document.getElementById("sparkle-canvas");
-const sceneDim        = document.getElementById("scene-dim");
-const recapOverlay    = document.getElementById("recap-overlay");
-const recapPanel      = document.getElementById("recap-panel");
-const recapChip       = document.getElementById("recap-chip");
+const stepChip = document.getElementById("step-chip");
+const stepQuestion = document.getElementById("step-question");
+const optionsRow = document.getElementById("options-row");
+const btnChoose = document.getElementById("btn-choose");
+const placedObjects = document.getElementById("placed-objects");
+const progressFill = document.getElementById("progress-fill");
+const progressLabel = document.getElementById("progress-label");
+const modalBackdrop = document.getElementById("modal-backdrop");
+const selectionPanel = document.getElementById("selection-panel");
+const sparkleCanvas = document.getElementById("sparkle-canvas");
+const sceneDim = document.getElementById("scene-dim");
+const recapOverlay = document.getElementById("recap-overlay");
+const recapPanel = document.getElementById("recap-panel");
+const recapChip = document.getElementById("recap-chip");
 const recapStatusBadge = document.getElementById("recap-status-badge");
-const recapBody       = document.getElementById("recap-body");
+const recapBody = document.getElementById("recap-body");
 const recapQuestionText = recapPanel.querySelector(".recap-q-text");
-const btnEquipOui     = document.getElementById("btn-equip-oui");
-const btnEquipNon     = document.getElementById("btn-equip-non");
-const welcomeOverlay  = document.getElementById("welcome-overlay");
+const btnEquipOui = document.getElementById("btn-equip-oui");
+const btnEquipNon = document.getElementById("btn-equip-non");
+const welcomeOverlay = document.getElementById("welcome-overlay");
 const btnWelcomeClose = document.getElementById("btn-welcome-close");
-const surveyOverlay   = document.getElementById("survey-overlay");
-const btnSurveyClose  = document.getElementById("btn-survey-close");
+const surveyOverlay = document.getElementById("survey-overlay");
+const btnSurveyClose = document.getElementById("btn-survey-close");
 
 let recapPendingStart = false;
 
@@ -316,7 +438,7 @@ function requestFullscreen() {
 
   try {
     if (root.requestFullscreen) {
-      root.requestFullscreen().catch(() => {});
+      root.requestFullscreen().catch(() => { });
     } else if (root.webkitRequestFullscreen) {
       root.webkitRequestFullscreen();
     } else if (root.msRequestFullscreen) {
@@ -348,36 +470,36 @@ function setupAutomaticFullscreen() {
 
 const ctx = sparkleCanvas.getContext("2d");
 let sparticles = [];
-let sparkRAF   = null;
+let sparkRAF = null;
 
 function resizeSparkCanvas() {
-  sparkleCanvas.width  = modalBackdrop.clientWidth;
+  sparkleCanvas.width = modalBackdrop.clientWidth;
   sparkleCanvas.height = modalBackdrop.clientHeight;
 }
 
 function launchSparkles(cardEl) {
   resizeSparkCanvas();
-  const rect   = cardEl.getBoundingClientRect();
-  const bRect  = modalBackdrop.getBoundingClientRect();
-  const cx     = rect.left + rect.width  / 2 - bRect.left;
-  const cy     = rect.top  + rect.height / 2 - bRect.top;
+  const rect = cardEl.getBoundingClientRect();
+  const bRect = modalBackdrop.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2 - bRect.left;
+  const cy = rect.top + rect.height / 2 - bRect.top;
 
   const COLORS = ["#4ade80", "#86efac", "#bbf7d0", "#fbbf24", "#f9a8d4", "#fff"];
-  const COUNT  = 32;
+  const COUNT = 32;
 
   for (let i = 0; i < COUNT; i++) {
-    const angle  = (Math.PI * 2 * i) / COUNT + (Math.random() - 0.5) * 0.5;
-    const speed  = 2.5 + Math.random() * 5;
+    const angle = (Math.PI * 2 * i) / COUNT + (Math.random() - 0.5) * 0.5;
+    const speed = 2.5 + Math.random() * 5;
     sparticles.push({
-      x:    cx, y: cy,
-      vx:   Math.cos(angle) * speed,
-      vy:   Math.sin(angle) * speed - Math.random() * 2,
-      r:    2 + Math.random() * 3,
+      x: cx, y: cy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - Math.random() * 2,
+      r: 2 + Math.random() * 3,
       life: 1,
       decay: 0.025 + Math.random() * 0.025,
       color: COLORS[Math.floor(Math.random() * COLORS.length)],
       shape: Math.random() > 0.5 ? "circle" : "star",
-      rot:  Math.random() * Math.PI * 2,
+      rot: Math.random() * Math.PI * 2,
       rotV: (Math.random() - 0.5) * 0.2,
     });
   }
@@ -406,13 +528,13 @@ function animateSparticles() {
 
   sparticles = sparticles.filter((p) => p.life > 0);
   sparticles.forEach((p) => {
-    p.x    += p.vx;
-    p.y    += p.vy;
-    p.vy   += 0.18;      // gravity
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.18;      // gravity
     p.life -= p.decay;
-    p.rot  += p.rotV;
+    p.rot += p.rotV;
     ctx.globalAlpha = Math.max(0, p.life);
-    ctx.fillStyle   = p.color;
+    ctx.fillStyle = p.color;
     if (p.shape === "star") {
       drawStar(p.x, p.y, p.r * 1.4, p.rot);
     } else {
@@ -453,6 +575,8 @@ function renderOptionAsset(option) {
 }
 
 function renderSceneAsset(option) {
+  if (!option.scenesprite) return "";
+
   const source = `${MEDICAL_ILLUSTRATIONS_DIR}/${option.scenesprite}`;
   return `
     <img class="medical-sprite"
@@ -490,22 +614,22 @@ function renderStep() {
   selectedOptId = null;
 
   // Update HUD
-  stepChip.textContent     = `${step.badge} / ${STEPS.length}`;
+  stepChip.textContent = `${step.badge} / ${STEPS.length}`;
   stepQuestion.textContent = step.question;
-  btnChoose.disabled       = true;
+  btnChoose.disabled = true;
 
   // Update progress bar
   const pct = Math.round((currentStep / STEPS.length) * 100);
-  progressFill.style.width  = `${pct}%`;
+  progressFill.style.width = `${pct}%`;
   progressLabel.textContent = `${currentStep} / ${STEPS.length}`;
 
   // Render option cards
   optionsRow.innerHTML = "";
   step.options.forEach((opt) => {
     const card = document.createElement("div");
-    card.className    = "option-card";
-    card.dataset.id   = opt.id;
-    card.innerHTML    = `
+    card.className = "option-card";
+    card.dataset.id = opt.id;
+    card.innerHTML = `
       <div class="card-check">
         <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
           <path d="M1.5 5.5 L4.5 8.5 L9.5 2.5"
@@ -546,7 +670,7 @@ function selectOption(optId) {
 function handleChoose() {
   if (!selectedOptId) return;
 
-  const step   = STEPS[currentStep];
+  const step = STEPS[currentStep];
   const option = step.options.find((o) => o.id === selectedOptId);
 
   selections.push({ step, option });
@@ -578,7 +702,10 @@ function handleChoose() {
 
       currentStep++;
       if (currentStep >= STEPS.length) {
-        openSurveyOverlay();
+        modalBackdrop.classList.add("hidden");
+        window.setTimeout(() => {
+          openSurveyOverlay();
+        }, 3000);
       } else {
         // 4) Longer pause before bringing back the selection window
         setTimeout(() => {
@@ -615,12 +742,13 @@ function closeSurveyOverlay() {
 // ======================================================
 
 function placeObjectInScene(step, option) {
+  const placement = option.placement || step.placement;
   const obj = document.createElement("div");
-  obj.className    = "placed-obj";
-  obj.style.left   = step.placement.left;
-  obj.style.top    = step.placement.top;
-  obj.style.width  = step.placement.size;
-  obj.innerHTML    = renderSceneAsset(option);
+  obj.className = "placed-obj";
+  obj.style.left = placement.left;
+  obj.style.top = placement.top;
+  obj.style.width = placement.size;
+  obj.innerHTML = renderSceneAsset(option);
   placedObjects.appendChild(obj);
 }
 
@@ -630,7 +758,7 @@ function placeObjectInScene(step, option) {
 
 function startRecap() {
   // Update progress to 100%
-  progressFill.style.width  = "100%";
+  progressFill.style.width = "100%";
   progressLabel.textContent = `${STEPS.length} / ${STEPS.length}`;
 
   recapIndex = 0;
@@ -640,8 +768,8 @@ function startRecap() {
 }
 
 function showRecapStep(i) {
-  const sel    = selections[i];
-  const step   = sel.step;
+  const sel = selections[i];
+  const step = sel.step;
   const option = sel.option;
   const optimalOpt = step.options.find((o) => o.optimal) || option;
   recapAwaitingNext = false;
@@ -685,14 +813,14 @@ function showRecapStep(i) {
 
   // Animate panel in
   recapPanel.style.transition = "none";
-  recapPanel.style.opacity    = "1";
-  recapPanel.style.transform  = "translateY(0)";
+  recapPanel.style.opacity = "1";
+  recapPanel.style.transform = "translateY(0)";
 }
 
 function goToNextRecapStep() {
   recapPanel.style.transition = "opacity 0.25s ease, transform 0.25s ease";
-  recapPanel.style.opacity    = "0";
-  recapPanel.style.transform  = "translateY(16px)";
+  recapPanel.style.opacity = "0";
+  recapPanel.style.transform = "translateY(16px)";
 
   setTimeout(() => {
     recapIndex++;
@@ -706,8 +834,8 @@ function goToNextRecapStep() {
       showFinalSummary();
     } else {
       recapPanel.style.transition = "none";
-      recapPanel.style.opacity    = "1";
-      recapPanel.style.transform  = "translateY(0)";
+      recapPanel.style.opacity = "1";
+      recapPanel.style.transform = "translateY(0)";
       showRecapStep(recapIndex);
     }
   }, 280);
@@ -757,7 +885,7 @@ function advanceRecap(answer) {
 // ======================================================
 
 function showFinalSummary() {
-  // Recap complete — save progression and go back to HUB
+  // Recap complete — save progression and return to the HUB.
   recapOverlay.classList.add("hidden");
   sceneDim.classList.add("hidden");
   placedObjects.querySelectorAll(".placed-obj").forEach((el) => {
