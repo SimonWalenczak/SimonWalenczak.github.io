@@ -84,6 +84,7 @@ const hubStage = document.getElementById("hub-stage");
 let statusTimer = null;
 let hubResultsChart = null;
 let hubResultsPayload = null;
+let radarButtonPositionRaf = null;
 let hasPassedWelcomeDialog = false;
 let activeWelcomeDialog = null;
 let isDoorPhaseDisabled = false;
@@ -464,6 +465,7 @@ function renderResultsRadar(scores) {
       responsive: true,
       maintainAspectRatio: false,
       animation: false,
+      onResize: () => scheduleRadarCategoryButtonPosition(),
       layout: {
         padding: preset.padding,
       },
@@ -490,7 +492,7 @@ function renderResultsRadar(scores) {
   });
 
   renderRadarCategoryButtons(scores);
-  positionRadarCategoryButtons();
+  scheduleRadarCategoryButtonPosition();
 }
 
 function renderRadarCategoryButtons(scores) {
@@ -513,30 +515,49 @@ function renderRadarCategoryButtons(scores) {
 
 function positionRadarCategoryButtons() {
   const container = document.getElementById("hub-radar-labels");
-  if (!container || !hubResultsChart?.scales?.r) {
+  const scale = hubResultsChart?.scales?.r;
+  if (!container || !scale || !resultsRadarCanvas) {
     return;
   }
 
-  const pointLabelItems = hubResultsChart.scales.r._pointLabelItems;
-  if (!Array.isArray(pointLabelItems)) {
+  const canvasRect = resultsRadarCanvas.getBoundingClientRect();
+  const containerRect = container.getBoundingClientRect();
+  if (!canvasRect.width || !canvasRect.height || !containerRect.width || !containerRect.height) {
     return;
   }
 
   const buttons = container.querySelectorAll(".hub-radar-category-btn");
   buttons.forEach((button, index) => {
-    const item = pointLabelItems[index];
-    if (!item) {
-      return;
-    }
-
-    const centerX = (item.left + item.right) / 2;
-    const centerY = (item.top + item.bottom) / 2;
+    // Anchor each post-it to the radar vertex itself, rather than Chart.js'
+    // transient point-label boxes. This keeps its position stable after an
+    // orientation change or any responsive resize.
+    const point = scale.getPointPositionForValue(index, scale.max);
+    const vectorX = point.x - scale.xCenter;
+    const vectorY = point.y - scale.yCenter;
+    const vectorLength = Math.hypot(vectorX, vectorY) || 1;
+    const outsideOffset = Math.max(8, Math.min(canvasRect.width, canvasRect.height) * 0.045);
+    const centerX = (canvasRect.left - containerRect.left) + ((point.x / hubResultsChart.width) * canvasRect.width) + ((vectorX / vectorLength) * outsideOffset);
+    const centerY = (canvasRect.top - containerRect.top) + ((point.y / hubResultsChart.height) * canvasRect.height) + ((vectorY / vectorLength) * outsideOffset);
     if (!Number.isFinite(centerX) || !Number.isFinite(centerY)) {
       return;
     }
 
     button.style.left = `${centerX}px`;
     button.style.top = `${centerY}px`;
+  });
+}
+
+function scheduleRadarCategoryButtonPosition() {
+  if (radarButtonPositionRaf !== null) {
+    cancelAnimationFrame(radarButtonPositionRaf);
+  }
+
+  // Let the canvas and its responsive parent settle before reading geometry.
+  radarButtonPositionRaf = requestAnimationFrame(() => {
+    radarButtonPositionRaf = requestAnimationFrame(() => {
+      radarButtonPositionRaf = null;
+      positionRadarCategoryButtons();
+    });
   });
 }
 
@@ -556,7 +577,7 @@ function refreshResultsRadarLayout() {
     hubResultsChart.data.datasets[0].pointBorderWidth = preset.borderWidth;
   }
   hubResultsChart.update("none");
-  positionRadarCategoryButtons();
+  scheduleRadarCategoryButtonPosition();
 }
 
 function renderCategoryDetails(categoryKey) {
