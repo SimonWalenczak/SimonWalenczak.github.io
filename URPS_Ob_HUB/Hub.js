@@ -72,6 +72,9 @@ const categoryOverlay = document.getElementById("hub-category-overlay");
 const categoryCloseButton = document.getElementById("hub-category-close");
 const categoryTitle = document.getElementById("hub-category-title");
 const categoryContent = document.getElementById("hub-category-content");
+const categoryCard = document.getElementById("hub-category-card");
+const categoryScrollbar = document.getElementById("hub-category-scrollbar");
+const categoryScrollbarThumb = document.getElementById("hub-category-scrollbar-thumb");
 const logoObesiteLink = document.getElementById("logo-obesite-link");
 const hubWelcomeOverlay = document.getElementById("hub-welcome-overlay");
 const hubWelcomeMessage = document.getElementById("hub-welcome-message");
@@ -570,6 +573,8 @@ function renderCategoryDetails(categoryKey) {
   if (!details.length) {
     categoryContent.innerHTML = `<p class="hub-results-empty">Aucune réponse enregistrée pour cette catégorie.</p>`;
     categoryOverlay?.classList.remove("is-hidden");
+    updateCategoryScrollbar();
+    startCategoryScrollbarSync();
     return;
   }
 
@@ -582,7 +587,60 @@ function renderCategoryDetails(categoryKey) {
   `).join("");
 
   categoryOverlay?.classList.remove("is-hidden");
+  updateCategoryScrollbar();
+  startCategoryScrollbarSync();
 }
+
+function updateCategoryScrollbar() {
+  if (!categoryCard || !categoryScrollbar || !categoryScrollbarThumb) {
+    return;
+  }
+
+  const { scrollTop, scrollHeight, clientHeight } = categoryCard;
+  const canScroll = scrollHeight > clientHeight + 1;
+
+  categoryScrollbar.classList.toggle("is-hidden", !canScroll);
+  if (!canScroll) {
+    return;
+  }
+
+  // The custom track lives in the scrollable card. Compensate for the card's
+  // own scroll position so the track stays visually pinned to the card.
+  const trackInset = 8;
+  const trackHeight = Math.max(0, clientHeight - (trackInset * 2));
+  categoryScrollbar.style.top = `${scrollTop + trackInset}px`;
+  categoryScrollbar.style.height = `${trackHeight}px`;
+  categoryScrollbar.style.bottom = "auto";
+  const thumbHeight = Math.min(trackHeight, Math.max(30, (clientHeight / scrollHeight) * trackHeight));
+  const maxThumbTop = Math.max(0, trackHeight - thumbHeight);
+  const maxScrollTop = Math.max(1, scrollHeight - clientHeight);
+  const scrollRatio = Math.min(1, Math.max(0, scrollTop / maxScrollTop));
+
+  categoryScrollbarThumb.style.height = `${thumbHeight}px`;
+  categoryScrollbarThumb.style.top = `${maxThumbTop * scrollRatio}px`;
+}
+
+let categoryScrollbarRAF = null;
+
+function startCategoryScrollbarSync() {
+  stopCategoryScrollbarSync();
+
+  const loop = () => {
+    updateCategoryScrollbar();
+    categoryScrollbarRAF = requestAnimationFrame(loop);
+  };
+  categoryScrollbarRAF = requestAnimationFrame(loop);
+}
+
+function stopCategoryScrollbarSync() {
+  if (categoryScrollbarRAF !== null) {
+    cancelAnimationFrame(categoryScrollbarRAF);
+    categoryScrollbarRAF = null;
+  }
+}
+
+categoryCard?.addEventListener("scroll", updateCategoryScrollbar, { passive: true });
+window.addEventListener("resize", updateCategoryScrollbar);
 
 function renderResultsCategories() {
   // Details are opened only via radar category label clicks.
@@ -676,6 +734,7 @@ function downloadResultsCsv() {
 
 function closeCategoryOverlay() {
   categoryOverlay?.classList.add("is-hidden");
+  stopCategoryScrollbarSync();
 }
 
 function maybeShowHubResults() {

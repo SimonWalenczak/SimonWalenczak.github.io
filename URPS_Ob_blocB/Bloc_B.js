@@ -70,13 +70,9 @@ const CHARACTER_SPRITES = {
 const screenTitle   = document.getElementById("screen-title");
 const screenGame    = document.getElementById("screen-game");
 const screenResults = document.getElementById("screen-results");
-const menuOverlay   = document.getElementById("menu-overlay");
 
 const btnTitleStart = document.getElementById("btn-title-start");
-const btnMenu       = document.getElementById("btn-menu");
 const btnRestart    = document.getElementById("btn-restart");
-const menuResume    = document.getElementById("menu-resume");
-const menuRestart   = document.getElementById("menu-restart");
 
 const hudSceneLabel   = document.getElementById("hud-scene-label");
 const hudProgressFill = document.getElementById("hud-progress-fill");
@@ -208,19 +204,37 @@ const SCENARIO_EMBEDDED = {"title":"Bloc B — Consultation contextualisée","su
 // BOOT — load scenario.json (with embedded fallback)
 // ======================================================
 
+// Patient is always written as "Mme Martin" in scenario.json; swap to "Mr Martin" when the random patient is male.
+function applyPatientGenderToScenario(data) {
+  if (PATIENT_GENDER !== "homme") return data;
+
+  const replaceInStrings = (value) => {
+    if (typeof value === "string") return value.replace(/Mme Martin/g, "Mr Martin");
+    if (Array.isArray(value)) return value.map(replaceInStrings);
+    if (value && typeof value === "object") {
+      return Object.fromEntries(
+        Object.entries(value).map(([key, val]) => [key, replaceInStrings(val)])
+      );
+    }
+    return value;
+  };
+
+  return replaceInStrings(data);
+}
+
 async function boot() {
   try {
     const scenarioUrl = resolveSceneAssetPath("scenario.json");
     const res = await fetch(`${scenarioUrl}?v=${Date.now()}`, { cache: "no-store" });
     if (res.ok) {
-      scenario = await res.json();
+      scenario = applyPatientGenderToScenario(await res.json());
       buildFlatSteps();
       return;
     }
   } catch (e) {
     // fetch unavailable (e.g. file:// protocol) — use embedded data
   }
-  scenario = SCENARIO_EMBEDDED;
+  scenario = applyPatientGenderToScenario(SCENARIO_EMBEDDED);
   buildFlatSteps();
 }
 
@@ -247,7 +261,7 @@ function answeredCount() {
 // ======================================================
 
 function showScreen(id) {
-  [screenTitle, screenGame, screenResults, menuOverlay]
+  [screenTitle, screenGame, screenResults]
     .filter(Boolean)
     .forEach((el) => el.classList.add("hidden"));
   document.getElementById(id).classList.remove("hidden");
@@ -487,9 +501,8 @@ function advanceOnViewportClick(event) {
   const isDialogueVisible = !vnDialog.classList.contains("hidden");
   const isNarrationVisible = !vnNarration.classList.contains("hidden");
   const isQuestionVisible = !vnQuestionOverlay.classList.contains("hidden");
-  const isMenuVisible = !menuOverlay.classList.contains("hidden");
 
-  if ((isDialogueVisible || isNarrationVisible) && !isQuestionVisible && !isMenuVisible) {
+  if ((isDialogueVisible || isNarrationVisible) && !isQuestionVisible) {
     advance();
   }
 }
@@ -521,15 +534,6 @@ vqConfirm.addEventListener("click", () => {
   const step = flatSteps[stepIndex];
   answers[step.id] = pendingAnswer;
   advance();
-});
-
-btnMenu.addEventListener("click", () => menuOverlay.classList.remove("hidden"));
-menuResume.addEventListener("click", () => menuOverlay.classList.add("hidden"));
-menuRestart.addEventListener("click", () => {
-  menuOverlay.classList.add("hidden");
-  stepIndex = 0; answers = {}; openFeedback = {}; selectedCategory = null;
-  showScreen("screen-game");
-  renderStep();
 });
 
 btnRestart.addEventListener("click", () => {

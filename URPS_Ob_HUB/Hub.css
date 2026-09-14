@@ -698,15 +698,48 @@ body {
 }
 
 .hub-category-card {
+  position: relative;
   width: min(980px, 100%);
   max-height: calc(100vh - 2rem);
   overflow-y: auto;
+  overscroll-behavior: contain;
+  /* Native scrollbars auto-hide after inactivity on most OS/browsers regardless of styling,
+     so we hide them and draw our own persistent indicator below. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   border: 1px solid rgba(147, 197, 253, 0.28);
   border-radius: 20px;
   background: linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.96));
   box-shadow: 0 28px 70px rgba(2, 6, 23, 0.45);
   color: #dbeafe;
   padding: 1.25rem;
+}
+
+.hub-category-card::-webkit-scrollbar {
+  display: none;
+}
+
+.hub-category-scrollbar {
+  position: absolute;
+  top: 8px;
+  right: 0.35rem;
+  bottom: 8px;
+  width: 6px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.5);
+  pointer-events: none;
+}
+
+.hub-category-scrollbar.is-hidden {
+  display: none;
+}
+
+.hub-category-scrollbar-thumb {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-radius: 999px;
+  background: rgba(96, 165, 250, 0.85);
 }
 
 .hub-category-header {
