@@ -535,7 +535,7 @@ function positionRadarCategoryButtons() {
     const vectorX = point.x - scale.xCenter;
     const vectorY = point.y - scale.yCenter;
     const vectorLength = Math.hypot(vectorX, vectorY) || 1;
-    const outsideOffset = Math.max(8, Math.min(canvasRect.width, canvasRect.height) * 0.045);
+    const outsideOffset = Math.max(10, Math.min(canvasRect.width, canvasRect.height) * 0.165);
     const centerX = (canvasRect.left - containerRect.left) + ((point.x / hubResultsChart.width) * canvasRect.width) + ((vectorX / vectorLength) * outsideOffset);
     const centerY = (canvasRect.top - containerRect.top) + ((point.y / hubResultsChart.height) * canvasRect.height) + ((vectorY / vectorLength) * outsideOffset);
     if (!Number.isFinite(centerX) || !Number.isFinite(centerY)) {
