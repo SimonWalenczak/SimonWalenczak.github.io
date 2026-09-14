@@ -343,7 +343,7 @@ const STEPS = [
         feedback: "Un chausse-pied standard peut être trop court ou rigide, rendant difficile l'enfilage des chaussures pour certains patients, ce qui peut entraîner de l'inconfort et de la frustration.",
       },
       {
-        placement: { left: "45.5%", top: "65%", size: "1%" },
+        placement: { left: "45.5%", top: "65%", size: "0.75%" },
         id: "chaussePied-adapte",
         label: "Chausse-pied adapté",
         desc: "Courbure ajustable, longueur personnalisée",
