@@ -204,6 +204,7 @@ function updateWelcomePointerPosition() {
 }
 
 function initializeHubScene() {
+  setupBrowserFullscreen();
   syncIntroFromSession();
   resolveDoorState();
   maybeShowHubResults();
@@ -211,8 +212,41 @@ function initializeHubScene() {
 
 }
 
+function requestBrowserFullscreen() {
+  if (isStandalone() || document.fullscreenElement || document.webkitFullscreenElement) {
+    return;
+  }
+
+  const root = document.documentElement;
+  const request = root.requestFullscreen || root.webkitRequestFullscreen;
+  if (!request) {
+    return;
+  }
+
+  try {
+    const result = request.call(root);
+    result?.catch?.(() => {});
+  } catch {
+    // Fullscreen can only be granted by a browser after a user interaction.
+  }
+}
+
+function setupBrowserFullscreen() {
+  if (isStandalone()) {
+    return;
+  }
+
+  const requestOnInteraction = () => requestBrowserFullscreen();
+  window.addEventListener("pointerdown", requestOnInteraction, { passive: true });
+  window.addEventListener("touchend", requestOnInteraction, { passive: true });
+  window.addEventListener("keydown", requestOnInteraction);
+}
+
 function isStandalone() {
-  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  const ownDisplayMode = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  const parentDisplayMode = window.top !== window
+    && (window.top.matchMedia("(display-mode: standalone)").matches || window.top.navigator.standalone === true);
+  return ownDisplayMode || parentDisplayMode;
 }
 
 function isIOS() {
