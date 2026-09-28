@@ -5,8 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
   <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <link rel="manifest" href="../manifest.json"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <meta name="apple-mobile-web-app-title" content="URPS Obésité"/>
+  <meta name="theme-color" content="#ffffff"/>
+  <link rel="manifest" href="manifest.webmanifest"/>
+  <link rel="apple-touch-icon" href="Logo_obesite.png"/>
   <title>URPS Obesite - Hub</title>
   <link rel="stylesheet" href="Hub.css"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
@@ -69,7 +72,19 @@
           </fieldset>
 
           <button class="intro-submit" type="submit">Entrer dans le centre</button>
+          <button class="install-app-button is-hidden" id="install-app-button" type="button">Installer l'outil sur cet appareil</button>
+          <p class="install-app-note is-hidden" id="install-app-note">Facultatif — ouvrez ensuite l'outil depuis votre écran d'accueil.</p>
         </form>
+      </section>
+
+      <section class="install-help is-hidden" id="install-help" role="dialog" aria-modal="true" aria-labelledby="install-help-title">
+        <div class="install-help-card">
+          <button class="install-help-close" id="install-help-close" type="button" aria-label="Fermer l'aide d'installation">×</button>
+          <p class="intro-kicker">Installation sur iPhone ou iPad</p>
+          <h2 class="install-help-title" id="install-help-title">Ajouter URPS Obésité à l’écran d’accueil</h2>
+          <ol class="install-help-steps"><li>Dans Safari, touchez <strong>Partager</strong> (carré avec une flèche vers le haut).</li><li>Choisissez <strong>Sur l’écran d’accueil</strong>.</li><li>Validez avec <strong>Ajouter</strong>, puis ouvrez l’outil depuis son icône.</li></ol>
+          <p class="install-help-note">L’installation est facultative : le site reste utilisable directement dans Safari.</p>
+        </div>
       </section>
 
       <section class="hub-welcome-overlay is-hidden" id="hub-welcome-overlay" aria-live="polite">

@@ -81,6 +81,11 @@ const hubWelcomeMessage = document.getElementById("hub-welcome-message");
 const hubWelcomeHint = document.getElementById("hub-welcome-hint");
 const hubWelcomePointer = document.getElementById("hub-welcome-pointer");
 const hubStage = document.getElementById("hub-stage");
+const installAppButton = document.getElementById("install-app-button");
+const installAppNote = document.getElementById("install-app-note");
+const installHelp = document.getElementById("install-help");
+const installHelpClose = document.getElementById("install-help-close");
+let deferredInstallPrompt = null;
 let statusTimer = null;
 let hubResultsChart = null;
 let hubResultsPayload = null;
@@ -198,52 +203,54 @@ function updateWelcomePointerPosition() {
   hubWelcomePointer.style.setProperty("--door-pointer-top", `${topPct}%`);
 }
 
-async function requestFullscreen() {
-  const root = document.documentElement;
-
-  if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
-    return;
-  }
-
-  try {
-    if (root.requestFullscreen) {
-      await root.requestFullscreen();
-    } else if (root.webkitRequestFullscreen) {
-      root.webkitRequestFullscreen();
-    } else if (root.msRequestFullscreen) {
-      root.msRequestFullscreen();
-    }
-  } catch {
-    // Browsers may reject autoplay fullscreen until a user interaction.
-  }
-}
-
-function setupAutomaticFullscreen() {
-  const tryOnInteraction = () => {
-    if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
-      return;
-    }
-
-    requestFullscreen();
-  };
-
-  window.addEventListener("click", tryOnInteraction, { passive: true });
-  window.addEventListener("touchend", tryOnInteraction, { passive: true });
-  window.addEventListener("pointerup", tryOnInteraction, { passive: true });
-  window.addEventListener("keydown", tryOnInteraction);
-}
-
 function initializeHubScene() {
-  setupAutomaticFullscreen();
   syncIntroFromSession();
   resolveDoorState();
   maybeShowHubResults();
   syncDoorLockState();
 
-  if (!document.fullscreenEnabled) {
-    showStatus("Le plein ecran n'est pas disponible sur ce navigateur.");
-  }
 }
+
+function isStandalone() {
+  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+}
+
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+function showInstallControl() {
+  if (!installAppButton || isStandalone()) return;
+  const canInstall = isIOS() || deferredInstallPrompt;
+  installAppButton.classList.toggle("is-hidden", !canInstall);
+  installAppNote?.classList.toggle("is-hidden", !canInstall);
+}
+
+async function installApp() {
+  if (isIOS()) {
+    installHelp?.classList.remove("is-hidden");
+    installHelpClose?.focus();
+    return;
+  }
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  showInstallControl();
+}
+
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+  showInstallControl();
+});
+
+window.addEventListener("appinstalled", () => {
+  deferredInstallPrompt = null;
+  installAppButton?.classList.add("is-hidden");
+  installAppNote?.classList.add("is-hidden");
+});
 
 function syncDoorLockState() {
   const shouldLockForWelcome = !hasPassedWelcomeDialog;
@@ -866,6 +873,11 @@ function openDoor(button) {
 mainDoor.addEventListener("click", () => openDoor(mainDoor));
 hubWelcomeOverlay?.addEventListener("click", dismissWelcomeDialog);
 resultsDownloadButton?.addEventListener("click", downloadResultsCsv);
+installAppButton?.addEventListener("click", installApp);
+installHelpClose?.addEventListener("click", () => installHelp?.classList.add("is-hidden"));
+installHelp?.addEventListener("click", (event) => {
+  if (event.target === installHelp) installHelp.classList.add("is-hidden");
+});
 
 genderOptions.forEach((button) => {
   button.addEventListener("click", () => selectGender(button));
@@ -913,3 +925,8 @@ if (typeof ResizeObserver !== "undefined" && hubStage) {
 }
 
 initializeHubScene();
+showInstallControl();
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js"));
+}
