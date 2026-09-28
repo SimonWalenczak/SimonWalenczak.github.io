@@ -930,3 +930,15 @@ showInstallControl();
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js"));
 }
+
+// In OnePage mode, the HUB stays mounted while the user completes a block.
+// Refresh its progression-dependent controls when it becomes visible again.
+window.addEventListener("message", (event) => {
+  if (event.origin !== window.location.origin || event.data?.type !== "urps:scene-activated") {
+    return;
+  }
+
+  resolveDoorState();
+  maybeShowHubResults();
+  syncDoorLockState();
+});
