@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <link rel="manifest" href="../manifest.json"/>
-  <title>URPS Obesite - One Page</title>
+  <title>URPS Obésité</title>
   <style>
     html,
     body {
@@ -53,7 +53,7 @@
   <template id="tpl-hub">
     <main class="hub" aria-label="Accueil du centre medical">
       <div class="content hub-stage" id="hub-stage">
-        <img class="hub-bg" src="Accueil_Background_RemakeV2.png" alt="Accueil du centre medical"/>
+        <img class="hub-bg" src="Accueil_Background_V4.png" alt="Accueil du centre medical"/>
 
         <section class="intro-panel" id="intro-panel" aria-labelledby="intro-title">
           <form class="intro-card" id="intro-form">
@@ -69,15 +69,15 @@
               <legend class="intro-label">Etes-vous un homme ou une femme ?</legend>
               <div class="gender-options" id="gender-options">
                 <button class="gender-option" type="button" data-gender="homme" aria-pressed="false">
-                  <img src="CharacterDoctor.svg" alt="" aria-hidden="true"/>
+                  <img src="Doctor_Male.svg" alt="" aria-hidden="true"/>
                   <span>Homme</span>
                 </button>
                 <button class="gender-option" type="button" data-gender="femme" aria-pressed="false">
-                  <img src="CharacterDoctor_Female.svg" alt="" aria-hidden="true"/>
+                  <img src="Doctor_Female.svg" alt="" aria-hidden="true"/>
                   <span>Femme</span>
                 </button>
                 <button class="gender-option" type="button" data-gender="ne_se_prononce_pas" aria-pressed="false">
-                  <img src="CharacterDoctor.svg" alt="" aria-hidden="true"/>
+                  <img src="Doctor_Male.svg" alt="" aria-hidden="true"/>
                   <span>Ne se prononce pas</span>
                 </button>
               </div>
@@ -399,21 +399,21 @@
       hub: {
         templateId: "tpl-hub",
         baseDir: "../URPS_Ob_HUB",
-        styleFiles: ["hub.css"],
+        styleFiles: ["Hub.css"],
         runnerKey: "hub",
         bodyClass: "",
       },
       blocA: {
         templateId: "tpl-blocA",
         baseDir: "../URPS_Ob_blocA",
-        styleFiles: ["bloc_a.css"],
+        styleFiles: ["Bloc_A.css"],
         runnerKey: "blocA",
         bodyClass: "",
       },
       blocB: {
         templateId: "tpl-blocB",
         baseDir: "../URPS_Ob_blocB",
-        styleFiles: ["style.css"],
+        styleFiles: ["Bloc_B.css"],
         runnerKey: "blocB",
         bodyClass: "vn-body",
       },
@@ -457,11 +457,12 @@
       return SCENES[scene] ? scene : "hub";
     }
 
-    function navigate(scene) {
+    function navigate(scene, { replace = false } = {}) {
       const targetScene = SCENES[scene] ? scene : "hub";
       const url = new URL(window.location.href);
       url.searchParams.set("scene", targetScene);
-      window.location.href = url.toString();
+      window.history[replace ? "replaceState" : "pushState"]({ scene: targetScene }, "", url);
+      mountScene(targetScene);
     }
 
     function mountScene(sceneKey) {
@@ -477,6 +478,7 @@
 
       document.body.className = scene.bodyClass || "";
       window.URPS_SCENE_BASE_DIR = scene.baseDir;
+      document.title = `URPS Obésité — ${sceneKey === "hub" ? "Accueil" : sceneKey === "blocA" ? "Bloc A" : "Bloc B"}`;
 
       scene.styleFiles.forEach((styleFile) => {
         const link = document.createElement("link");
@@ -502,9 +504,11 @@
 
     sessionStorage.setItem("urps_ob_single_page", "true");
 
+    window.addEventListener("popstate", () => mountScene(currentSceneFromQuery()));
+
     (async () => {
       try {
-        mountScene(currentSceneFromQuery());
+        navigate(currentSceneFromQuery(), { replace: true });
         bootOverlay.classList.add("hidden");
       } catch (error) {
         console.error(error);
