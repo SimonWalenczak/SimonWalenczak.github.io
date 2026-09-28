@@ -363,9 +363,11 @@ function resolveDoorState() {
   const shouldShowBlocBAssets = progress === HUB_PROGRESS_BLOC_B_COMPLETED;
   posterHotspots.forEach((link) => {
     link.classList.toggle("is-locked", !shouldShowBlocBAssets);
+    link.classList.toggle("is-results-highlight", shouldShowBlocBAssets && hasSavedResults);
     link.setAttribute("aria-disabled", String(!shouldShowBlocBAssets));
   });
   logoObesiteLink.classList.toggle("is-hidden", !shouldShowBlocBAssets);
+  logoObesiteLink.classList.toggle("is-results-highlight", shouldShowBlocBAssets && hasSavedResults);
   wallResults.classList.toggle("is-hidden", !shouldShowBlocBAssets || !hasSavedResults);
 }
 
@@ -512,7 +514,7 @@ function renderRadarCategoryButtons(scores) {
   scores.forEach((item) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "hub-radar-category-btn";
+    button.className = "hub-radar-category-btn is-results-highlight";
     button.textContent = item.label;
     button.style.backgroundImage = `url("${item.palette.sprite}")`;
     button.addEventListener("click", () => renderCategoryDetails(item.key));

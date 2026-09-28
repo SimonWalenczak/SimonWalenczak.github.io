@@ -423,13 +423,19 @@ function renderQuestion(step) {
     slider.className = "likert-slider";
     slider.setAttribute("aria-label", "Echelle de Likert de 1 a 5");
 
-    slider.addEventListener("input", () => {
+    const selectSliderValue = () => {
       const current = Number(slider.value);
       const currentMeta = step.options.find((o) => String(o.value) === String(current));
       pendingAnswer = current;
       valuePill.textContent = `${current} — ${currentMeta ? currentMeta.label : ""}`;
       vqConfirm.classList.remove("hidden");
-    });
+    };
+
+    // A tap on the track is an explicit response, even when the handle is
+    // already positioned on 3 and therefore does not emit an input change.
+    slider.addEventListener("pointerdown", selectSliderValue);
+    slider.addEventListener("input", selectSliderValue);
+    slider.addEventListener("click", selectSliderValue);
 
     const marks = document.createElement("div");
     marks.className = "likert-marks";

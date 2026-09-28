@@ -636,6 +636,52 @@ body {
   filter: drop-shadow(0 0.2cqw 0.3cqw rgba(2, 6, 23, 0.4)) brightness(1.08);
 }
 
+/* Bilan : make the three resource links and the six category post-its easy to spot. */
+.poster-hotspot.is-results-highlight::before,
+.scene-logo-link.is-results-highlight::before,
+.hub-radar-category-btn.is-results-highlight::before {
+  content: "";
+  position: absolute;
+  inset: -0.38cqw;
+  z-index: 1;
+  border: 0.18cqw solid rgba(250, 204, 21, 0.95);
+  border-radius: 0.65cqw;
+  background: rgba(250, 204, 21, 0.12);
+  box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.5);
+  pointer-events: none;
+  animation: hub-results-interactive-pulse 1.8s ease-in-out infinite;
+}
+
+.scene-logo-link.is-results-highlight::before {
+  border-radius: 0.85cqw;
+}
+
+.hub-radar-category-btn.is-results-highlight::before {
+  inset: -0.28cqw;
+  border-radius: 0.5cqw;
+}
+
+@keyframes hub-results-interactive-pulse {
+  0%, 100% {
+    opacity: 0.45;
+    box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.48);
+  }
+
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 0 0.45cqw rgba(250, 204, 21, 0), 0 0 1.2cqw rgba(250, 204, 21, 0.78);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .poster-hotspot.is-results-highlight::before,
+  .scene-logo-link.is-results-highlight::before,
+  .hub-radar-category-btn.is-results-highlight::before {
+    animation: none;
+    opacity: 0.85;
+  }
+}
+
 .hub-results-click-hint {
   position: absolute;
   left: 50%;
