@@ -73,11 +73,11 @@
       const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
       function updateInstallGate() {
-        const installed = isStandalone();
-        installGate.hidden = installed;
-        if (installed) return;
-        installGateIos.hidden = !isIOS();
-        installGateBrowser.hidden = isIOS();
+        const requiresIOSInstall = isIOS() && !isStandalone();
+        installGate.hidden = !requiresIOSInstall;
+        if (!requiresIOSInstall) return;
+        installGateIos.hidden = false;
+        installGateBrowser.hidden = true;
         installGateButton.hidden = !deferredInstallPrompt;
         installGateNote.hidden = Boolean(deferredInstallPrompt);
       }
