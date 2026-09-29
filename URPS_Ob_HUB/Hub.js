@@ -204,7 +204,6 @@ function updateWelcomePointerPosition() {
 }
 
 function initializeHubScene() {
-  setupBrowserFullscreen();
   syncIntroFromSession();
   resolveDoorState();
   maybeShowHubResults();
@@ -212,41 +211,8 @@ function initializeHubScene() {
 
 }
 
-function requestBrowserFullscreen() {
-  if (isStandalone() || document.fullscreenElement || document.webkitFullscreenElement) {
-    return;
-  }
-
-  const root = document.documentElement;
-  const request = root.requestFullscreen || root.webkitRequestFullscreen;
-  if (!request) {
-    return;
-  }
-
-  try {
-    const result = request.call(root);
-    result?.catch?.(() => {});
-  } catch {
-    // Fullscreen can only be granted by a browser after a user interaction.
-  }
-}
-
-function setupBrowserFullscreen() {
-  if (isStandalone()) {
-    return;
-  }
-
-  const requestOnInteraction = () => requestBrowserFullscreen();
-  window.addEventListener("pointerdown", requestOnInteraction, { passive: true });
-  window.addEventListener("touchend", requestOnInteraction, { passive: true });
-  window.addEventListener("keydown", requestOnInteraction);
-}
-
 function isStandalone() {
-  const ownDisplayMode = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
-  const parentDisplayMode = window.top !== window
-    && (window.top.matchMedia("(display-mode: standalone)").matches || window.top.navigator.standalone === true);
-  return ownDisplayMode || parentDisplayMode;
+  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
 }
 
 function isIOS() {
@@ -373,7 +339,7 @@ function resolveDoorState() {
 
   if (progress === HUB_PROGRESS_BLOC_B_COMPLETED) {
     activeDoor = {
-      label: "Pour plus de ressources",
+      label: "Pour plus d'informations",
       url: "../URPS_Ob_blocB/index.html",
     };
   } else if (progress === HUB_PROGRESS_BLOC_A_COMPLETED) {
@@ -397,11 +363,9 @@ function resolveDoorState() {
   const shouldShowBlocBAssets = progress === HUB_PROGRESS_BLOC_B_COMPLETED;
   posterHotspots.forEach((link) => {
     link.classList.toggle("is-locked", !shouldShowBlocBAssets);
-    link.classList.toggle("is-results-highlight", shouldShowBlocBAssets && hasSavedResults);
     link.setAttribute("aria-disabled", String(!shouldShowBlocBAssets));
   });
   logoObesiteLink.classList.toggle("is-hidden", !shouldShowBlocBAssets);
-  logoObesiteLink.classList.toggle("is-results-highlight", shouldShowBlocBAssets && hasSavedResults);
   wallResults.classList.toggle("is-hidden", !shouldShowBlocBAssets || !hasSavedResults);
 }
 
@@ -548,7 +512,7 @@ function renderRadarCategoryButtons(scores) {
   scores.forEach((item) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "hub-radar-category-btn is-results-highlight";
+    button.className = "hub-radar-category-btn";
     button.textContent = item.label;
     button.style.backgroundImage = `url("${item.palette.sprite}")`;
     button.addEventListener("click", () => renderCategoryDetails(item.key));

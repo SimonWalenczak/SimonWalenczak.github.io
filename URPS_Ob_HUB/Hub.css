@@ -103,7 +103,7 @@ body {
   font-weight: 700;
 }
 
-.intro-select {
+/* .intro-select {
   width: 100%;
   min-height: 44px;
   padding: 0.62rem 0.75rem;
@@ -113,7 +113,7 @@ body {
   color: #1f2933;
   font: inherit;
   cursor: pointer;
-}
+} */
 
 .intro-input {
   width: 100%;
