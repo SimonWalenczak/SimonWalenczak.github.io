@@ -212,7 +212,17 @@ function initializeHubScene() {
 }
 
 function isStandalone() {
-  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  return window.matchMedia("(display-mode: standalone), (display-mode: fullscreen)").matches || window.navigator.standalone === true;
+}
+
+function enterAndroidFullscreen() {
+  if (!/Android/i.test(navigator.userAgent)) return;
+  // Fullscreen the outer page so it survives navigation between scene iframes.
+  const targetDocument = window.parent.document;
+  if (targetDocument.fullscreenElement || !targetDocument.fullscreenEnabled) return;
+  targetDocument.documentElement.requestFullscreen().catch(() => {
+    // Continue the questionnaire if the browser declines fullscreen.
+  });
 }
 
 function isIOS() {
@@ -896,6 +906,7 @@ introForm.addEventListener("submit", (event) => {
     return;
   }
 
+  enterAndroidFullscreen();
   completeIntro();
 });
 

@@ -11,6 +11,11 @@
   <link rel="manifest" href="manifest.webmanifest"/>
   <link rel="apple-touch-icon" href="Logo_obesite.png"/>
   <title>URPS Obesite - Hub</title>
+  <script>
+    if (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) {
+      document.documentElement.classList.add("is-ios");
+    }
+  </script>
   <link rel="stylesheet" href="Hub.css"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 </head>
