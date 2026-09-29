@@ -103,9 +103,9 @@ body {
   font-weight: 700;
 }
 
-/* .intro-select {
+.intro-select {
   width: 100%;
-  min-height: 44px;
+  min-height: 100px;
   padding: 0.62rem 0.75rem;
   border: 1px solid rgba(69, 92, 112, 0.35);
   border-radius: 8px;
@@ -113,7 +113,7 @@ body {
   color: #1f2933;
   font: inherit;
   cursor: pointer;
-} */
+}
 
 .intro-input {
   width: 100%;
@@ -1075,10 +1075,10 @@ body {
     font-size: 0.78rem;
   }
 
-  .intro-select {
-    min-height: 60px;
+  /* .intro-select {
+    min-height: 10%;
     padding: 0.35rem 0.5rem;
-  }
+  } */
 
   .gender-options {
     gap: 0.5rem;
