@@ -48,7 +48,8 @@ body {
 }
 
 .intro-panel {
-  position: absolute;
+  /* The questionnaire must not be clipped by the scene's 16:9 frame. */
+  position: fixed;
   inset: 0;
   z-index: 10;
   display: flex;
@@ -104,14 +105,25 @@ body {
 }
 
 .intro-select {
+  /* Let CSS size the closed control on iOS; keep the native option picker. */
+  -webkit-appearance: none;
+  appearance: none;
   width: 100%;
-  min-height: 100em;
-  padding: 0.62rem 0.75rem;
+  min-width: 0;
+  height: 44px;
+  min-height: 44px;
+  flex-shrink: 0;
+  padding: 0 2.5rem 0 0.75rem;
   border: 1px solid rgba(69, 92, 112, 0.35);
   border-radius: 8px;
   background: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='m1 1 5 5 5-5' fill='none' stroke='%23455c70' stroke-width='2'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
   color: #1f2933;
   font: inherit;
+  font-size: 16px;
+  line-height: normal;
   cursor: pointer;
 }
 
@@ -1070,15 +1082,9 @@ body {
     margin-bottom: 0.2rem;
   }
 
-  .intro-label,
-  .intro-select {
+  .intro-label {
     font-size: 0.78rem;
   }
-
-  /* .intro-select {
-    min-height: 10%;
-    padding: 0.35rem 0.5rem;
-  } */
 
   .gender-options {
     gap: 0.5rem;
