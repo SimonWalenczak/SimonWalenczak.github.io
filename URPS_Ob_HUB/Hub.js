@@ -215,14 +215,32 @@ function isStandalone() {
   return window.matchMedia("(display-mode: standalone), (display-mode: fullscreen)").matches || window.navigator.standalone === true;
 }
 
-function enterAndroidFullscreen() {
+async function enterAndroidFullscreen() {
   if (!/Android/i.test(navigator.userAgent)) return;
   // Fullscreen the outer page so it survives navigation between scene iframes.
   const targetDocument = window.parent.document;
   if (targetDocument.fullscreenElement || !targetDocument.fullscreenEnabled) return;
-  targetDocument.documentElement.requestFullscreen().catch(() => {
-    // Continue the questionnaire if the browser declines fullscreen.
-  });
+  const note = document.getElementById("fullscreen-note");
+  note.classList.add("is-hidden");
+  try {
+    await targetDocument.documentElement.requestFullscreen();
+  } catch {
+    note.textContent = "Le navigateur n'a pas activé le plein écran. Vous pouvez réessayer ou continuer.";
+    note.classList.remove("is-hidden");
+  }
+}
+
+function initializeAndroidFullscreenControl() {
+  if (!/Android/i.test(navigator.userAgent)) return;
+  const targetDocument = window.parent.document;
+  const button = document.getElementById("fullscreen-button");
+  const update = () => {
+    const active = targetDocument.fullscreenElement || window.matchMedia("(display-mode: fullscreen)").matches;
+    button.classList.toggle("is-hidden", !targetDocument.fullscreenEnabled || Boolean(active));
+  };
+  button.addEventListener("click", enterAndroidFullscreen);
+  targetDocument.addEventListener("fullscreenchange", update);
+  update();
 }
 
 function isIOS() {
@@ -912,6 +930,7 @@ introForm.addEventListener("submit", (event) => {
 
 populateSpecialties();
 populateDepartments();
+initializeAndroidFullscreenControl();
 initializeWelcomeState();
 categoryCloseButton?.addEventListener("click", closeCategoryOverlay);
 categoryOverlay?.addEventListener("click", (event) => {
