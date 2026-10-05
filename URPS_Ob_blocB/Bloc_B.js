@@ -109,38 +109,8 @@ let isStartInfoOpen = false;
 const doctorSlot = charDoctor;
 const patientSlot = charPatient;
 
-function requestFullscreen() {
-  const root = document.documentElement;
-  if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
-    return;
-  }
-
-  try {
-    if (root.requestFullscreen) {
-      root.requestFullscreen().catch(() => {});
-    } else if (root.webkitRequestFullscreen) {
-      root.webkitRequestFullscreen();
-    } else if (root.msRequestFullscreen) {
-      root.msRequestFullscreen();
-    }
-  } catch {
-    // Browsers may reject fullscreen until a user interaction.
-  }
-}
-
 function setupAutomaticFullscreen() {
-  const tryOnInteraction = () => {
-    if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
-      return;
-    }
-
-    requestFullscreen();
-  };
-
-  window.addEventListener("click", tryOnInteraction, { passive: true });
-  window.addEventListener("touchend", tryOnInteraction, { passive: true });
-  window.addEventListener("pointerup", tryOnInteraction, { passive: true });
-  window.addEventListener("keydown", tryOnInteraction);
+  window.URPS_APP.installAutomaticFullscreen();
 }
 
 function getSelectedDoctorGender() {
@@ -675,6 +645,13 @@ async function initGame() {
   showScreen("screen-game");
   renderStep();
   showStartInfoOverlay();
+  window.URPS_SCENE.ready();
 }
 
 initGame();
+
+let sceneActivated = false;
+window.addEventListener("urps:scene-activated", () => {
+  if (!sceneActivated && scenario && stepIndex < flatSteps.length) renderStep();
+  sceneActivated = true;
+});

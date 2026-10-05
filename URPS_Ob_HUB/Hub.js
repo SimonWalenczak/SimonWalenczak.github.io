@@ -223,7 +223,7 @@ async function enterAndroidFullscreen() {
   const note = document.getElementById("fullscreen-note");
   note.classList.add("is-hidden");
   try {
-    await targetDocument.documentElement.requestFullscreen();
+    await window.URPS_APP.requestFullscreen();
   } catch {
     note.textContent = "Le navigateur n'a pas activé le plein écran. Vous pouvez réessayer ou continuer.";
     note.classList.remove("is-hidden");
@@ -961,14 +961,17 @@ if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js"));
 }
 
-// In OnePage mode, the HUB stays mounted while the user completes a block.
-// Refresh its progression-dependent controls when it becomes visible again.
-window.addEventListener("message", (event) => {
-  if (event.origin !== window.location.origin || event.data?.type !== "urps:scene-activated") {
-    return;
-  }
-
+// Restore state on every entry without reloading the mounted scene.
+window.addEventListener("urps:scene-activated", () => {
+  mainDoor.classList.remove("is-entering");
+  initializeWelcomeState();
   resolveDoorState();
   maybeShowHubResults();
+  if (selectedSpecialty) showWelcomeDialog();
   syncDoorLockState();
+  refreshResultsRadarLayout();
 });
+window.addEventListener("urps:scene-deactivated", () => {
+  closeCategoryOverlay();
+});
+window.URPS_SCENE.ready();

@@ -80,6 +80,11 @@ body {
   font: 600 18px/1.5 system-ui, sans-serif;
 }
 .orientation-gate[hidden] { display: none; }
+.orientation-gate button { min-height: 44px; margin-top: 1rem; font: inherit; }
+.viewport-install-help { position: fixed; z-index: 1001; overflow-y: auto; }
+.scene-loading { position: absolute; inset: 0; z-index: 100; display: grid; place-content: center; text-align: center; background: #f9faec; color: #1f2933; font: 16px system-ui; }
+.scene-loading[hidden] { display: none; }
+.scene-loading button { min-height: 44px; }
 /* Installation instructions take precedence over the landscape reminder. */
 #install-gate { z-index: 1000; box-sizing: border-box; overflow-y: auto; }
 #install-gate .install-gate-card { box-sizing: border-box; max-height: 100%; overflow-y: auto; }
