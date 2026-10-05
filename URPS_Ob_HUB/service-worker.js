@@ -1,6 +1,15 @@
 const CACHE_PREFIX = "urps-obesite-hub-";
-const CACHE_NAME = `${CACHE_PREFIX}v4`;
-const APP_SHELL = ["./", "./index.html", "./Hub.css", "./Hub.js", "./manifest.webmanifest"];
+const CACHE_NAME = `${CACHE_PREFIX}20261005-r1`;
+const APP_SHELL = [
+  "./",
+  "./index.html",
+  "./manifest.webmanifest",
+  "./Hub.css?v=20261005-r1",
+  "./Hub.js?v=20261005-r1",
+  "../shared/scene-layout.css?v=20261005-r1",
+  "../shared/scene-layout.js?v=20261005-r1",
+  "../shared/scene-runtime.js?v=20261005-r1"
+];
 const shellPaths = new Set(APP_SHELL.map((path) => new URL(path, self.registration.scope).pathname));
 
 self.addEventListener("install", (event) => {
@@ -31,7 +40,7 @@ self.addEventListener("fetch", (event) => {
       await cache.put(event.request, response.clone());
       return response;
     } catch (error) {
-      const cached = await cache.match(event.request);
+      const cached = await cache.match(event.request, { ignoreSearch: url.pathname.endsWith(".html") || url.pathname.endsWith("/") });
       if (cached) return cached;
       throw error;
     }
