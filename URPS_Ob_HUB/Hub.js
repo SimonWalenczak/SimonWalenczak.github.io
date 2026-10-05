@@ -3,6 +3,8 @@ const HUB_PROGRESS_BLOC_A_COMPLETED = "blocA_completed";
 const HUB_PROGRESS_BLOC_B_COMPLETED = "blocB_completed";
 const HUB_RESULTS_KEY = "urps_ob_bloc_b_results";
 const HUB_RESULTS_SAVED_KEY = "urps_ob_bloc_b_results_saved";
+const HUB_RESULTS_VISITED_KEY = "urps_ob_results_visited";
+let resultsVisitState = { id: null, used: [] };
 const HUB_WELCOME_SEEN_KEY = "urps_ob_hub_welcome_seen";
 const HUB_BLOC_A_TRANSITION_SEEN_KEY = "urps_ob_hub_bloc_a_transition_seen";
 
@@ -543,9 +545,39 @@ function renderRadarCategoryButtons(scores) {
     button.className = "hub-radar-category-btn";
     button.textContent = item.label;
     button.style.backgroundImage = `url("${item.palette.sprite}")`;
-    button.addEventListener("click", () => renderCategoryDetails(item.key));
+    button.dataset.resultControl = `category:${item.key}`;
+    button.addEventListener("click", () => {
+      renderCategoryDetails(item.key);
+      markResultUsed(button.dataset.resultControl);
+    });
     container.appendChild(button);
   });
+  syncResultsHighlights();
+}
+
+function prepareResultsHighlights(payload) {
+  const id = payload.resultId || JSON.stringify(payload);
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(HUB_RESULTS_VISITED_KEY));
+    resultsVisitState = saved?.id === id && Array.isArray(saved.used) ? saved : { id, used: [] };
+  } catch {
+    resultsVisitState = { id, used: [] };
+  }
+  sessionStorage.setItem(HUB_RESULTS_VISITED_KEY, JSON.stringify(resultsVisitState));
+}
+
+function syncResultsHighlights() {
+  const enabled = sessionStorage.getItem(HUB_PROGRESS_KEY) === HUB_PROGRESS_BLOC_B_COMPLETED && Boolean(hubResultsPayload);
+  document.querySelectorAll("[data-result-control]").forEach((element) => {
+    element.classList.toggle("is-results-highlight", enabled && !resultsVisitState.used.includes(element.dataset.resultControl));
+  });
+}
+
+function markResultUsed(key) {
+  if (!resultsVisitState.id || resultsVisitState.used.includes(key)) return;
+  resultsVisitState.used.push(key);
+  sessionStorage.setItem(HUB_RESULTS_VISITED_KEY, JSON.stringify(resultsVisitState));
+  syncResultsHighlights();
 }
 
 function positionRadarCategoryButtons() {
@@ -570,7 +602,7 @@ function positionRadarCategoryButtons() {
     const vectorX = point.x - scale.xCenter;
     const vectorY = point.y - scale.yCenter;
     const vectorLength = Math.hypot(vectorX, vectorY) || 1;
-    const outsideOffset = Math.max(10, Math.min(canvasRect.width, canvasRect.height) * 0.165);
+    const outsideOffset = Math.max(10, Math.min(canvasRect.width, canvasRect.height) * 0.27);
     const centerX = (canvasRect.left - containerRect.left) + ((point.x / hubResultsChart.width) * canvasRect.width) + ((vectorX / vectorLength) * outsideOffset);
     const centerY = (canvasRect.top - containerRect.top) + ((point.y / hubResultsChart.height) * canvasRect.height) + ((vectorY / vectorLength) * outsideOffset);
     if (!Number.isFinite(centerX) || !Number.isFinite(centerY)) {
@@ -784,8 +816,10 @@ function downloadResultsCsv() {
   link.download = "resultats_urps_obesite.csv";
   document.body.appendChild(link);
   link.click();
+  markResultUsed("download");
   link.remove();
-  URL.revokeObjectURL(downloadUrl);
+  // Give mobile browsers time to take ownership of the download.
+  window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 60000);
 }
 
 function closeCategoryOverlay() {
@@ -809,6 +843,7 @@ function maybeShowHubResults() {
       return;
     }
 
+    prepareResultsHighlights(parsed);
     hubResultsPayload = {
       scores: parsed.scores.map((item) => ({
         ...item,
@@ -824,6 +859,7 @@ function maybeShowHubResults() {
     wallResults.classList.remove("is-hidden");
     renderResultsRadar(hubResultsPayload.scores);
     renderResultsCategories();
+    syncResultsHighlights();
   } catch {
     sessionStorage.removeItem(HUB_RESULTS_KEY);
     sessionStorage.removeItem(HUB_RESULTS_SAVED_KEY);
@@ -901,6 +937,13 @@ function openDoor(button) {
 mainDoor.addEventListener("click", () => openDoor(mainDoor));
 hubWelcomeOverlay?.addEventListener("click", dismissWelcomeDialog);
 resultsDownloadButton?.addEventListener("click", downloadResultsCsv);
+resultsDownloadButton.dataset.resultControl = "download";
+[...posterHotspots, logoObesiteLink].forEach((link) => {
+  link.dataset.resultControl = `resource:${new URL(link.href).hostname}`;
+  link.addEventListener("click", () => {
+    if (link.getAttribute("aria-disabled") !== "true") markResultUsed(link.dataset.resultControl);
+  });
+});
 installAppButton?.addEventListener("click", installApp);
 installHelpClose?.addEventListener("click", () => installHelp?.classList.add("is-hidden"));
 installHelp?.addEventListener("click", (event) => {

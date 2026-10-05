@@ -656,7 +656,8 @@ body {
 /* Bilan : make the three resource links and the six category post-its easy to spot. */
 .poster-hotspot.is-results-highlight::before,
 .scene-logo-link.is-results-highlight::before,
-.hub-radar-category-btn.is-results-highlight::before {
+.hub-radar-category-btn.is-results-highlight::before,
+.hub-results-download.is-results-highlight::before {
   content: "";
   position: absolute;
   inset: -0.38cqw;
@@ -673,7 +674,8 @@ body {
   border-radius: 0.85cqw;
 }
 
-.hub-radar-category-btn.is-results-highlight::before {
+.hub-radar-category-btn.is-results-highlight::before,
+.hub-results-download.is-results-highlight::before {
   inset: -0.28cqw;
   border-radius: 0.5cqw;
 }
@@ -693,7 +695,8 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .poster-hotspot.is-results-highlight::before,
   .scene-logo-link.is-results-highlight::before,
-  .hub-radar-category-btn.is-results-highlight::before {
+  .hub-radar-category-btn.is-results-highlight::before,
+  .hub-results-download.is-results-highlight::before {
     animation: none;
     opacity: 0.85;
   }
@@ -723,13 +726,13 @@ body {
   transform: translateX(-50%);
   width: max-content;
   max-width: 95%;
-  min-height: 2.5cqw;
+  min-height: 40px;
   padding: 0.55cqw 1cqw;
   border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: 0.6cqw;
-  background: #5c9157;
+  background: #B93832;
   color: #fff;
-  font-size: 1.05cqw;
+  font-size: max(14px, 1.05cqw);
   font-weight: 800;
   cursor: pointer;
   box-shadow: 0 0.3cqw 0.8cqw rgba(2, 6, 23, 0.28);
@@ -737,7 +740,7 @@ body {
 
 .hub-results-download:hover,
 .hub-results-download:focus-visible {
-  background: #457a41;
+  background: #922C27;
   outline: 2px solid #fff;
   outline-offset: 2px;
 }
@@ -1135,3 +1138,27 @@ body {
     font-size: 0.74rem;
   }
 }
+
+.hub-results-download:active { background: #7C2521; }
+.hub-results-download:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+
+/* Keep the instruction and download in flow instead of overlapping offsets. */
+.hub-results-actions {
+  position: absolute;
+  top: 112%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 110%;
+  display: grid;
+  gap: .4rem;
+}
+.hub-results-actions > * {
+  position: relative;
+  inset: auto;
+  transform: none;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+}
+.hub-results-click-hint { font-size: max(12px, .95cqw); }
+.hub-radar-category-btn { font-size: max(12px, 1cqw); min-height: 30px; max-width: max(85px, 9cqw); }

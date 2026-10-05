@@ -581,6 +581,7 @@ function buildCategoryDetailsData(categoryKey) {
 function persistResultsAndReturnToHub() {
   const scores = getCategoryScores();
   const payload = {
+    resultId: crypto.randomUUID(),
     scores,
     details: Object.fromEntries(scores.map((item) => [item.key, buildCategoryDetailsData(item.key)])),
   };
