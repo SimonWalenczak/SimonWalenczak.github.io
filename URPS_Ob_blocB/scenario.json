@@ -469,7 +469,7 @@
           "type": "dialogue",
           "speaker": "doctor",
           "name": "Vous",
-          "text": "Selon vous, comment en êtes-vous arrivée à cette situation ?",
+          "text": "Selon vous, comment en êtes-vous arrivé(e) à cette situation ?",
           "status": "Default"
         },
         {
