@@ -369,7 +369,7 @@
           "type": "dialogue",
           "speaker": "patient",
           "name": "Mme Martin",
-          "text": "Je me sens plutôt bien, mais ce n'est pas toujours facile tous les jours.",
+          "text": "Je me sens plutôt bien, mais ce n'est pas facile tous les jours.",
           "status": "Default"
         },
         {
