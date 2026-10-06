@@ -11,7 +11,7 @@ with environment() as (p, origin):
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.goto(origin + '/URPS_OnePage/index.html')
         page.locator('.scene-loading').wait_for(state='hidden')
-        hub = page.frame(url=origin + '/URPS_Ob_HUB/index.html')
+        hub = page.frame(url=lambda value: value.split("?")[0] == origin + '/URPS_Ob_HUB/index.html')
         for sel in ['#specialty-select', '#department-select', '#environment-select', '#practice-type-select']:
             hub.locator(sel).select_option(index=1)
         hub.locator('#age-input').fill('40')
@@ -22,7 +22,7 @@ with environment() as (p, origin):
         hub.locator('.door-main').click()
         page.wait_for_function('document.querySelector("[data-scene=blocA]").classList.contains("is-active")')
         page.locator('.scene-loading').wait_for(state='hidden')
-        a = page.frame(url=origin + '/URPS_Ob_blocA/index.html')
+        a = page.frame(url=lambda value: value.split("?")[0] == origin + '/URPS_Ob_blocA/index.html')
         a.locator('#btn-welcome-close').click()
         if engine == 'chromium':
             assert page.evaluate('document.fullscreenElement?.tagName') == 'HTML'
@@ -47,7 +47,7 @@ with environment() as (p, origin):
         hub.locator('.door-main').click()
         page.wait_for_function('document.querySelector("[data-scene=blocB]").classList.contains("is-active")')
         page.locator('.scene-loading').wait_for(state='hidden')
-        fb = page.frame(url=origin + '/URPS_Ob_blocB/index.html')
+        fb = page.frame(url=lambda value: value.split("?")[0] == origin + '/URPS_Ob_blocB/index.html')
         fb.locator('#start-info-continue').click()
         for _ in range(3):
             page.evaluate('window.dispatchEvent(new Event("pageshow"))')

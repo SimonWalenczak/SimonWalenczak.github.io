@@ -17,23 +17,23 @@ with environment() as (p, origin):
     }""")
     page.goto(origin + "/URPS_OnePage/index.html")
     page.wait_for_function("navigator.serviceWorker.controller !== null")
-    hub = page.frame(url=origin + "/URPS_Ob_HUB/index.html")
+    hub = page.frame(url=lambda value: value.split("?")[0] == origin + "/URPS_Ob_HUB/index.html")
     hub.wait_for_function("navigator.serviceWorker.controller !== null")
     page.wait_for_function("""async () => {
       const keys = await caches.keys();
-      return keys.includes('urps-obesite-hub-20261005-r1') &&
-        keys.includes('urps-obesite-onepage-20261005-r1') &&
+      return keys.includes('urps-obesite-hub-20261006-r1') &&
+        keys.includes('urps-obesite-onepage-20261006-r1') &&
         !keys.includes('urps-obesite-hub-v4') && !keys.includes('urps-obesite-onepage-v2');
     }""")
     assert "unrelated-app" in page.evaluate("caches.keys()")
     # All four HTML shells must reference the same version of shared code.
     for folder in ["URPS_OnePage", "URPS_Ob_HUB", "URPS_Ob_blocA", "URPS_Ob_blocB"]:
         html = (ROOT / folder / "index.html").read_text(encoding="utf-8")
-        assert "../shared/scene-runtime.js?v=20261005-r1" in html
-        assert "../shared/scene-layout.css?v=20261005-r1" in html
-    shared = "/shared/scene-layout.css?v=20261005-r1"
+        assert "../shared/scene-runtime.js?v=20261006-r1" in html
+        assert "../shared/scene-layout.css?v=20261006-r1" in html
+    shared = "/shared/scene-layout.css?v=20261006-r1"
     page.evaluate("""async path => {
-      const cache = await caches.open('urps-obesite-onepage-20261005-r1');
+      const cache = await caches.open('urps-obesite-onepage-20261006-r1');
       await cache.put(path, new Response('STALE'));
     }""", shared)
     fresh = page.evaluate("path => fetch(path).then(r => r.text())", shared)
@@ -66,6 +66,31 @@ with environment() as (p, origin):
         page.locator(".scene-loading").wait_for(state="hidden")
         page.frame_locator('[data-scene="blocB"]').locator("#start-info-continue").click()
         assert not page.locator('[data-scene="blocB"]').evaluate("e => e.inert")
+        context.close()
+
+        # A deactivation can arrive while a child is still parsing its head.
+        context = browser.new_context(service_workers="block")
+        page = context.new_page()
+        errors = []
+        page.on("pageerror", lambda error: errors.append(str(error)))
+        held = []
+        page.route("**/delayed-head.js", lambda route: held.append(route))
+        original = (ROOT / "URPS_Ob_blocB/index.html").read_text(encoding="utf-8")
+        slow_html = original.replace("</script>", '</script><script src="/delayed-head.js"></script>', 1)
+        page.route("**/URPS_Ob_blocB/index.html*", lambda route: route.fulfill(body=slow_html, content_type="text/html"))
+        page.goto(origin + "/URPS_OnePage/index.html", wait_until="domcontentloaded")
+        for _ in range(50):
+            if held:
+                break
+            page.wait_for_timeout(100)
+        assert held
+        child = page.frame(url=lambda value: value.split("?")[0] == origin + "/URPS_Ob_blocB/index.html")
+        assert child.evaluate("document.body === null")
+        page.evaluate('document.querySelector("[data-scene=blocB]").contentWindow.postMessage({type:"urps:scene-deactivated"},location.origin)')
+        page.wait_for_timeout(100)
+        held[0].fulfill(body="", content_type="application/javascript")
+        child.wait_for_function("document.body && document.body.inert")
+        assert not errors, errors
         context.close()
 
         # The iOS installation gate is accessible above the portrait reminder.
