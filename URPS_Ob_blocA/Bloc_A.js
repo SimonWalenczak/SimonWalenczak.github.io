@@ -396,6 +396,10 @@ const STEPS = [
 let currentStep = 0;
 let selectedOptId = null;
 let selections = []; // { step, option }
+let choiceShownAt = null;
+let choiceResponseSeconds = null;
+let equipmentShownAt = null;
+let equipmentResponseTimes = {};
 let recapIndex = 0;
 let equipmentAnswers = {}; // stepId -> "oui" | "non"
 let recapAwaitingNext = false;
@@ -580,6 +584,8 @@ function getCostSymbols(option) {
 }
 
 function renderStep() {
+  choiceShownAt = performance.now();
+  choiceResponseSeconds = null;
   const step = STEPS[currentStep];
   selectedOptId = null;
 
@@ -622,6 +628,9 @@ function renderStep() {
 // ======================================================
 
 function selectOption(optId) {
+  if (choiceResponseSeconds === null && choiceShownAt !== null) {
+    choiceResponseSeconds = (performance.now() - choiceShownAt) / 1000;
+  }
   selectedOptId = optId;
   document.querySelectorAll(".option-card").forEach((c) => {
     c.classList.toggle("selected", c.dataset.id === optId);
@@ -643,7 +652,7 @@ function handleChoose() {
   const step = STEPS[currentStep];
   const option = step.options.find((o) => o.id === selectedOptId);
 
-  selections.push({ step, option });
+  selections.push({ step, option, responseSeconds: choiceResponseSeconds });
 
   // Lock UI
   btnChoose.disabled = true;
@@ -688,6 +697,8 @@ function handleChoose() {
 }
 
 function closeWelcomeOverlay() {
+  choiceShownAt = performance.now();
+  sessionStorage.removeItem("urps_ob_bloc_a_details");
   welcomeOverlay.classList.add("hidden");
 }
 
@@ -733,11 +744,13 @@ function startRecap() {
 
   recapIndex = 0;
   equipmentAnswers = {};
+  equipmentResponseTimes = {};
   recapOverlay.classList.remove("hidden");
   showRecapStep(0);
 }
 
 function showRecapStep(i) {
+  equipmentShownAt = performance.now();
   const sel = selections[i];
   const step = sel.step;
   const option = sel.option;
@@ -823,6 +836,7 @@ function advanceRecap(answer) {
   const optimalOpt = step.options.find((o) => o.optimal) || option;
   const stepId = selections[recapIndex].step.id;
   equipmentAnswers[stepId] = answer;
+  equipmentResponseTimes[stepId] = (performance.now() - equipmentShownAt) / 1000;
 
   const pedagogicLead = answer === "oui"
     ? "C'est très bien car savez-vous que..."
@@ -855,6 +869,20 @@ function advanceRecap(answer) {
 // ======================================================
 
 function showFinalSummary() {
+  const groups = [
+    { label: "Aménagement du cabinet — choix", questions: selections.map(({ step, option, responseSeconds }) => ({
+      question: step.question, answer: `${option.label} — ${option.desc}`, responseSeconds,
+    })) },
+    { label: "Aménagement du cabinet — équipements présents", questions: selections.map(({ step, option }) => {
+      const reference = step.options.find((item) => item.optimal) || option;
+      return {
+        question: `Disposez-vous de cet équipement dans votre cabinet ? — ${reference.label}`,
+        answer: equipmentAnswers[step.id] === "oui" ? "Oui" : "Non",
+        responseSeconds: equipmentResponseTimes[step.id] ?? null,
+      };
+    }) },
+  ];
+  sessionStorage.setItem("urps_ob_bloc_a_details", JSON.stringify(groups));
   // Recap complete — save progression and return to the HUB.
   recapOverlay.classList.add("hidden");
   sceneDim.classList.add("hidden");

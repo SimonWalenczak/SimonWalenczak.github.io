@@ -1,5 +1,7 @@
 import os
 import json
+import csv as csv_parser
+import io
 from browser_support import ARTIFACTS, ENGINES, environment
 with environment() as (p, origin):
     for engine in ENGINES:
@@ -73,7 +75,14 @@ with environment() as (p, origin):
         download = d.value
         assert download.suggested_filename == 'resultats_urps_obesite.csv'
         csv = open(download.path(), encoding='utf-8-sig').read()
-        assert 'Note moyenne' in csv and '40' in csv
+        rows = list(csv_parser.reader(io.StringIO(csv), delimiter=';'))
+        assert all(len(row) == 4 for row in rows)
+        assert ['Âge', '40', '', ''] in rows
+        assert len([row for row in rows if row[1] == 'Moyenne (scores corrigés)']) == 8
+        # Eight choices, eight equipment answers and 22 consultation questions.
+        timed = [row for row in rows[1:] if row[3] and row[1] != 'Moyenne (scores corrigés)']
+        assert len(timed) == 38, timed
+        assert all(float(row[3].replace(',', '.')) >= 0 for row in timed)
         assert hub.locator('.is-results-highlight').count() == 8
         page.evaluate('window.dispatchEvent(new Event("pageshow"))')
         page.locator('.scene-loading').wait_for(state='hidden')

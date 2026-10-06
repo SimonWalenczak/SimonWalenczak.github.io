@@ -34,6 +34,8 @@ let scenario = null;
 let flatSteps = []; // all steps in order
 let stepIndex = 0;
 let answers   = {};
+let responseTimes = {};
+let questionShownAt = null;
 let openFeedback = {};
 let selectedCategory = null;
 let radarChart = null;
@@ -343,6 +345,7 @@ function renderDialogue(step) {
 
 function renderQuestion(step) {
   pendingAnswer = null;
+  questionShownAt = null;
 
   renderPatientCharacter({
     dim: true,
@@ -394,6 +397,7 @@ function renderQuestion(step) {
     slider.setAttribute("aria-label", "Echelle de Likert de 1 a 5");
 
     const selectSliderValue = () => {
+      recordResponseTime(step);
       const current = Number(slider.value);
       const currentMeta = step.options.find((o) => String(o.value) === String(current));
       pendingAnswer = current;
@@ -436,6 +440,7 @@ function renderQuestion(step) {
     btn.className = "vq-opt" + (String(existingAnswer) === String(opt.value) ? " selected" : "");
     btn.textContent = opt.label;
     btn.addEventListener("click", () => {
+      recordResponseTime(step);
       pendingAnswer = opt.value;
       document.querySelectorAll(".vq-opt").forEach((b) => b.classList.remove("selected"));
       btn.classList.add("selected");
@@ -457,6 +462,7 @@ function renderQuestion(step) {
 
 function showQuestionFromTop(step) {
   vnQuestionOverlay.classList.remove("hidden");
+  questionShownAt = performance.now();
   const scroller = vnQuestionOverlay.querySelector(".question-scroll");
   // A new question must start at its heading, not at the previous answer's
   // scroll position. Repeat after layout for Safari's delayed scroll clamping.
@@ -466,6 +472,14 @@ function showQuestionFromTop(step) {
       scroller.scrollTop = 0;
     }
   });
+}
+
+function recordResponseTime(step) {
+  // Measure display to first explicit selection, excluding the confirmation
+  // delay. Later changes to the answer do not overwrite this latency.
+  if (responseTimes[step.id] === undefined && questionShownAt !== null) {
+    responseTimes[step.id] = (performance.now() - questionShownAt) / 1000;
+  }
 }
 
 // ======================================================
@@ -503,7 +517,7 @@ function advanceOnViewportClick(event) {
 if (btnTitleStart) {
   btnTitleStart.addEventListener("click", async () => {
     if (!scenario) await boot();  // boot() already called at load; this is a safety net
-    stepIndex = 0; answers = {}; openFeedback = {}; selectedCategory = null;
+    stepIndex = 0; answers = {}; responseTimes = {}; questionShownAt = null; openFeedback = {}; selectedCategory = null;
     showScreen("screen-game");
     renderStep();
     showStartInfoOverlay();
@@ -526,7 +540,7 @@ vqConfirm.addEventListener("click", () => {
 });
 
 btnRestart.addEventListener("click", () => {
-  stepIndex = 0; answers = {}; openFeedback = {}; selectedCategory = null;
+  stepIndex = 0; answers = {}; responseTimes = {}; questionShownAt = null; openFeedback = {}; selectedCategory = null;
   showScreen("screen-game");
   renderStep();
 });
@@ -584,6 +598,12 @@ function buildCategoryDetailsData(categoryKey) {
       const val = answers[step.id];
       const meta = getAnswerMeta(step, val);
       return {
+        question: step.question || step.text,
+        questionId: step.id,
+        rawValue: typeof val === "number" && Number.isFinite(val) ? val : null,
+        numericValue: meta && Number.isFinite(meta.score)
+          ? (step.reverseScore ? (meta.max || 5) + 1 - meta.score : meta.score) : null,
+        responseSeconds: responseTimes[step.id] ?? null,
         answer: meta ? meta.label : String(val),
         feedbackTitle: step.feedbackTitle,
         feedback: step.feedback,
@@ -653,7 +673,7 @@ async function initGame() {
   setupAutomaticFullscreen();
   await boot(); // load scenario.json (or fall back to SCENARIO_EMBEDDED)
   stepIndex = 0;
-  answers = {};
+  answers = {}; responseTimes = {}; questionShownAt = null;
   openFeedback = {};
   selectedCategory = null;
   showScreen("screen-game");

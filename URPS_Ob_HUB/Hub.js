@@ -757,49 +757,50 @@ function getSessionGenderLabel() {
   return selectedButton?.querySelector("span")?.textContent || gender;
 }
 
-function convertScoreToFivePointScale(score) {
-  if (!Number.isFinite(score) || score <= 0) {
-    return "";
-  }
-
-  return Number((score / 20).toFixed(2));
+function csvNumber(value) {
+  return Number.isFinite(value) ? String(Number(value.toFixed(3))).replace(".", ",") : "";
 }
 
 function buildResultsCsv() {
-  const headers = [
-    "Profil",
-    "",
-    "Plainte et poid",
-    "Mesure du poid",
-    "Communication",
-    "Accompagnement",
-    "Stigmatisation",
-    "Parcours de soins",
-  ];
-  const scoresByKey = Object.fromEntries(
-    (hubResultsPayload?.scores || []).map((item) => [item.key, item.score])
-  );
-  const rows = [
-    ["Spécialité", getSessionProfileValue("urps_ob_specialty")],
-    ["Age", getSessionProfileValue("urps_ob_age")],
+  const rows = [["Question", "Réponse", "Valeur numérique associée", "Temps de réponse (secondes)"]];
+  rows.push(["Données démographiques", "", "", ""]);
+  const profile = [
+    ["Spécialité", getSessionSelectLabel("specialty-select", "urps_ob_specialty")],
+    ["Âge", getSessionProfileValue("urps_ob_age")],
     ["Département", getSessionSelectLabel("department-select", "urps_ob_department")],
-    ["Enviro. Rural", getSessionSelectLabel("environment-select", "urps_ob_environment")],
-    ["Type exercice", getSessionSelectLabel("practice-type-select", "urps_ob_practice_type")],
+    ["Environnement d’exercice", getSessionSelectLabel("environment-select", "urps_ob_environment")],
+    ["Type d’exercice", getSessionSelectLabel("practice-type-select", "urps_ob_practice_type")],
     ["Sexe", getSessionGenderLabel()],
   ];
-  const categoryKeys = ["plainte", "mesure", "communication", "accompagnement", "stigmatisation", "parcours"];
+  profile.forEach(([question, answer]) => rows.push([question, answer, "", ""]));
 
-  return [
-    headers,
-    ...rows.map(([label, profileValue]) => [
-      label,
-      profileValue,
-      ...categoryKeys.map(() => ""),
-    ]),
-    ["Note moyenne", "", ...categoryKeys.map((key) => convertScoreToFivePointScale(scoresByKey[key]))],
-  ]
-    .map((row) => row.map(escapeCsvValue).join(";"))
-    .join("\r\n");
+  function appendCategory(label, questions) {
+    const values = questions.map((item) => item.numericValue).filter(Number.isFinite);
+    const times = questions.map((item) => item.responseSeconds).filter(Number.isFinite);
+    const mean = values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+    // Sample standard deviation: undefined for fewer than two scored answers.
+    const sd = values.length > 1
+      ? Math.sqrt(values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / (values.length - 1)) : null;
+    // Never represent an unrecorded duration as zero or a partial total as complete.
+    const totalTime = times.length && times.length === questions.length
+      ? times.reduce((sum, value) => sum + value, 0) : null;
+    rows.push([label, "Moyenne (scores corrigés)", csvNumber(mean), csvNumber(totalTime)]);
+    rows.push([label, "SD (écart-type, n-1)", csvNumber(sd), ""]);
+    questions.forEach((item) => rows.push([
+      item.question || `Question non conservée — ${item.feedbackTitle || "ancien résultat"}`,
+      item.answer, csvNumber(item.numericValue), csvNumber(item.responseSeconds),
+    ]));
+  }
+
+  let equipmentGroups = [];
+  try { equipmentGroups = JSON.parse(sessionStorage.getItem("urps_ob_bloc_a_details") || "[]"); } catch (_) { /* Older session. */ }
+  if (Array.isArray(equipmentGroups)) {
+    equipmentGroups.forEach((group) => appendCategory(group.label, group.questions || []));
+  }
+  (hubResultsPayload?.scores || []).forEach((category) => {
+    appendCategory(category.label, hubResultsPayload?.details?.[category.key] || []);
+  });
+  return rows.map((row) => row.map(escapeCsvValue).join(";")).join("\r\n");
 }
 
 function downloadResultsCsv() {
