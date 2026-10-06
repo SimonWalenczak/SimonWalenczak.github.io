@@ -1,9 +1,9 @@
-"""Run all browser checks, or pass suite names (layout lifecycle journey bilan cache)."""
+"""Run all browser checks, or pass suite names (layout lifecycle journey bilan questions cache)."""
 import subprocess
 import sys
 from pathlib import Path
 
-SUITES = ("layout", "lifecycle", "journey", "bilan", "cache")
+SUITES = ("layout", "lifecycle", "journey", "bilan", "questions", "cache")
 selected = sys.argv[1:] or SUITES
 for suite in selected:
     if suite not in SUITES:

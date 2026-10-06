@@ -427,7 +427,7 @@ function renderQuestion(step) {
       vqConfirm.classList.add("hidden");
     }
 
-    vnQuestionOverlay.classList.remove("hidden");
+    showQuestionFromTop(step);
     return;
   }
 
@@ -452,7 +452,20 @@ function renderQuestion(step) {
     vqConfirm.classList.add("hidden");
   }
 
+  showQuestionFromTop(step);
+}
+
+function showQuestionFromTop(step) {
   vnQuestionOverlay.classList.remove("hidden");
+  const scroller = vnQuestionOverlay.querySelector(".question-scroll");
+  // A new question must start at its heading, not at the previous answer's
+  // scroll position. Repeat after layout for Safari's delayed scroll clamping.
+  scroller.scrollTop = 0;
+  requestAnimationFrame(() => {
+    if (flatSteps[stepIndex] === step && !vnQuestionOverlay.classList.contains("hidden")) {
+      scroller.scrollTop = 0;
+    }
+  });
 }
 
 // ======================================================

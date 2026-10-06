@@ -33,6 +33,7 @@
     window.URPS_SCENE = {
       ready() {
         ready = true;
+        document.body.inert = embedded && !active;
         if (embedded) notifyReady();
         else window.dispatchEvent(new Event("urps:scene-activated"));
       },
@@ -46,7 +47,7 @@
         active = false;
         latestActivation++;
         document.activeElement?.blur?.();
-        document.body.inert = true;
+        if (document.body) document.body.inert = true;
         window.dispatchEvent(new Event("urps:scene-deactivated"));
       }
       if (data?.type !== "urps:scene-activated" || !ready) return;
