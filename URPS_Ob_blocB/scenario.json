@@ -484,7 +484,7 @@
           "id": "origines-obesite",
           "category": "accompagnement",
           "internal": false,
-          "text": "J'interroge mon patient sur les origines qu'il associe à son obésité. (échelle de 1 à 5)",
+          "text": "J'interroge mon patient sur les origines qu'il associe à son obésité.",
           "responseKind": "slider5",
           "feedbackTitle": "Comprendre les explications du patient",
           "feedback": "Explorer les origines perçues par le patient peut aider à comprendre son histoire, ses représentations et les leviers d'accompagnement possibles.",
