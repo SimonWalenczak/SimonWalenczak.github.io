@@ -17,6 +17,20 @@ with environment() as (p, origin):
                     if min(a['right'], q['right']) - max(a['left'], q['left']) > 1 and min(a['bottom'], q['bottom']) - max(a['top'], q['top']) > 1:
                         overlaps.append((a['key'], q['key']))
             assert not overlaps, (engine, w, overlaps)
+            # Check text overflow and proportions, not just control rectangles.
+            assert page.locator('.hub-radar-category-btn').evaluate_all('''es => es.every(e => {
+                const stage = document.getElementById('hub-stage').getBoundingClientRect();
+                const r = e.getBoundingClientRect();
+                const text = document.createRange();
+                text.selectNodeContents(e);
+                const containedText = [...text.getClientRects()].every(t => t.left >= r.left - 1 && t.right <= r.right + 1);
+                return containedText && r.width <= stage.width * .106 &&
+                    r.left >= stage.left && r.right <= stage.right && r.top >= stage.top && r.bottom <= stage.bottom;
+            })''')
+            assert page.locator('.hub-results-actions').evaluate('''e => {
+                const stage=document.getElementById('hub-stage').getBoundingClientRect(), r=e.getBoundingClientRect();
+                return r.width <= stage.width * .28 && r.bottom <= stage.bottom;
+            }''')
             for i in range(6):
                 page.locator('.hub-radar-category-btn').nth(i).click()
                 page.locator('#hub-category-close').click()

@@ -726,13 +726,13 @@ body {
   transform: translateX(-50%);
   width: max-content;
   max-width: 95%;
-  min-height: 40px;
+  min-height: 0;
   padding: 0.55cqw 1cqw;
   border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: 0.6cqw;
   background: #B93832;
   color: #fff;
-  font-size: max(14px, 1.05cqw);
+  font-size: 1.3cqw;
   font-weight: 800;
   cursor: pointer;
   box-shadow: 0 0.3cqw 0.8cqw rgba(2, 6, 23, 0.28);
@@ -1148,9 +1148,9 @@ body {
   top: 112%;
   left: 50%;
   transform: translateX(-50%);
-  width: 110%;
+  width: 90%;
   display: grid;
-  gap: .4rem;
+  gap: .65cqw;
 }
 .hub-results-actions > * {
   position: relative;
@@ -1160,5 +1160,14 @@ body {
   max-width: 100%;
   margin: 0;
 }
-.hub-results-click-hint { font-size: max(12px, .95cqw); }
-.hub-radar-category-btn { font-size: max(12px, 1cqw); min-height: 30px; max-width: max(85px, 9cqw); }
+.hub-results-click-hint { font-size: 1.05cqw; }
+.hub-radar-category-btn {
+  display: block;
+  width: 10.5cqw;
+  max-width: 10.5cqw;
+  min-height: 3.2cqw;
+  padding: .35cqw .25cqw;
+  font-size: 1.1cqw;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
