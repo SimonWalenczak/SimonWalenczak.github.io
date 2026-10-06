@@ -1,14 +1,14 @@
 const CACHE_PREFIX = "urps-obesite-hub-";
-const CACHE_NAME = `${CACHE_PREFIX}20261006-r1`;
+const CACHE_NAME = `${CACHE_PREFIX}20261006-r2`;
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./Hub.css?v=20261006-r1",
-  "./Hub.js?v=20261006-r1",
-  "../shared/scene-layout.css?v=20261006-r1",
-  "../shared/scene-layout.js?v=20261006-r1",
-  "../shared/scene-runtime.js?v=20261006-r1"
+  "./Hub.css?v=20261006-r2",
+  "./Hub.js?v=20261006-r2",
+  "../shared/scene-layout.css?v=20261006-r2",
+  "../shared/scene-layout.js?v=20261006-r2",
+  "../shared/scene-runtime.js?v=20261006-r2"
 ];
 const shellPaths = new Set(APP_SHELL.map((path) => new URL(path, self.registration.scope).pathname));
 
